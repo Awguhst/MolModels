@@ -269,9 +269,6 @@ So, the question for Chapter 2: **given a molecule's weight, hydrogen-bond donor
 You have only five descriptors. Based on the plots, which single additional number about a molecule would you most like to have, and why? (Chemists: argue for or against logP. Biologists and mathematicians: what property of the *shape* of the molecule might matter?)
 :::
 
-::: {.instructor}
-Timing: loading and the logS discussion take about 10 minutes; the two chemist and maths boxes are optional reading for a mixed room, but do say out loud that one log unit is a factor of ten, since this is the single fact non-chemists most often miss later. The two scatter plots and the heatmap take 15 minutes. Let learners find the PCB and coronene rows themselves before you name them; a chemist in the room can usually explain why they are insoluble, which is a good moment to hand over the floor. The duplicate check returning zero is a useful surprise: ask why a zero does not settle the question before revealing the note on canonical SMILES.
-:::
 
 ## Exercises
 

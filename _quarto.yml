@@ -56,7 +56,9 @@ website:
     copy-button: false
     keyboard-shortcut: ["/", "s"]
   navbar:
-    logo: brand/logo.svg
+    logo:
+      light: brand/logo.svg
+      dark: brand/logo-dark.svg
     logo-alt: "Molecules & Models logo: a hexagonal ring of connected nodes"
     logo-href: /index.html
     title: "Molecules & Models"
@@ -128,7 +130,8 @@ format:
       gutter-width: 1.5rem
 
 filters:
-  - mm
+  - mm          # before Quarto's own filters, so that .solution divs are ours (Quarto would otherwise
+  - quarto      # render them as a theorem-style "Solution." environment)
 
 execute:
   freeze: auto                  # local renders reuse cached results; CI renders everything

@@ -3,47 +3,42 @@
 // the differences live here. Tokens come from _tokens.scss.
 @import "tokens";
 
-$body-bg: #0F1217;
-$body-color: #E6E9EE;
-$link-color: #A99BFF;
-$link-hover-color: #C4BAFF;
-$border-color: #29303B;
-$navbar-bg: #161A21;
-$navbar-fg: #E6E9EE;
-$navbar-hl: #A99BFF;
-$sidebar-bg: #161A21;
-$sidebar-fg: #E6E9EE;
-$sidebar-hl: #A99BFF;
-$footer-bg: #0F1217;
-$footer-fg: #A0A8B4;
-$code-bg: #1D222B;
-$code-color: #E6E9EE;
-$code-block-bg: #0B0D11;
+$body-bg: #15181C;
+$body-color: #E8E4DC;
+$link-color: #E8E4DC;
+$link-hover-color: #E8E4DC;
+$border-color: #2F353D;
+$navbar-bg: #15181C;
+$navbar-fg: #E8E4DC;
+$navbar-hl: #E8E4DC;
+$sidebar-bg: #15181C;
+$sidebar-fg: #E8E4DC;
+$sidebar-hl: #E8E4DC;
+$footer-bg: #15181C;
+$footer-fg: #A6A197;
+$code-bg: #242930;
+$code-color: #E8E4DC;
+$code-block-bg: #101317;
 $code-block-border-left: false;
-$toc-color: #A0A8B4;
-$toc-active-border: #A99BFF;
-$toc-inactive-border: #29303B;
-$table-color: #E6E9EE;
-$table-border-color: #29303B;
-$input-bg: #1D222B;
-$input-color: #E6E9EE;
-$input-border-color: #29303B;
-$card-bg: #161A21;
-$card-border-color: #29303B;
-$popover-bg: #1D222B;
-$dropdown-bg: #1D222B;
-$dropdown-link-color: #E6E9EE;
-$dropdown-link-hover-bg: #29303B;
-$modal-content-bg: #161A21;
-$text-muted: #A0A8B4;
-$btn-close-color: #E6E9EE;
+$toc-color: #A6A197;
+$toc-active-border: #E8E4DC;
+$toc-inactive-border: #2F353D;
+$table-color: #E8E4DC;
+$table-border-color: #2F353D;
+$input-bg: #242930;
+$input-color: #E8E4DC;
+$input-border-color: #2F353D;
+$card-bg: #1C2025;
+$card-border-color: #2F353D;
+$popover-bg: #242930;
+$dropdown-bg: #242930;
+$dropdown-link-color: #E8E4DC;
+$dropdown-link-hover-bg: #2F353D;
+$modal-content-bg: #1C2025;
+$text-muted: #A6A197;
+$btn-close-color: #E8E4DC;
 
 /*-- scss:rules --*/
 :root {
   @include mm-tokens-dark;
-}
-
-// In dark mode the tinted figure panel keeps the light-figure fallback readable
-body.quarto-dark {
-  .navbar .navbar-brand img { filter: none; }
 }

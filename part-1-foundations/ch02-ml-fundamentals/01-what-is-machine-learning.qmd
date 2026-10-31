@@ -257,9 +257,6 @@ None of these is a reason to avoid machine learning. They are the questions to a
 A group reports a model that predicts, from structure, whether a compound will be toxic in mice, trained on 180 compounds, 160 of them from a single chemical series. Which of the four failure modes worries you most, and what one extra piece of information would you ask for?
 :::
 
-::: {.instructor}
-Timing: about 10 minutes for the first two sections if the unsupervised discussion stays short; reserve a solid 10 minutes for the polynomial figure, which is the emotional centre of the episode and the hook for 2.4. Ask chemists what the degree-15 curve "would predict for $x = 1.05$". Surface early the misconception that classification and regression are different *algorithms*: they differ in the type of label and the loss, and the same linear model appears in both ([episode 2.5](05-classification.html)). The ★ exercise works well as a two-minute vote with the whole room.
-:::
 
 ## Exercises
 

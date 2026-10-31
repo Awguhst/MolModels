@@ -12,13 +12,13 @@ questions:
 objectives:
   - "Find any episode from its number and read its Overview and Key points cards."
   - "Recognise each kind of callout box and know what it asks you to do."
-  - "Use the progress tracker, the view and theme switches, glossary tooltips and search."
+  - "Use the progress tracker, the theme switch, glossary tooltips and search."
 keypoints:
   - "Four Parts, sixteen chapters; episode 2.3 is the third episode of Chapter 2. Chapters 0–2 are available now; the rest are marked *soon*."
   - "Read the Overview card first and the Key points card last; they are the contract for the page."
   - "Predict boxes and checkpoints work only if you commit to an answer before looking."
   - "Exercises are graded ★ (check), ★★ (apply), ★★★ (stretch). Do all the ★ ones, and at least one ★★ per episode."
-  - "Progress is stored in your browser only; the Instructor view adds notes for teachers and changes nothing else."
+  - "Progress is stored in your browser only, and you can reset it from the sidebar at any time."
 ---
 
 {{< include /_includes/mm-setup.qmd >}}
@@ -110,11 +110,6 @@ Every option tells you something, including the wrong ones, and a small running 
 
 **Mark episode complete.** The button in the footer records that you finished the page: a tick appears next to the episode in the sidebar, the chapter page shows a progress bar, and the home page offers a *Continue* card pointing at the next unfinished episode. All of this is stored in your browser only (no server, no account), so it does not follow you to another browser or device. *Reset progress* in the sidebar clears it.
 
-**Learner / Instructor view.** The switch in the navigation bar shows or hides *Instructor notes*: timing advice, sticking points and discussion starters for whoever is teaching. It changes nothing else, and curious learners may switch it on. Opening any page with `?view=instructor` on the end of the address does the same and remembers the choice.
-
-::: {.instructor}
-This is what an instructor note looks like. Episode 0.1 is best done live in the first ten minutes of a first session: open the page on the projector, click through the checkpoint, mark the episode complete and reset progress, so that nobody wonders later whether the site is tracking them. Then send everyone to the setup episode and give the room twenty minutes to get a green `check_env` output.
-:::
 
 **Dark / Light / Auto.** The theme switch next to the view switch; *Auto* follows your operating system. Figures are rendered in both themes and swap with the page.
 

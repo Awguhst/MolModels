@@ -351,9 +351,6 @@ print(f"kg/mol: coefficient {model_kg.coef_[0]:.4f}   R² {model_kg.score(X_kg, 
 In the table above the ring coefficient (−0.47) is thirty times the molecular-weight coefficient (−0.013). That says nothing about importance: one ring is one unit, while one g/mol is a tiny step on a feature that spans 760 units. To compare features you must put them on the same scale first, which is one of the reasons [episode 2.6](06-pipelines-leakage.html) standardises features inside a pipeline. Until then, read signs with care and magnitudes not at all.
 :::
 
-::: {.instructor}
-Timing: budget 10 minutes for the normal equation, 15 for gradient descent (the divergence demo is where the room wakes up; let learners guess the step at which the loss passes a million), 5 for scikit-learn and 10 for the five-feature model and the coefficient discussion. If time is short, drop the units cell and keep the with/without-rings comparison, which is the one learners remember. Expect the question "so which coefficients are *right*?"; the honest answer, that neither set is, and that prediction and explanation are different goals, loops back to the biologist's corner in episode 2.1. The ★★ exercise on unstandardised gradient descent is worth doing live if the predict box generated debate.
-:::
 
 ## Exercises
 

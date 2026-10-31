@@ -354,9 +354,6 @@ Saving the *pipeline* rather than the model alone is the point: the file contain
 A paper reports 94% accuracy for predicting antibiotic resistance from bacterial genomes, with 2,000 isolates collected from 40 hospitals and a random 80/20 split. Which of the four leaks is most likely, and what single change to the evaluation would you ask the authors to make?
 :::
 
-::: {.instructor}
-Timing: scaling and the penguin pipeline take about 15 minutes; the four leakage cases need the remaining 25 and are the heart of the episode. The duplicate hunt in ESOL is a good live moment: ask the room why `.duplicated()` returned zero before showing the trailing spaces. The `GroupKFold` bar chart usually prompts "but which number is right?", and the answer "the one that matches how the model will be used" sets up scaffold splits for Part II. Mathematicians may want the deep-dive on bias; chemists and biologists should be pointed to the bridge boxes instead. Exercise 2 works well as a 5-minute pair discussion before showing the solution.
-:::
 
 ## Exercises
 

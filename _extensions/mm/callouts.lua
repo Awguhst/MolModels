@@ -1,5 +1,5 @@
 -- Molecules & Models callout vocabulary.
---   ::: {.note} / .tip / .pitfall / .prereq / .discussion / .instructor / .deep-dive
+--   ::: {.note} / .tip / .pitfall / .prereq / .discussion / .deep-dive
 --   ::: {.challenge level=2 title="..."}  with nested  :::: {.solution}
 --   ::: {.bridge audience="chem|bio|math|cs"}
 --   ::: {.checkpoint title="..."}  (question text, then a task list `- [x]` / `- [ ]` of options,
@@ -19,7 +19,6 @@ local kinds = {
   solution    = { label = "Solution", collapsible = true, cta_show = "Show solution", cta_hide = "Hide solution" },
   discussion  = { label = "Discussion" },
   ["deep-dive"] = { label = "Deep dive", collapsible = true, cta_show = "Show the maths", cta_hide = "Hide the maths" },
-  instructor  = { label = "Instructor note" },
   checkpoint  = { label = "Checkpoint" },
   predict     = { label = "Predict before you run" },
 }
@@ -215,6 +214,23 @@ local function Div(div)
   return nil
 end
 
+-- Quarto parses `.solution` (like `.proof` and `.remark`) into its own "Proof" custom node before any
+-- user filter runs. Reclaim those nodes so that solutions render as our collapsed <details> boxes.
+local function Proof(p)
+  if not quarto.doc.is_format("html") then return nil end
+  local kind = pandoc.utils.stringify(p.type or p.name or ""):lower()
+  if kind ~= "solution" then return nil end
+  local div = p.div
+  if div == nil then return nil end
+  if pandoc.utils.type(div) ~= "Block" or div.t ~= "Div" then
+    -- Quarto may hand us the content as a list of blocks rather than the original Div
+    local blocks = pandoc.utils.type(div) == "Blocks" and div or pandoc.Blocks({ div })
+    div = pandoc.Div(blocks, pandoc.Attr("", { "solution" }))
+  end
+  local spec = kinds.solution
+  return pandoc.Blocks(build_callout(div, "solution", spec.label, "solution", nil, true, spec.cta_show, spec.cta_hide))
+end
+
 return {
-  { Div = Div },
+  { Div = Div, Proof = Proof },
 }

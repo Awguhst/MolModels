@@ -194,9 +194,6 @@ sys.version_info >= (3, 10)
 
 `sys.version_info` is a named tuple of integers (major, minor, micro, ...), and Python compares tuples element by element, so the comparison reads "at least 3.10" without any string parsing. This is exactly the test `check_env.py` performs.
 
-::: {.instructor}
-In a taught session, budget twenty minutes and expect the room to split: about a third on Colab, a third who already have conda, and a third with a fresh laptop. Have `check_env.py` output on the projector as the target state and let the first group help the third; the kernel-selection pitfall and the Microsoft Store alias cover most of what goes wrong. Do not wait for every machine to be green before moving on; anyone stuck can use Colab for Chapter 1 and fix the install at home.
-:::
 
 ## Troubleshooting
 

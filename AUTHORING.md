@@ -40,7 +40,7 @@ One episode is one `.qmd` file, `NN-slug.qmd`, inside its chapter directory. Rea
 6. **`## Where this is going`**: one paragraph linking the idea to a later cheminformatics or bioinformatics chapter.
 7. **Key points card** (generated from `keypoints`), then the footer (mark complete, previous/next, edit/report, last updated) — generated, never hand-written.
 
-Also required somewhere in the body: at least one `.predict` box, at least one `.bridge`, and one `.instructor` note. `tests/test_content_rules.py` checks all of this.
+Also required somewhere in the body: at least one `.predict` box and at least one `.bridge`. `tests/test_content_rules.py` checks all of this.
 
 Length: 1,500–3,000 words plus code. Split anything longer into two episodes.
 
@@ -64,7 +64,7 @@ prerequisites: [ch02-ep02]   # episode ids: chCC-epNN or chCC-labNN
 ---
 ```
 
-Validated against `tests/episode-schema.json`. Ids are derived: chapter 2 episode 3 is `ch02-ep03`; Lab 1 of chapter 1 is `ch01-lab01`.
+Validated against `tests/episode-schema.json`. Keep titles free of `$` maths and avoid leading numbers like `1.` (they parse as lists). Ids are derived: chapter 2 episode 3 is `ch02-ep03`; Lab 1 of chapter 1 is `ch01-lab01`.
 The chapter directory's `_metadata.yml` supplies `chapter`, `chapter-id`, `chapter-title`, `chapter-short`, `chapter-href`; episodes never repeat those.
 
 ## Callout vocabulary
@@ -83,7 +83,6 @@ All callouts are fenced divs handled by `_extensions/mm/callouts.lua`. Titles ac
 | `::: {.discussion}` | Discussion prompt | |
 | `::: {.bridge audience="chem"}` | Chemist's corner | `chem`, `bio` (Biologist's corner), `math` (Maths corner), `cs` (For programmers) |
 | `::: {.deep-dive title="..."}` | collapsed "Show the maths" | optional theory; never required to follow the episode |
-| `::: {.instructor}` | Instructor note | only visible in Instructor view |
 | `::: {.checkpoint title="..."}` | multiple-choice question | see below |
 
 Nested divs use more colons (`::::`). Example:
@@ -231,12 +230,12 @@ an `index.qmd` with the "soon" banner, 4–6 topic bullets and 3 planned outcome
 | Piece | Where | Role |
 |---|---|---|
 | Pre-render | `scripts/build_course_data.py` | reads front matter → `_generated/course.json`, `_sidebar.yml` (via `metadata-files`), `assets/js/course-data.js`, hero/schedule/lab/key-point includes, metro map SVG |
-| Lua filters | `_extensions/mm/callouts.lua`, `math.lua`, `episode.lua` | callouts; TeX → KaTeX spans; key points card, footer, KaTeX + JS dependencies |
+| Lua filters | `_extensions/mm/callouts.lua`, `math.lua`, `episode.lua` | callouts; TeX → KaTeX spans; key points card, footer, KaTeX + JS dependencies. Quarto parses `.solution` into its own "Proof" node before any filter runs, so `callouts.lua` reclaims those nodes with a `Proof` handler; `_quarto.yml` lists `filters: [mm, quarto]` so the extension runs first |
 | Shortcodes | `_extensions/mm/term.lua`, `glossary.lua` | glossary tooltips and page (`glossary.yml` parsed by pandoc) |
 | Title block | `_extensions/mm/partials/title-block.html` | episode / lab / plain title blocks from metadata |
 | Post-render | `scripts/post_render.py` | sidebar decoration (numbers, times, check circles, "soon"), part accent on `<html>`, skip link, a11y fixes, CDN removal, guards Quarto's nav script against SVG links |
-| Theme | `brand/*.yml`, `assets/scss/*.scss`, `assets/highlight/*.theme` | tokens as CSS custom properties; dark is the default layer, light overrides tokens |
-| JS | `assets/js/mm.js` | theme switch (Dark/Light/Auto), Learner/Instructor view (`?view=instructor`), progress, expand-all-solutions, quiz score, long-output collapse, print expansion, `/` search |
+| Theme | `brand/*.yml`, `assets/scss/*.scss`, `assets/highlight/*.theme` | tokens as CSS custom properties in `_tokens.scss`; dark is the default layer, light overrides tokens. Design rules: colour is semantic only (one accent per Part, one per callout kind), callouts are a thin coloured rule rather than a box, headings are serif, links are ink-coloured with an accent underline, no all-caps labels. Any SCSS change needs a clean full render (`rm -rf _site && quarto render`) because the compiled CSS file name is hashed |
+| JS | `assets/js/mm.js` | theme switch (Dark/Light/Auto), progress, expand-all-solutions, quiz score, long-output collapse, print expansion, `/` search |
 | Fonts | `assets/fonts/` | IBM Plex Sans, Source Serif 4, JetBrains Mono, subset with fontTools (`scripts/subset_fonts.sh`), served via `brand` typography |
 
 Fonts: the spec's three families are used unchanged; they are subset to Latin + Greek + symbols (38–68 KB per face) and self-hosted. No CDN is contacted at runtime: `tests/test_rendered_site.py::test_no_runtime_cdn` guards this.

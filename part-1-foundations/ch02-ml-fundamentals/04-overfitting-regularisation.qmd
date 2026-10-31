@@ -419,9 +419,6 @@ On large datasets people often replace the cross-validation in step 2 with one f
 Step 4 checks the *whole procedure*, grid search included. When the data are too small to spare a test set, {{< term nested-cv >}} does the same job: an outer cross-validation loop scores the procedure, and inside each outer fold an inner `GridSearchCV` chooses the hyperparameters. In scikit-learn that is one line, `cross_val_score(GridSearchCV(...), X, y, cv=outer)`. It matters when $n$ is tens, not thousands.
 :::
 
-::: {.instructor}
-Timing: synthetic experiment and bias–variance about 15 minutes; ESOL curves 10; ridge and lasso 10; CV and grid search 10. "Why is the ridge validation curve flat, then?" always comes up: let the room answer, because it is the point of the small-data section. Mathematicians will ask why the lasso zeros are exact; point to the deep-dive and move on. If short of time, skip the lasso grid search.
-:::
 
 ## Exercises
 

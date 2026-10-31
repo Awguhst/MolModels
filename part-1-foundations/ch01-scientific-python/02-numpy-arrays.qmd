@@ -284,9 +284,6 @@ print("all molecular weights:            ", X[:, 0])
 `X[i]` is one sample, `X[:, j]` is one feature across all samples, and `X.mean(axis=0)` is the vector of feature means. Keep this picture: it is what `axis=0` means for the rest of the course.
 :::
 
-::: {.instructor}
-Timing: lists to arrays, indexing and masks take 15 minutes if you let learners type along. The vectorisation timing cell is the moment of the episode; ask for predictions out loud first and let the spread (most guess 2–10×) sink in. Broadcasting is the hardest section; the "line the shapes up from the right" rule on a whiteboard, with the `(4,)` versus `(4, 1)` failure shown live, is worth five minutes. The matrix section can be shortened to the `solve` call if time is tight; the X / y note must not be cut.
-:::
 
 ## Exercises
 

@@ -98,3 +98,17 @@ def test_every_episode_page_has_structure():
             if '<span class="mm-ep-label">Lab' in html:
                 continue
             pytest.fail(f"{page.relative_to(SITE)}: episode without key points card")
+
+
+def test_solutions_are_collapsible():
+    """Every exercise solution renders as a collapsed <details> (Quarto's own 'Solution.' environment must not win)."""
+    bad = []
+    for page in pages():
+        html = page.read_text(encoding="utf8")
+        if 'class="proof solution"' in html:
+            bad.append(f"{page.relative_to(SITE)}: solution rendered by Quarto's proof environment")
+        n_ex = html.count("mm-callout--challenge")
+        n_sol = html.count('details class="mm-callout mm-callout--solution"')
+        if n_ex and n_sol < n_ex:
+            bad.append(f"{page.relative_to(SITE)}: {n_ex} exercises but {n_sol} collapsible solutions")
+    assert not bad, chr(10).join(bad)

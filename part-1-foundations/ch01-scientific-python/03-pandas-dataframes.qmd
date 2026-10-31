@@ -274,9 +274,6 @@ The penguin table obeys three rules that make all of the above work without spec
 
 Untidy tables are everywhere in science: a spreadsheet with one column per year, a plate layout where the position of a cell encodes the sample, a sheet with the sample name in a merged header row. They look fine to a human and are nearly unusable by code. `melt` is the usual repair for "variables in column headers"; `pivot_table` is how you produce a wide summary for a reader *after* the analysis, not before. Keep the long, tidy table as the source of truth and derive everything else from it.
 
-::: {.instructor}
-Timing: loading through `loc`/`iloc` takes about 15 minutes; the index-versus-position distinction is worth a live demonstration with `gentoo.loc[0]` failing. The chained-assignment pitfall is best shown rather than described. If short on time, compress merge and categoricals and keep melt, pivot and missing values, which the lab relies on. Biologists usually enjoy the pivot of species × island; ask them to interpret it before you do.
-:::
 
 ## Exercises
 

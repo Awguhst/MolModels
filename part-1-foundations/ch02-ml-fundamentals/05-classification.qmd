@@ -329,9 +329,6 @@ A probability of 0.8 should mean "about 80 of 100 such tumours are malignant". W
 A paper reports "our toxicity classifier reaches 97% accuracy". The dataset has 4% toxic compounds. What is the first number you would ask for, and what would convince you the model is useful to a chemist?
 :::
 
-::: {.instructor}
-Timing: setup through logistic regression takes about 12 minutes; the decision-boundary figures are quick but learners like to play with `k`, so budget 8 minutes there. The confusion matrix discussion is the heart of the episode and benefits from being done out loud with the medical framing (ask: which cell would you least like to be in?). The screening simulation at the end is where chemists in the room usually wake up; if time is short, skip the calibration note and the ROC/PR comparison, not the imbalance section.
-:::
 
 ## Exercises
 

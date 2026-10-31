@@ -24,7 +24,7 @@ This is iteration 1. **Part I** is complete through Chapter 2: Start here, Scien
 
 ## How it is built
 
-The site is a [Quarto](https://quarto.org) website rendered from `.qmd` files with Python executed through Jupyter. Lesson structure (callouts, glossary tooltips, key points, progress tracking) is implemented once as a Quarto extension and a small amount of JavaScript, so that authors write plain Markdown. The pedagogical patterns, such as the Overview box, timed episodes, challenges with hidden solutions, key points and learner/instructor views, follow the conventions popularised by [The Carpentries](https://carpentries.org); the design, code and text are original. See [AUTHORING.md](https://github.com/YOUR-USER/molecules-and-models/blob/main/AUTHORING.md) for the conventions.
+The site is a [Quarto](https://quarto.org) website rendered from `.qmd` files with Python executed through Jupyter. Lesson structure (callouts, glossary tooltips, key points, progress tracking) is implemented once as a Quarto extension and a small amount of JavaScript, so that authors write plain Markdown. The pedagogical patterns, such as the Overview box, timed episodes, challenges with hidden solutions and key points, follow the conventions popularised by [The Carpentries](https://carpentries.org); the design, code and text are original. See [AUTHORING.md](https://github.com/YOUR-USER/molecules-and-models/blob/main/AUTHORING.md) for the conventions.
 
 ## Datasets and credits
 

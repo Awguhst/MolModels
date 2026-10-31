@@ -87,9 +87,13 @@ def decorate(html: str, page_rel: PurePosixPath) -> str:
         if ch is not None:
             if ch["stub"]:
                 label = re.sub(r"\s*\(soon\)\s*$", "", text)
+                m2 = re.match(r"(\d+) (.*)", label)
+                inner = f'<span class="mm-ep-num">{m2.group(1)}</span> <span class="mm-ep-title">{m2.group(2)}</span>' if m2 else f'<span class="mm-ep-title">{label}</span>'
                 return (f'<a href="{href}" class="sidebar-item-text sidebar-link mm-soon{active}">'
-                        f'<span class="mm-ep-title">{label}</span><span class="mm-chip">soon</span></a>')
-            return (f'<a href="{href}" class="sidebar-item-text sidebar-link{active}"><span class="mm-ep-title">{text}</span>'
+                        f'{inner}<span class="mm-chip">soon</span></a>')
+            m2 = re.match(r"(\d+) (.*)", text)
+            label = f'<span class="mm-ep-num">{m2.group(1)}</span> <span class="mm-ep-title">{m2.group(2)}</span>' if m2 else f'<span class="mm-ep-title">{text}</span>'
+            return (f'<a href="{href}" class="sidebar-item-text sidebar-link{active}">{label}'
                     f'<span class="mm-pct" data-mm-pct="{ch["id"]}"></span></a>'
                     f'<span class="mm-progress" data-mm-bar="{ch["id"]}" data-part="{ch["part"]}" aria-hidden="true" hidden><span></span></span>')
         if "(soon)" in text:
@@ -108,6 +112,10 @@ def decorate(html: str, page_rel: PurePosixPath) -> str:
     html = html.replace('<nav class="navbar navbar-expand-lg "', '<nav class="navbar navbar-expand-lg " aria-label="Main"')
     html = html.replace('<nav id="quarto-sidebar" class="sidebar', '<nav id="quarto-sidebar" aria-label="Course contents" class="sidebar')
     html = html.replace('<nav id="TOC" role="doc-toc"', '<nav id="TOC" role="doc-toc" aria-label="On this page"')
+    # Quarto drops logo-alt when the logo has light/dark variants; the brand link then has no name
+    html = html.replace('alt="" class="navbar-logo', 'alt="Molecules &amp; Models home" class="navbar-logo')
+    # the mobile sidebar toggle carries an aria-label that does not contain its visible text
+    html = html.replace('aria-expanded="false" aria-label="Toggle sidebar navigation" onclick', 'aria-expanded="false" onclick')
     # 6. No runtime CDN calls: Quarto adds RequireJS + jQuery from jsdelivr whenever a cell displays
     #    HTML (pandas tables). We have no Jupyter widgets, so drop them.
     html = CDN_SCRIPT_RE.sub("", html)

@@ -259,9 +259,6 @@ The fix is to add the missing elements, or better, to make the error message say
 `KeyError` (a dict, Series or DataFrame does not have that key or column; check spelling and `df.columns`), `TypeError` (an operation applied to the wrong type, such as `"3" + 1`), and `ValueError` (the type is right but the value is not, such as `float("abc")` or mismatched array shapes). `NameError` means you used a variable before the cell that defines it ran; restart the kernel and run the notebook top to bottom.
 :::
 
-::: {.instructor}
-Timing: lists versus dicts and slicing take about 10 minutes with a live demo; spend the saved time on the traceback walk-through, which is the single highest-value skill in this episode. Ask learners to name the error, the line and the cause before you say anything. The mutable-default pitfall can be dropped if the group is short on time. Programmers in the room will be bored by types; pair them with a chemist or biologist for the exercises.
-:::
 
 ## Exercises
 

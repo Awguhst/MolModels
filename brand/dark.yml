@@ -4,25 +4,25 @@ meta:
   link: https://YOUR-USER.github.io/molecules-and-models/
 color:
   palette:
-    bg: "#0F1217"
-    surface: "#161A21"
-    surface-2: "#1D222B"
-    code-bg: "#0B0D11"
-    border: "#29303B"
-    text: "#E6E9EE"
-    text-muted: "#A0A8B4"
-    violet: "#A99BFF"
-    amber: "#F2B84B"
-    green: "#5FD39B"
-    coral: "#FF8C7A"
+    bg: "#15181C"
+    surface: "#1C2025"
+    surface-2: "#242930"
+    code-bg: "#101317"
+    border: "#2F353D"
+    text: "#E8E4DC"
+    text-muted: "#A6A197"
+    blue: "#86AEE0"
+    amber: "#E3AA5C"
+    sage: "#93C487"
+    rose: "#E39AA9"
   foreground: text
   background: bg
-  primary: violet
+  primary: blue
   secondary: text-muted
-  success: green
+  success: sage
   warning: amber
-  danger: coral
-  info: "#7CC4FA"
+  danger: rose
+  info: "#86AEE0"
 typography:
   fonts:
     - family: IBM Plex Sans
@@ -64,7 +64,7 @@ typography:
   base:
     family: IBM Plex Sans
     size: 17px
-    line-height: 1.65
+    line-height: 1.6
   headings:
     family: Source Serif 4
     weight: 600
@@ -73,5 +73,5 @@ typography:
     family: JetBrains Mono
     size: 0.853rem
   link:
-    color: violet
+    color: text
     decoration: underline

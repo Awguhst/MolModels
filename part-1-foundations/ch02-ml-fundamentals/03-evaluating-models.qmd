@@ -260,9 +260,6 @@ The spread is a few hundredths of a log unit for this dataset, so one split is a
 A colleague reports "our model achieves R² = 0.93" for predicting a binding affinity from 80 measured compounds. List three questions you would ask before believing that number tells you anything about the next 80 compounds.
 :::
 
-::: {.instructor}
-Timing: the split and baseline take about 10 minutes; most groups need the full 15 minutes on the plots. A good discussion prompt when the residual plot appears is to ask which *descriptor* might be missing (lipophilicity / logP always comes up), which sets up Part II nicely. The "worst molecules" table is a good place to let chemists in the room talk.
-:::
 
 ## Exercises
 

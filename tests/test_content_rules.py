@@ -48,7 +48,6 @@ def test_episode_pedagogy(path: Path):
     assert text.count("{.solution}") >= len(levels), "every exercise needs a solution"
     assert "{.predict}" in text, "missing a 'predict before you run' prompt"
     assert re.search(r"\{\.bridge audience=", text), "missing a bridge box"
-    assert "{.instructor}" in text, "missing an instructor note"
     # glossary terms used must exist
     for tid in re.findall(r"\{\{< term ([a-z0-9-]+)", text):
         assert tid in TERM_IDS, f"unknown glossary term '{tid}'"

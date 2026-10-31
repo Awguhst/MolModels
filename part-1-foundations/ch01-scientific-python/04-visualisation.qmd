@@ -231,9 +231,6 @@ Think of Figure 1 in a paper describing a new dataset. It almost always contains
 A colleague shows a bar chart of mean body mass per species with error bars for the standard deviation, and argues that it "says the same thing" as the violin plot. What does the bar chart hide that the violin shows? When is the bar chart the better choice?
 :::
 
-::: {.instructor}
-Timing: the first three scatter plots take about 10 minutes; let learners type them rather than copy. The histogram and box/violin pair takes 10, and the pairplot and heatmap the rest. The Simpson's paradox moment at the heatmap (bill depth versus body mass) is the point of the episode; ask the room to explain the negative correlation *before* you point them back to the pairplot. If time is short, drop the figure-hygiene list to a reading assignment and keep the overplotting pitfall, which bites everyone in Part II.
-:::
 
 ## Exercises
 

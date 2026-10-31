@@ -58,7 +58,7 @@ def main() -> int:
         bgs = {"bg": t["bg"], "surface": t["surface"], "surface-2": t["surface-2"], "code-bg": t["code-bg"]}
         text_tokens = ["text", "text-muted", "accent-1", "accent-2", "accent-3", "accent-4", "link"]
         callouts = ["note", "tip", "pitfall", "challenge", "solution", "discussion", "bridge-chem",
-                    "bridge-bio", "bridge-math", "bridge-cs", "instructor", "checkpoint", "prereq", "deep-dive"]
+                    "bridge-bio", "bridge-math", "bridge-cs", "checkpoint", "prereq", "deep-dive"]
         checks: list[tuple[str, str, str, float]] = []
         for name in text_tokens:
             for bgname, bg in bgs.items():

@@ -288,9 +288,6 @@ For division: `/` is true division and always returns a float; `//` is *floor* d
 ::::
 :::
 
-::: {.instructor}
-Running this as a diagnostic at the start of a cohort: give it as homework before the first session, ask for a score out of ten, and do not collect the answers. The distribution tells you how much of Chapter 1's first episode to do live. Questions 5, 8 and 10 separate those who have *written* Python from those who have only read it; anyone with those three right can be pointed at Chapter 1 immediately, whatever the rest of their score.
-:::
 
 ## Scoring, and if you struggled
 

@@ -22,8 +22,8 @@ def _mm_install():
     import matplotlib as mpl
     from IPython import get_ipython
 
-    LIGHT = {"bg": "#FFFFFF", "text": "#1B1F27", "axis": "#5B6573", "grid": "#D5DAE2"}
-    DARK = {"bg": "#161A21", "text": "#E6E9EE", "axis": "#A0A8B4", "grid": "#29303B"}
+    LIGHT = {"bg": "#FFFFFF", "text": "#1E2228", "axis": "#5E6168", "grid": "#D8D5CE"}
+    DARK = {"bg": "#1C2025", "text": "#E8E4DC", "axis": "#A6A197", "grid": "#2F353D"}
 
     def same(c1, c2):
         try:

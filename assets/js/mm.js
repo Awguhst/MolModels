@@ -1,6 +1,6 @@
 /* Molecules & Models — progressive enhancements.
  * Everything here is optional: the site is fully readable without it.
- * State lives in localStorage (wrapped in try/catch): mm-theme, mm-view, mm-progress, mm-last.
+ * State lives in localStorage (wrapped in try/catch): mm-theme, mm-progress, mm-last.
  */
 (function () {
   "use strict";
@@ -21,9 +21,7 @@
   var ICON = {
     sun: '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>',
     moon: '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7z"/></svg>',
-    auto: '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor" stroke="none"/></svg>',
-    learner: '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2 5.5 8 3l6 2.5L8 8z"/><path d="M4.5 6.8v3.4c0 .8 1.6 1.6 3.5 1.6s3.5-.8 3.5-1.6V6.8"/></svg>',
-    instructor: '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="2" y="3" width="12" height="8" rx="1"/><path d="M8 11v2.5M5 13.5h6"/></svg>'
+    auto: '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor" stroke="none"/></svg>'
   };
 
   /* ---------------------------------------------------------------- theme (Dark / Light / Auto) */
@@ -43,10 +41,10 @@
   }
   function themeControl() {
     var pref = store.get("mm-theme", "dark");
-    var wrap = el("div", { class: "mm-ctl mm-theme-ctl" });
+    var wrap = el("div", { class: "mm-theme-ctl" });
     var seg = el("div", { class: "mm-seg", role: "radiogroup", "aria-label": "Colour theme" });
     [["dark", "Dark", ICON.moon], ["light", "Light", ICON.sun], ["auto", "Auto", ICON.auto]].forEach(function (o) {
-      var b = el("button", { type: "button", role: "radio", "data-mm-theme-btn": o[0], "aria-checked": String(o[0] === pref), title: o[1] + " theme" }, o[2] + '<span class="mm-visually-hidden">' + o[1] + " theme</span>");
+      var b = el("button", { type: "button", role: "radio", "data-mm-theme-btn": o[0], "aria-checked": String(o[0] === pref), title: o[1] + " theme", "aria-label": o[1] + " theme" }, o[2]);
       b.addEventListener("click", function () { store.set("mm-theme", o[0]); applyTheme(o[0]); });
       seg.appendChild(b);
     });
@@ -56,29 +54,9 @@
     return wrap;
   }
 
-  /* ---------------------------------------------------------------- learner / instructor view */
-  function applyView(v) {
-    root.setAttribute("data-mm-view", v);
-    document.querySelectorAll("[data-mm-view-btn]").forEach(function (b) { b.setAttribute("aria-checked", String(b.getAttribute("data-mm-view-btn") === v)); });
-  }
-  function viewControl() {
-    var v = root.getAttribute("data-mm-view") || store.get("mm-view", "learner");
-    var wrap = el("div", { class: "mm-ctl mm-view-ctl" });
-    var seg = el("div", { class: "mm-seg", role: "radiogroup", "aria-label": "View" });
-    [["learner", "Learner", ICON.learner], ["instructor", "Instructor", ICON.instructor]].forEach(function (o) {
-      var b = el("button", { type: "button", role: "radio", "data-mm-view-btn": o[0], "aria-checked": String(o[0] === v), title: o[1] + " view" }, o[2] + "<span>" + o[1] + "</span>");
-      b.addEventListener("click", function () { store.set("mm-view", o[0]); applyView(o[0]); });
-      seg.appendChild(b);
-    });
-    wrap.appendChild(seg);
-    applyView(v);
-    return wrap;
-  }
-
   function mountHeaderControls() {
     var tools = document.querySelector(".navbar .quarto-navbar-tools");
     if (!tools) return;
-    tools.insertBefore(viewControl(), tools.firstChild);
     tools.insertBefore(themeControl(), tools.firstChild);
   }
 
