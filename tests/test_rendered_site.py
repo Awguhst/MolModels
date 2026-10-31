@@ -112,3 +112,14 @@ def test_solutions_are_collapsible():
         if n_ex and n_sol < n_ex:
             bad.append(f"{page.relative_to(SITE)}: {n_ex} exercises but {n_sol} collapsible solutions")
     assert not bad, chr(10).join(bad)
+
+
+def test_collapsible_bodies_are_intact():
+    """A filter bug once replaced the first paragraph of every untitled collapsible box with 'nil'."""
+    bad = []
+    for page in pages():
+        html = page.read_text(encoding="utf8")
+        for m in re.finditer(r'<details class="mm-callout mm-callout--(solution|proof|deep-dive)[^"]*"[^>]*>.*?<div class="mm-callout-body">\s*(.{0,12})', html, re.S):
+            if m.group(2).strip().startswith("nil"):
+                bad.append(f"{page.relative_to(SITE)}: {m.group(1)} body starts with 'nil'")
+    assert not bad, chr(10).join(bad)

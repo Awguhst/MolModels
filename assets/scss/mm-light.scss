@@ -366,11 +366,10 @@ pre:not(.sourceCode) { background: var(--mm-surface); border: 1px solid var(--mm
   border-left: 2px solid var(--mm-c);
   max-width: calc(var(--mm-measure) + 1.1rem);
 }
-.mm-callout-head { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; margin-bottom: .35rem; }
+.mm-callout-head { display: flex; align-items: baseline; gap: .5rem .7rem; flex-wrap: wrap; margin-bottom: .35rem; }
 .mm-callout-icon { width: 15px; height: 15px; color: var(--mm-c); flex: 0 0 auto; align-self: center; }
 .mm-callout-label { font-size: .86rem; font-weight: 600; color: var(--mm-c); }
 .mm-callout-title { font-family: var(--mm-font-heading); font-weight: 600; font-size: 1.08rem; color: var(--mm-text); margin: 0; }
-.mm-callout-title::before { content: "—"; margin-right: .5rem; color: var(--mm-text-muted); font-weight: 400; }
 .mm-callout-stars { font-size: .82rem; color: var(--mm-c); letter-spacing: .05em; }
 .mm-callout-body > :last-child { margin-bottom: 0; }
 .mm-callout-body > p:first-child { margin-top: 0; }
@@ -391,6 +390,12 @@ pre:not(.sourceCode) { background: var(--mm-surface); border: 1px solid var(--mm
 .mm-callout--bridge-math { --mm-c: var(--mm-bridge-math); }
 .mm-callout--bridge-cs { --mm-c: var(--mm-bridge-cs); }
 .mm-callout--predict { --mm-c: var(--mm-tip); }
+// formal mathematics (Appendix A): definitions, theorems, propositions, collapsed proofs
+.mm-callout--definition { --mm-c: var(--mm-discussion); }
+.mm-callout--theorem, .mm-callout--proposition { --mm-c: var(--mm-deep-dive); }
+.mm-callout--proof { --mm-c: var(--mm-prereq); }
+.mm-callout--definition .mm-callout-body, .mm-callout--theorem .mm-callout-body, .mm-callout--proposition .mm-callout-body { font-family: var(--mm-font-heading); font-size: 1.02rem; }
+.mm-callout--definition .mm-callout-body code, .mm-callout--theorem .mm-callout-body code, .mm-callout--proposition .mm-callout-body code { font-size: .82em; }
 // interactive blocks (exercises, checkpoints) get a faint field so their extent is clear
 .mm-callout--challenge, .mm-callout--checkpoint {
   max-width: none; padding: 1rem 1.25rem 1.1rem 1.1rem; border-radius: 0 var(--mm-radius) var(--mm-radius) 0;
@@ -399,7 +404,7 @@ pre:not(.sourceCode) { background: var(--mm-surface); border: 1px solid var(--mm
 .mm-callout--challenge > .mm-callout-body, .mm-callout--checkpoint > .mm-callout-body { max-width: var(--mm-measure); }
 
 // Collapsible callouts (solution, deep-dive): <details>
-details.mm-callout > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; padding: .1rem 0; }
+details.mm-callout > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: .5rem .7rem; flex-wrap: wrap; padding: .1rem 0; }
 details.mm-callout > summary::-webkit-details-marker { display: none; }
 details.mm-callout > summary .mm-summary-cta { margin-left: auto; font-size: .84rem; color: var(--mm-text-muted); display: inline-flex; align-items: center; gap: .3rem; text-decoration: underline; text-decoration-color: var(--mm-border); text-underline-offset: .16em; }
 details.mm-callout > summary:hover .mm-summary-cta { color: var(--mm-text); }

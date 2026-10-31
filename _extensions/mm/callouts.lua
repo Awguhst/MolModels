@@ -5,6 +5,7 @@
 --   ::: {.checkpoint title="..."}  (question text, then a task list `- [x]` / `- [ ]` of options,
 --                                   each option followed by its feedback paragraph)
 --   ::: {.predict}  (a "predict before you run" prompt)
+--   ::: {.definition title="..."} / .theorem / .proposition (numbered per page) and ::: {.proof} (collapsed)
 -- Emits semantic, accessible HTML; the CSS lives in assets/scss/mm-light.scss.
 -- Only active for HTML output; other formats fall back to plain divs.
 
@@ -21,7 +22,19 @@ local kinds = {
   ["deep-dive"] = { label = "Deep dive", collapsible = true, cta_show = "Show the maths", cta_hide = "Hide the maths" },
   checkpoint  = { label = "Checkpoint" },
   predict     = { label = "Predict before you run" },
+  -- formal mathematics (Appendix A); numbered per page in order of appearance
+  definition  = { label = "Definition", numbered = true },
+  theorem     = { label = "Theorem", numbered = true },
+  proposition = { label = "Proposition", numbered = true },
+  proof       = { label = "Proof", collapsible = true, cta_show = "Show proof", cta_hide = "Hide proof" },
 }
+
+local numbers = {}
+local function numbered_label(kind, spec)
+  if not spec.numbered then return spec.label end
+  numbers[kind] = (numbers[kind] or 0) + 1
+  return spec.label .. " " .. numbers[kind]
+end
 
 local bridges = {
   chem = { label = "Chemist's corner", icon = "chem" },
@@ -174,9 +187,12 @@ local function build_callout(div, kind, label, icon, extra_head, collapsible, ct
   else
     table.insert(out, raw("</div></div>"))
   end
-  -- a label id is required even when there is no title: emit a hidden label span
+  -- a label id is required even when there is no title: give the label span the id.
+  -- The label lives in the opening block for collapsible boxes (details + summary) and in the
+  -- second block (the head) otherwise; never touch a content block.
   if not title_html then
-    out[2] = raw(tostring(out[2].text):gsub('<span class="mm%-callout%-label">', '<span class="mm-callout-label" id="' .. id .. '-label">', 1))
+    local idx = collapsible and 1 or 2
+    out[idx] = raw(tostring(out[idx].text):gsub('<span class="mm%-callout%-label">', '<span class="mm-callout-label" id="' .. id .. '-label">', 1))
   end
   return out
 end
@@ -208,27 +224,27 @@ local function Div(div)
     if c:includes(kind) then
       local icon = kind
       if kind == "predict" then icon = "predict" end
-      return build_callout(div, kind, spec.label, icon, nil, spec.collapsible, spec.cta_show, spec.cta_hide)
+      return build_callout(div, kind, numbered_label(kind, spec), icon, nil, spec.collapsible, spec.cta_show, spec.cta_hide)
     end
   end
   return nil
 end
 
--- Quarto parses `.solution` (like `.proof` and `.remark`) into its own "Proof" custom node before any
--- user filter runs. Reclaim those nodes so that solutions render as our collapsed <details> boxes.
+-- Quarto parses `.solution` and `.proof` (and `.remark`) into its own "Proof" custom node before any
+-- user filter runs. Reclaim those nodes so that solutions and proofs render as our collapsed <details> boxes.
 local function Proof(p)
   if not quarto.doc.is_format("html") then return nil end
   local kind = pandoc.utils.stringify(p.type or p.name or ""):lower()
-  if kind ~= "solution" then return nil end
+  if kind ~= "solution" and kind ~= "proof" then return nil end
   local div = p.div
   if div == nil then return nil end
   if pandoc.utils.type(div) ~= "Block" or div.t ~= "Div" then
     -- Quarto may hand us the content as a list of blocks rather than the original Div
     local blocks = pandoc.utils.type(div) == "Blocks" and div or pandoc.Blocks({ div })
-    div = pandoc.Div(blocks, pandoc.Attr("", { "solution" }))
+    div = pandoc.Div(blocks, pandoc.Attr("", { kind }))
   end
-  local spec = kinds.solution
-  return pandoc.Blocks(build_callout(div, "solution", spec.label, "solution", nil, true, spec.cta_show, spec.cta_hide))
+  local spec = kinds[kind]
+  return pandoc.Blocks(build_callout(div, kind, spec.label, kind, nil, true, spec.cta_show, spec.cta_hide))
 end
 
 return {

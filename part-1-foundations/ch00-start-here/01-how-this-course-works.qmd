@@ -78,6 +78,8 @@ A bridge box is written for one background. This one is a *Chemist's corner*; th
 A discussion prompt has no single answer. Write two or three sentences before moving on; in a taught course the instructor uses these to start a conversation.
 :::
 
+The [maths refresher](../../appendices/maths-refresher.html) adds three more, in the style of a mathematics text: numbered *Definition*, *Theorem* and *Proposition* boxes, each followed by a collapsed *Show proof* where a short argument helps.
+
 ### Exercises and solutions
 
 Exercises come at the end of each episode with a star rating: ★☆☆ checks understanding, ★★☆ applies the idea to something new, ★★★ is a stretch. Every exercise has a collapsed **Show solution** button, and the solution explains *why*, not just what. Do all of the ★ exercises and at least one ★★; the ★★★ ones are optional. The **Expand all solutions** button under the title opens every solution on the page at once, handy when revising or teaching, and dangerous when learning.

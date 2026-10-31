@@ -4,7 +4,7 @@ Small datasets live here. Anything whose redistribution terms are unclear is **n
 it is downloaded at build time by `scripts/fetch_data.py` with SHA-256 verification and cached
 locally (git-ignored).
 
-## Palmer penguins — `penguins.csv` (bundled)
+## Palmer penguins: `penguins.csv` (bundled)
 
 | | |
 |---|---|
@@ -30,7 +30,7 @@ Columns:
 
 Missing values are written as `NA`.
 
-## ESOL / Delaney aqueous solubility — `esol.csv` (downloaded at build time, git-ignored)
+## ESOL / Delaney aqueous solubility: `esol.csv` (downloaded at build time, git-ignored)
 
 | | |
 |---|---|

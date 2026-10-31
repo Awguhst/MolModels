@@ -38,7 +38,7 @@ One episode is one `.qmd` file, `NN-slug.qmd`, inside its chapter directory. Rea
 4. **Sections** (`##`), each following the same arc: motivating example → intuition in words or a figure → minimal maths (details in a `.deep-dive`) → code → interpretation of the output → pitfall.
 5. **`## Exercises`**: 2–4 `.challenge` boxes graded `level=1` (★ check understanding), `2` (★★ apply), `3` (★★★ stretch), each with a nested `.solution`. One episode per chapter contains an exercise titled **"Debug this"** with a realistic broken snippet.
 6. **`## Where this is going`**: one paragraph linking the idea to a later cheminformatics or bioinformatics chapter.
-7. **Key points card** (generated from `keypoints`), then the footer (previous/next, edit/report, last updated) — generated, never hand-written.
+7. **Key points card** (generated from `keypoints`), then the footer (previous/next, edit/report, last updated). Both are generated, never hand-written.
 
 Also required somewhere in the body: at least one `.predict` box and at least one `.bridge`. `tests/test_content_rules.py` checks all of this.
 
@@ -84,6 +84,9 @@ All callouts are fenced divs handled by `_extensions/mm/callouts.lua`. Titles ac
 | `::: {.bridge audience="chem"}` | Chemist's corner | `chem`, `bio` (Biologist's corner), `math` (Maths corner), `cs` (For programmers) |
 | `::: {.deep-dive title="..."}` | collapsed "Show the maths" | optional theory; never required to follow the episode |
 | `::: {.checkpoint title="..."}` | multiple-choice question | see below |
+| `::: {.definition title="..."}` | Definition 1, 2, ... | formal mathematics (Appendix A); numbered per page in order of appearance |
+| `::: {.theorem title="..."}`, `::: {.proposition title="..."}` | Theorem 1 / Proposition 1 | state the result; put the argument in a `.proof` after it |
+| `::: {.proof}` | collapsed "Show proof" | keep proofs short; a sketch is fine |
 
 Nested divs use more colons (`::::`). Example:
 
@@ -167,13 +170,13 @@ grid, legend frame) recoloured for the dark theme; `plt.show()` is a no-op durin
 runs. Quarto's `renderings` option tags the two outputs `light-content` / `dark-content` and the theme switch shows the
 right one. Learners who copy the visible code get the ordinary light figure. Consequences:
 
-- the cell must emit *nothing else* (no `print`, no trailing expression) — hence `plt.show()` as the last line;
+- the cell must emit *nothing else* (no `print`, no trailing expression), hence `plt.show()` as the last line;
 - one figure per cell;
 - do not use `fig-cap` or `label: fig-...` on these cells (Quarto limitation with `renderings`); write captions as text;
 - data colours come from the palette in the mplstyle (colour-blind-safe, readable on both backgrounds); do not hard-code colours unless they are semantic;
 - always give units in axis labels.
 
-Why not two matplotlib styles? Any approach that re-runs the cell would double execution time and break cells with side effects; recolouring the finished figure is cheaper and keeps learner code untouched. The fallback of a single light figure on a framed panel is what you get automatically if you forget `renderings` — the tests will tell you.
+Why not two matplotlib styles? Any approach that re-runs the cell would double execution time and break cells with side effects; recolouring the finished figure is cheaper and keeps learner code untouched. The fallback of a single light figure on a framed panel is what you get automatically if you forget `renderings`; the tests will tell you.
 
 ## Labs
 
@@ -181,9 +184,9 @@ Why not two matplotlib styles? Any approach that re-runs the cell would double e
 - Lab page front matter (schema `tests/lab-schema.json`): `title, chapter, lab, duration ("60–90 min"), minutes (integer, for the schedule), level, objectives, prerequisites-text, summary, dataset, notebook` (base name). The chapter page's lab card and its three buttons (Open in Colab, Download .ipynb, View solutions) are generated from it.
 - Notebook structure: title + goals → setup cell (Colab-aware: `try: import google.colab` and `pip install` only what is missing) → data loading with local path then raw-GitHub fallback → numbered tasks → reflection questions.
 - Cell tags (JupyterLab: View → Cell toolbar → Tags, or the cell metadata editor):
-  - `solution` — replaced by a `# TODO` stub in the student version (leading comment lines are kept as the task statement);
-  - `check` — friendly `assert`s that confirm the learner's result ("✅ check" cells); kept verbatim;
-  - `solutions-only` — removed from the student notebook.
+  - `solution`: replaced by a `# TODO` stub in the student version (leading comment lines are kept as the task statement);
+  - `check`: friendly `assert`s that confirm the learner's result ("✅ check" cells); kept verbatim;
+  - `solutions-only`: removed from the student notebook.
 - Budget: CPU, under 3 minutes, no GPU, no accounts, no paid APIs. `tests/test_notebooks_execute.py` enforces time and warnings.
 - Quarto executes and renders the solutions notebook as `labs/lab-NN-slug-solutions.html` (the "View solutions" page).
 
