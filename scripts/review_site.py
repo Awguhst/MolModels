@@ -89,6 +89,14 @@ def main() -> int:
                     print(f"skip {name}: {PAGES[name]} not rendered")
                     continue
                 page.goto(url, wait_until="networkidle")
+                # the theme script enables stylesheet links after load, which starts their download:
+                # wait until every enabled stylesheet has actually been parsed before capturing
+                page.wait_for_timeout(300)
+                page.wait_for_function(
+                    "Array.from(document.querySelectorAll('link[rel=\"stylesheet\"]')).every(l => l.sheet !== null)",
+                    timeout=20000,
+                )
+                page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(300)
                 if not args.no_shots:
                     for w in WIDTHS:
