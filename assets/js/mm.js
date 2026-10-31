@@ -57,6 +57,15 @@
     var tools = document.querySelector(".navbar .quarto-navbar-tools");
     if (!tools) return;
     tools.insertBefore(themeControl(), tools.firstChild);
+    // On narrow screens the header has no room for the switch: a second copy lives at the foot of the
+    // collapsed menu (CSS shows one or the other). Both copies share the same stored preference.
+    var menu = document.querySelector("#navbarCollapse");
+    if (menu) {
+      var inMenu = themeControl();
+      inMenu.classList.add("mm-theme-ctl--menu");
+      inMenu.insertBefore(el("span", { class: "mm-theme-ctl-label" }, "Theme"), inMenu.firstChild);
+      menu.appendChild(inMenu);
+    }
   }
 
   /* ---------------------------------------------------------------- solutions, quizzes, outputs, print */

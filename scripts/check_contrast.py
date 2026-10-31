@@ -72,6 +72,7 @@ def main() -> int:
                 checks.append((f"{name} border on {bgname}", t[name], bgs[bgname], 3.0))
         for name in [k for k in t if k.startswith("syntax-")]:
             checks.append((f"{name} on code-bg", t[name], t["code-bg"], 4.5))
+        checks.append(("primary button text (bg colour) on accent-1", t["bg"], t["accent-1"], 4.5))
         checks.append(("focus ring on bg", t["focus"], t["bg"], 3.0))
         checks.append(("focus ring on surface", t["focus"], t["surface"], 3.0))
         checks.append(("border on bg (non-text)", t["border"], t["bg"], 1.2))
