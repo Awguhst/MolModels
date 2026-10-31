@@ -50,6 +50,8 @@ pytest                                   # front-matter schema, content rules, d
 playwright install chromium              # once
 python scripts/review_site.py            # screenshots at 1440/1024/390 in both themes + axe-core -> _review/
 python scripts/check_contrast.py         # WCAG contrast audit of the design tokens
+bash scripts/lighthouse.sh               # optional: Lighthouse on four pages, served gzip-compressed -> _review/lighthouse/
+python scripts/serve_site.py             # browse _site/ locally with gzip, as GitHub Pages serves it
 ```
 
 Quarto must use the course environment: activate it before running Quarto, or set `QUARTO_PYTHON` to its interpreter.
@@ -71,7 +73,8 @@ appendices/                 maths-refresher.qmd, glossary.qmd, key-points.qmd, s
 data/                       penguins.csv + README.md (sources, licences, checksums); esol.csv is downloaded
 glossary.yml                single source for the glossary page and tooltips
 scripts/                    build_course_data.py, post_render.py, fetch_data.py, check_env.py,
-                            make_student_notebooks.py, new_episode.py, new_chapter.py, review_site.py, check_contrast.py
+                            make_student_notebooks.py, new_episode.py, new_chapter.py, review_site.py,
+                            check_contrast.py, lighthouse.sh, serve_site.py, subset_fonts.sh
 tests/                      pytest suite (see above)
 .github/workflows/          publish.yml: render → test → link check → deploy to GitHub Pages
 _review/screenshots/        responsive screenshots from scripts/review_site.py

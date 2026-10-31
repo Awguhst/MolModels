@@ -74,8 +74,13 @@ def test_no_warnings_or_errors_in_outputs():
     bad = []
     for page in pages():
         html = page.read_text(encoding="utf8")
-        if "cell-output-stderr" in html or "cell-output-error" in html:
-            bad.append(str(page.relative_to(SITE)))
+        if "cell-output-stderr" in html:
+            bad.append(f"{page.relative_to(SITE)}: stderr (warning) output")
+        if "cell-output-error" in html:
+            # an error cell is allowed only when the author asked for it (#| error: true), e.g. to teach tracebacks
+            src = ROOT / page.relative_to(SITE).with_suffix(".qmd")
+            if not (src.exists() and "#| error: true" in src.read_text(encoding="utf8")):
+                bad.append(f"{page.relative_to(SITE)}: unexpected error output")
         if re.search(r"(Deprecation|Future|User|Runtime)Warning", html):
             bad.append(f"{page.relative_to(SITE)} mentions a Warning in output")
     assert not bad, "\n".join(bad)

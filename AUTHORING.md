@@ -210,7 +210,7 @@ an `index.qmd` with the "soon" banner, 4–6 topic bullets and 3 planned outcome
 - Second person, warm, precise, no filler. Short paragraphs (≤ 4 sentences). British spelling.
 - Define every term at first use and link it with `{{< term >}}`.
 - Lead with the scientific example, then intuition, then maths, then code. Interpret every output. Follow with the pitfall.
-- Maths: `$...$` inline, `$$...$$` display. KaTeX is self-hosted; readers without JavaScript see the TeX source. Keep maths in the body minimal; put derivations in `.deep-dive`.
+- Maths: `$...$` inline, `$$...$$` display. KaTeX is self-hosted and attached only to pages that contain maths (the `math.lua` filter sets a flag that `episode.lua` reads); readers without JavaScript see the TeX source. Keep maths in the body minimal; put derivations in `.deep-dive`. Avoid `$` in callout titles.
 - Units everywhere: logS in log₁₀(mol/L), masses in g, lengths in mm.
 - Never invent citations, dataset facts or API behaviour. If you cannot verify it, leave it out.
 - Bridge boxes are written *for* that reader: chemists get bench analogies, biologists get experiments, mathematicians get the formal view, programmers get the engineering view.
@@ -234,7 +234,7 @@ an `index.qmd` with the "soon" banner, 4–6 topic bullets and 3 planned outcome
 | Lua filters | `_extensions/mm/callouts.lua`, `math.lua`, `episode.lua` | callouts; TeX → KaTeX spans; key points card, footer, KaTeX + JS dependencies |
 | Shortcodes | `_extensions/mm/term.lua`, `glossary.lua` | glossary tooltips and page (`glossary.yml` parsed by pandoc) |
 | Title block | `_extensions/mm/partials/title-block.html` | episode / lab / plain title blocks from metadata |
-| Post-render | `scripts/post_render.py` | sidebar decoration (numbers, times, check circles, "soon"), part accent on `<html>`, skip link, a11y fixes, CDN removal |
+| Post-render | `scripts/post_render.py` | sidebar decoration (numbers, times, check circles, "soon"), part accent on `<html>`, skip link, a11y fixes, CDN removal, guards Quarto's nav script against SVG links |
 | Theme | `brand/*.yml`, `assets/scss/*.scss`, `assets/highlight/*.theme` | tokens as CSS custom properties; dark is the default layer, light overrides tokens |
 | JS | `assets/js/mm.js` | theme switch (Dark/Light/Auto), Learner/Instructor view (`?view=instructor`), progress, expand-all-solutions, quiz score, long-output collapse, print expansion, `/` search |
 | Fonts | `assets/fonts/` | IBM Plex Sans, Source Serif 4, JetBrains Mono, subset with fontTools (`scripts/subset_fonts.sh`), served via `brand` typography |

@@ -8,6 +8,8 @@
 * lab cards                           substitute the GitHub repo/branch into Colab links
 * a11y fixes                          role="button" on collapse toggles, labelled navbar, non-empty table headers
 * no CDN                              remove the RequireJS/jQuery CDN tags Quarto adds for HTML outputs
+* quarto-nav.js                       guard the <a>.href rewrite against SVG anchors (roadmap stations)
+* lazy figures                        loading="lazy" on figure images; idempotent via a marker comment
 """
 from __future__ import annotations
 
@@ -47,7 +49,16 @@ def resolve(page_rel: PurePosixPath, href: str) -> str:
     return "/".join(parts)
 
 
+MARKER = "<!-- mm-post-render -->"
+
+
 def decorate(html: str, page_rel: PurePosixPath) -> str:
+    if MARKER in html:
+        return html  # already processed (quarto preview re-runs post-render after every partial render)
+    html = html.replace("</head>", MARKER + "</head>", 1)
+    # 0. figures below the fold load lazily
+    html = re.sub(r'<img src="([^"]+)" alt="([^"]*)" width="(\d+)" height="(\d+)" class="figure-img">',
+                  r'<img src="\1" alt="\2" width="\3" height="\4" class="figure-img" loading="lazy" decoding="async">', html)
     # 1. part accent
     m = re.match(r"part-(\d)-", page_rel.parts[0]) if page_rel.parts else None
     if m:
@@ -104,8 +115,20 @@ def decorate(html: str, page_rel: PurePosixPath) -> str:
     return html
 
 
+def patch_quarto_nav() -> None:
+    """Quarto's quarto-nav.js rewrites every <a>.href but assumes it is a string; the roadmap's SVG
+    station links expose an SVGAnimatedString and crash the handler. Skip non-string hrefs."""
+    js = OUT / "site_libs" / "quarto-nav" / "quarto-nav.js"
+    if js.exists():
+        text = js.read_text(encoding="utf8")
+        fixed = text.replace("      if (links[i].href) {", '      if (typeof links[i].href === "string") {')
+        if fixed != text:
+            js.write_text(fixed, encoding="utf8")
+
+
 def main() -> int:
     n = 0
+    patch_quarto_nav()
     for f in OUT.rglob("*.html"):
         rel = PurePosixPath(f.relative_to(OUT).as_posix())
         html = f.read_text(encoding="utf8")

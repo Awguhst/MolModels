@@ -158,7 +158,9 @@ table.dataframe tbody th { color: var(--mm-text-muted); font-weight: 500; text-a
 .navbar .navbar-brand img { height: 28px; width: 28px; max-height: 28px; }
 .navbar .navbar-title { font-family: var(--mm-font-heading); font-weight: 600; font-size: 1.12rem; letter-spacing: -.01em; white-space: nowrap; }
 @media (min-width: 992px) and (max-width: 1199.98px) {
-  .navbar .navbar-nav .nav-link { padding-left: .5rem; padding-right: .5rem; font-size: .88rem; }
+  .navbar .navbar-brand-container { flex: 0 0 auto; }
+  .navbar .navbar-brand, .navbar .navbar-title { max-width: none; overflow: visible; }
+  .navbar .navbar-nav .nav-link { padding-left: .45rem; padding-right: .45rem; font-size: .86rem; }
   .navbar .navbar-nav .nav-link.active::after { left: .5rem; right: .5rem; }
   .mm-view-ctl .mm-seg button span { display: none; }
   .navbar .navbar-title { font-size: 1rem; }
@@ -520,6 +522,15 @@ table.mm-schedule td.mm-sched-ep .mm-ep-num { margin-right: .35rem; }
 table.mm-schedule td.mm-sched-q { color: var(--mm-text-muted); font-size: .88rem; }
 table.mm-schedule ul { margin: 0; padding-left: 1rem; }
 table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-accent) 6%, transparent); }
+@media (max-width: 767.98px) {
+  // stack the schedule table: one card per episode
+  table.mm-schedule thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  table.mm-schedule, table.mm-schedule tbody, table.mm-schedule tr, table.mm-schedule td { display: block; width: 100%; }
+  table.mm-schedule tr { border-bottom: 1px solid var(--mm-border); padding: .6rem 0; }
+  table.mm-schedule td { border: 0; padding: .15rem .25rem; }
+  table.mm-schedule td.mm-sched-time::before { content: "Cumulative time: "; font-family: var(--mm-font-body); color: var(--mm-text-muted); }
+  table.mm-schedule td.mm-sched-q ul { padding-left: 1.1rem; }
+}
 .mm-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
 .mm-card { border: 1px solid var(--mm-border); border-radius: var(--mm-radius-lg); background: var(--mm-surface); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .5rem; }
 .mm-card h3, #quarto-document-content .mm-card h3 { margin: 0; font-size: 1.12rem; }

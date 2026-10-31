@@ -1,6 +1,7 @@
 ---
 title: "Glossary"
 subtitle: "Every term introduced in the course, in one place."
+mm-katex: true   # definitions are inserted by a shortcode after the filters run; force KaTeX
 ---
 
 {{< glossary >}}

@@ -43,11 +43,14 @@ $endif$
 $else$
 $if(chapter-index)$
 $else$
+$if(hide-title)$
+$else$
 $if(part-title)$
 <nav class="mm-crumb" aria-label="Breadcrumb"><span class="mm-part-dot" aria-hidden="true"></span><span>$part-title$</span></nav>
 $endif$
 <h1 class="title">$title$</h1>
 $if(subtitle)$<p class="subtitle lead">$subtitle$</p>$endif$
+$endif$
 $endif$
 $endif$
 $endif$

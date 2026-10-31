@@ -43,6 +43,8 @@ def student_version(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
                 # keep only the leading comment block (the task description), then the stub
                 head = []
                 for l in lines:
+                    if l.startswith("#|"):
+                        continue  # Quarto cell options (fig-alt etc.) are not part of the task statement
                     if l.startswith("#"):
                         head.append(l)
                     else:

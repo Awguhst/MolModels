@@ -58,7 +58,7 @@ website:
   navbar:
     logo: brand/logo.svg
     logo-alt: "Molecules & Models logo: a hexagonal ring of connected nodes"
-    logo-href: index.qmd
+    logo-href: /index.html
     title: "Molecules & Models"
     collapse-below: lg
     left:

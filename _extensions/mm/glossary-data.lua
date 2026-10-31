@@ -7,10 +7,15 @@ local function stringify_md(v)
   -- keep inline markdown (links, code) by writing the metadata inlines back to HTML
   if v == nil then return "" end
   if type(v) == "string" then return v end
-  if v.t == "MetaInlines" then
-    return pandoc.write(pandoc.Pandoc({ pandoc.Plain(v) }), "html")
-  elseif v.t == "MetaBlocks" then
-    return pandoc.write(pandoc.Pandoc(v), "html")
+  -- the "mathjax" writer method emits <span class="math inline">\(...\)</span> (the "katex" method
+  -- omits the delimiters); our self-hosted KaTeX auto-render needs the delimiters, and episode.lua
+  -- attaches KaTeX when it sees these spans
+  local opts = { html_math_method = "mathjax" }
+  local kind = pandoc.utils.type(v)
+  if kind == "Inlines" then
+    return pandoc.write(pandoc.Pandoc({ pandoc.Plain(v) }), "html", opts)
+  elseif kind == "Blocks" then
+    return pandoc.write(pandoc.Pandoc(v), "html", opts)
   end
   return pandoc.utils.stringify(v)
 end

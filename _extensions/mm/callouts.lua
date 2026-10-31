@@ -68,8 +68,11 @@ local function inline_title(div)
   local t = div.attributes["title"]
   if not t or t == "" then return nil end
   local doc = pandoc.read(t, "markdown")
-  if #doc.blocks == 0 then return esc(t) end
-  return pandoc.write(pandoc.Pandoc(doc.blocks[1].content and { pandoc.Plain(doc.blocks[1].content) } or doc.blocks), "html")
+  local first = doc.blocks[1]
+  -- only a plain paragraph is rendered as inline markdown; anything else (e.g. "1. Types" parsing
+  -- as an ordered list) is used verbatim as escaped text
+  if #doc.blocks ~= 1 or not first or (first.t ~= "Para" and first.t ~= "Plain") then return esc(t) end
+  return pandoc.write(pandoc.Pandoc({ pandoc.Plain(first.content) }), "html")
 end
 
 -- ---------------------------------------------------------------------------

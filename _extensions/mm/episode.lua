@@ -63,7 +63,7 @@ local function rel_href(from_file, to_file)
   return table.concat(out, "/")
 end
 
-local function add_dependencies()
+local function add_katex()
   quarto.doc.add_html_dependency({
     name = "katex",
     version = "0.16.22",
@@ -95,6 +95,22 @@ local function add_dependencies()
       { name = "fonts/KaTeX_Typewriter-Regular.woff2", path = "../../assets/katex/fonts/KaTeX_Typewriter-Regular.woff2" },
     },
   })
+end
+
+local function has_math(doc)
+  -- math.lua has already turned Math nodes into <span class="math ..."> raw HTML; the glossary
+  -- shortcode emits the same markup inside a raw block
+  local found = false
+  doc:walk({
+    RawInline = function(r) if r.format == "html" and r.text:find('class="math', 1, true) then found = true end end,
+    RawBlock = function(r) if r.format == "html" and r.text:find('class="math', 1, true) then found = true end end,
+  })
+  return found
+end
+
+local function add_dependencies(doc)
+  -- pages whose maths arrives through a shortcode (the glossary) opt in with `mm-katex: true`
+  if has_math(doc) or doc.meta["mm-katex"] then add_katex() end
   quarto.doc.add_html_dependency({
     name = "mm",
     version = "0.1.0",
@@ -176,7 +192,7 @@ end
 
 local function Pandoc(doc)
   if not quarto.doc.is_format("html") then return nil end
-  add_dependencies()
+  add_dependencies(doc)
   local meta = doc.meta
   local course = read_course()
   local id = page_id(meta)
