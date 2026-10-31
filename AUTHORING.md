@@ -32,13 +32,13 @@ Quarto needs to find the Python environment: activate it, or set `QUARTO_PYTHON`
 
 One episode is one `.qmd` file, `NN-slug.qmd`, inside its chapter directory. Reading order of the page:
 
-1. **Title block** (generated from front matter): breadcrumb, number + title, time/level chips, chapter progress, Overview card (Questions | Objectives).
+1. **Title block** (generated from front matter): breadcrumb, number + title, time/level line, Overview card (Questions | Objectives).
 2. `{{< include /_includes/mm-setup.qmd >}}` as the very first line after the front matter. It is a hidden cell that styles figures and enables light/dark renderings.
 3. **Opening paragraph**: the scientific question that motivates the episode. No "In this episode we will".
 4. **Sections** (`##`), each following the same arc: motivating example → intuition in words or a figure → minimal maths (details in a `.deep-dive`) → code → interpretation of the output → pitfall.
 5. **`## Exercises`**: 2–4 `.challenge` boxes graded `level=1` (★ check understanding), `2` (★★ apply), `3` (★★★ stretch), each with a nested `.solution`. One episode per chapter contains an exercise titled **"Debug this"** with a realistic broken snippet.
 6. **`## Where this is going`**: one paragraph linking the idea to a later cheminformatics or bioinformatics chapter.
-7. **Key points card** (generated from `keypoints`), then the footer (mark complete, previous/next, edit/report, last updated) — generated, never hand-written.
+7. **Key points card** (generated from `keypoints`), then the footer (previous/next, edit/report, last updated) — generated, never hand-written.
 
 Also required somewhere in the body: at least one `.predict` box and at least one `.bridge`. `tests/test_content_rules.py` checks all of this.
 
@@ -229,13 +229,13 @@ an `index.qmd` with the "soon" banner, 4–6 topic bullets and 3 planned outcome
 
 | Piece | Where | Role |
 |---|---|---|
-| Pre-render | `scripts/build_course_data.py` | reads front matter → `_generated/course.json`, `_sidebar.yml` (via `metadata-files`), `assets/js/course-data.js`, hero/schedule/lab/key-point includes, metro map SVG |
+| Pre-render | `scripts/build_course_data.py` | reads front matter → `_generated/course.json`, `_sidebar.yml` (via `metadata-files`), hero/schedule/lab/key-point includes, metro map SVG |
 | Lua filters | `_extensions/mm/callouts.lua`, `math.lua`, `episode.lua` | callouts; TeX → KaTeX spans; key points card, footer, KaTeX + JS dependencies. Quarto parses `.solution` into its own "Proof" node before any filter runs, so `callouts.lua` reclaims those nodes with a `Proof` handler; `_quarto.yml` lists `filters: [mm, quarto]` so the extension runs first |
 | Shortcodes | `_extensions/mm/term.lua`, `glossary.lua` | glossary tooltips and page (`glossary.yml` parsed by pandoc) |
 | Title block | `_extensions/mm/partials/title-block.html` | episode / lab / plain title blocks from metadata |
 | Post-render | `scripts/post_render.py` | sidebar decoration (numbers, times, check circles, "soon"), part accent on `<html>`, skip link, a11y fixes, CDN removal, guards Quarto's nav script against SVG links |
 | Theme | `brand/*.yml`, `assets/scss/*.scss`, `assets/highlight/*.theme` | tokens as CSS custom properties in `_tokens.scss`; dark is the default layer, light overrides tokens. Design rules: colour is semantic only (one accent per Part, one per callout kind), callouts are a thin coloured rule rather than a box, headings are serif, links are ink-coloured with an accent underline, no all-caps labels. Any SCSS change needs a clean full render (`rm -rf _site && quarto render`) because the compiled CSS file name is hashed |
-| JS | `assets/js/mm.js` | theme switch (Dark/Light/Auto), progress, expand-all-solutions, quiz score, long-output collapse, print expansion, `/` search |
+| JS | `assets/js/mm.js` | theme switch (Dark/Light/Auto), expand-all-solutions, quiz score, long-output collapse, print expansion, `/` search |
 | Fonts | `assets/fonts/` | IBM Plex Sans, Source Serif 4, JetBrains Mono, subset with fontTools (`scripts/subset_fonts.sh`), served via `brand` typography |
 
 Fonts: the spec's three families are used unchanged; they are subset to Latin + Greek + symbols (38–68 KB per face) and self-hosted. No CDN is contacted at runtime: `tests/test_rendered_site.py::test_no_runtime_cdn` guards this.

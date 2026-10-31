@@ -1,7 +1,7 @@
 -- Episode machinery for Molecules & Models:
 --   * attaches the self-hosted KaTeX + mm CSS/JS dependencies (correct relative paths on every page)
 --   * appends the auto-generated "Key points" card (from front matter `keypoints`)
---   * appends the episode footer: mark-complete button, previous/next cards, edit / report links, last updated
+--   * appends the episode footer: previous/next cards, edit / report links, last updated
 -- Course structure (ids, titles, prev/next, git dates) comes from _generated/course.json,
 -- which scripts/build_course_data.py writes before each render.
 
@@ -115,7 +115,6 @@ local function add_dependencies(doc)
     name = "mm",
     version = "0.1.0",
     scripts = {
-      { path = "../../assets/js/course-data.js", attribs = { defer = "" } },
       { path = "../../assets/js/mm.js", attribs = { defer = "" } },
     },
   })
@@ -169,9 +168,6 @@ local function footer_block(meta, course, id)
   local repo = str(meta, "github-repo") or "YOUR-USER/molecules-and-models"
   local branch = str(meta, "github-branch") or "main"
   table.insert(parts, '<div class="mm-footer">')
-  if item and (item.kind == "episode" or item.kind == "lab") then
-    table.insert(parts, '<div class="mm-complete-row"><button type="button" class="mm-btn mm-complete" data-mm-complete="' .. esc(id) .. '" hidden aria-pressed="false">' .. icons.check .. '<span class="mm-complete-text">Mark episode complete</span></button><span class="mm-complete-hint" data-mm-complete-hint hidden>Progress is saved in this browser only.</span></div>')
-  end
   if item then
     local prev = item.prev and course.pages[item.prev] or nil
     local nxt = item.next and course.pages[item.next] or nil

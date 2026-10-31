@@ -8,17 +8,17 @@ level: beginner
 questions:
   - "How is the course organised, and what does a number like 2.3 mean?"
   - "What are all the boxes on a page for, and which ones can I skip?"
-  - "How do I keep track of where I am?"
+  - "How do I find my way around, and what does the site remember?"
 objectives:
   - "Find any episode from its number and read its Overview and Key points cards."
   - "Recognise each kind of callout box and know what it asks you to do."
-  - "Use the progress tracker, the theme switch, glossary tooltips and search."
+  - "Use the sidebar, the theme switch, glossary tooltips and search."
 keypoints:
   - "Four Parts, sixteen chapters; episode 2.3 is the third episode of Chapter 2. Chapters 0–2 are available now; the rest are marked *soon*."
   - "Read the Overview card first and the Key points card last; they are the contract for the page."
   - "Predict boxes and checkpoints work only if you commit to an answer before looking."
   - "Exercises are graded ★ (check), ★★ (apply), ★★★ (stretch). Do all the ★ ones, and at least one ★★ per episode."
-  - "Progress is stored in your browser only, and you can reset it from the sidebar at any time."
+  - "The site keeps no record of what you have read. Only your theme choice is remembered, in this browser."
 ---
 
 {{< include /_includes/mm-setup.qmd >}}
@@ -108,10 +108,9 @@ Every option tells you something, including the wrong ones, and a small running 
 
 ## Tools on the page
 
-**Mark episode complete.** The button in the footer records that you finished the page: a tick appears next to the episode in the sidebar, the chapter page shows a progress bar, and the home page offers a *Continue* card pointing at the next unfinished episode. All of this is stored in your browser only (no server, no account), so it does not follow you to another browser or device. *Reset progress* in the sidebar clears it.
+**The sidebar.** Every episode and lab is listed under its chapter with its number and the time it takes. Chapters that are not written yet are dimmed and marked *soon*. There is no account and nothing to tick off: the course does not keep track of what you have read, so come and go as you like and use the sidebar to find your place.
 
-
-**Dark / Light / Auto.** The theme switch next to the view switch; *Auto* follows your operating system. Figures are rendered in both themes and swap with the page.
+**Dark / Light / Auto.** The theme switch in the top bar; *Auto* follows your operating system. Figures are rendered in both themes and swap with the page.
 
 **Glossary tooltips.** Technical terms carry a dotted underline the first time they appear in each episode, like {{< term kernel >}} here. Hover or focus for a one-sentence definition; click for the full entry in the [glossary](../../appendices/glossary.html).
 
@@ -128,20 +127,20 @@ Without using search:
 
 1. Open the glossary and find the definition of *kernel*.
 2. Open episode 2.3 and find its ★★★ exercise. What published model does it ask you to compare against?
-3. Come back here and mark this episode complete. Where does the tick appear?
+3. Come back here using only the sidebar. How many minutes does the sidebar say this episode takes?
 
 :::: {.solution}
 1. The glossary is under *Appendices* in the sidebar; *kernel* is defined as the Python process that runs notebook cells and keeps your variables between them.
 2. Episode 2.3 is *Evaluating models honestly* in Chapter 2. Its ★★★ exercise, *Compare with Delaney's published model*, asks you to evaluate the predictions of Delaney's original ESOL model on your own test molecules, and then to think about whether that comparison is fair.
-3. A tick appears next to *0.1 How this course works* in the sidebar, and the Chapter 0 page shows the chapter progress bar moving.
+3. Under *0 Start here* in the sidebar, *0.1 How this course works* is listed with 15 min: 10 minutes of teaching plus 5 of exercises, the two numbers in the title block.
 ::::
 :::
 
 ::: {.challenge level=2 title="What the browser knows"}
-Mark this episode complete, then open the same page in a private or incognito window of the same browser. Is it still marked complete? Explain what that tells you about where progress is stored, and what the *Reset progress* button in the sidebar actually deletes.
+Switch the theme to *Light*, then open the same page in a private or incognito window of the same browser. Which theme does it open in? Explain what that tells you about where the choice is stored, and why the site cannot know which pages you have read.
 
 :::: {.solution}
-In the private window the episode is *not* marked complete. Progress lives in the browser's local storage for this site, which a private window does not share with your normal session, and which no server ever sees; the theme and view choices live there too. *Reset progress* deletes the stored list of completed pages (after asking you to confirm) and nothing else. Two machines mean two independent progress records, which is the price of keeping no accounts.
+The private window opens in the default dark theme. Your choice lives in the browser's local storage for this site, which a private window does not share with your normal session and which no server ever sees. That is the only thing the site stores: it has no account, sets no cookies and sends nothing anywhere, so it has no way to know which pages you have read, and it does not try to. Two machines mean two independent theme settings, which is the price of keeping no accounts.
 ::::
 :::
 

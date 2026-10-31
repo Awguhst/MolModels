@@ -4,7 +4,6 @@
 * <html data-mm-part="N">            the Part accent colour for the page
 * skip link                           "Skip to content" as the first focusable element
 * sidebar decoration                  episode numbers, time estimates, completion circles, "soon" chips,
-                                      per-chapter progress bars (filled by assets/js/mm.js)
 * lab cards                           substitute the GitHub repo/branch into Colab links
 * a11y fixes                          role="button" on collapse toggles, labelled navbar, non-empty table headers
 * no CDN                              remove the RequireJS/jQuery CDN tags Quarto adds for HTML outputs
@@ -75,11 +74,11 @@ def decorate(html: str, page_rel: PurePosixPath) -> str:
         if pg and pg["kind"] == "episode":
             minutes = pg["teaching"] + pg["exercises"]
             inner = (f'<span class="mm-ep-num">{pg["label"]}</span> <span class="mm-ep-title">{pg["title"]}</span> '
-                     f'<span class="mm-time">{minutes} min</span><span class="mm-check" data-mm-check="{pg["id"]}" aria-hidden="true"></span>')
+                     f'<span class="mm-time">{minutes} min</span>')
             return f'<a href="{href}" class="sidebar-item-text sidebar-link{active}">{inner}</a>'
         if pg and pg["kind"] == "lab":
             inner = (f'<span class="mm-ep-num">Lab</span> <span class="mm-ep-title">{pg["title"]}</span> '
-                     f'<span class="mm-time">{pg.get("duration", "")}</span><span class="mm-check" data-mm-check="{pg["id"]}" aria-hidden="true"></span>')
+                     f'<span class="mm-time">{pg.get("duration", "")}</span>')
             return f'<a href="{href}" class="sidebar-item-text sidebar-link{active}">{inner}</a>'
         if pg and pg["kind"] == "quiz":
             inner = f'<span class="mm-ep-num">Quiz</span> <span class="mm-ep-title">{text}</span>'
@@ -93,9 +92,7 @@ def decorate(html: str, page_rel: PurePosixPath) -> str:
                         f'{inner}<span class="mm-chip">soon</span></a>')
             m2 = re.match(r"(\d+) (.*)", text)
             label = f'<span class="mm-ep-num">{m2.group(1)}</span> <span class="mm-ep-title">{m2.group(2)}</span>' if m2 else f'<span class="mm-ep-title">{text}</span>'
-            return (f'<a href="{href}" class="sidebar-item-text sidebar-link{active}">{label}'
-                    f'<span class="mm-pct" data-mm-pct="{ch["id"]}"></span></a>'
-                    f'<span class="mm-progress" data-mm-bar="{ch["id"]}" data-part="{ch["part"]}" aria-hidden="true" hidden><span></span></span>')
+            return f'<a href="{href}" class="sidebar-item-text sidebar-link{active}">{label}</a>'
         if "(soon)" in text:
             label = text.replace("(soon)", "").strip()
             return f'<a href="{href}" class="sidebar-item-text sidebar-link mm-soon{active}"><span class="mm-ep-title">{label}</span><span class="mm-chip">soon</span></a>'

@@ -17,11 +17,6 @@ toc: false
 
 {{< generated metro >}}
 
-<div class="mm-continue" data-mm-continue hidden>
-<div class="mm-continue-text"><strong data-mm-continue-title></strong><span data-mm-continue-sub></span></div>
-<a class="mm-btn mm-btn-primary" data-mm-continue-link href="#">Continue</a>
-</div>
-
 <div class="mm-home-intro">
 
 You know how to write a loop and a function. You have seen some calculus, some linear algebra and some statistics, possibly a while ago. You may know molecules, or cells, or proofs, or compilers, but not all four. This course takes you, step by step and with runnable code, from scientific Python through machine learning into predicting molecular properties, docking, protein and sequence models, and generative design. Every page is free, open, and works without an account.
@@ -69,7 +64,7 @@ Four Parts, each a line on the map above; chapters are the stations. Filled stat
 <li><h3>Read the overview</h3><p>Every episode opens with the questions it answers, what you will be able to do afterwards, and how long it takes.</p></li>
 <li><h3>Run the code</h3><p>Code cells are exactly what you would type. Copy them into a notebook, or open the lab in Colab with one click. Figures and tables appear as you would see them.</p></li>
 <li><h3>Predict, then check</h3><p>Before key cells you are asked to predict the result. Exercises are graded ★ (check understanding), ★★ (apply) and ★★★ (stretch), with solutions hidden until you want them.</p></li>
-<li><h3>Keep your bearings</h3><p>Bridge boxes speak to chemists, biologists, mathematicians and programmers separately. Glossary tooltips define every term. Key points close each episode, and your progress is tracked in your browser only.</p></li>
+<li><h3>Keep your bearings</h3><p>Bridge boxes speak to chemists, biologists, mathematicians and programmers separately. Glossary tooltips define every term, and key points close each episode. There is nothing to sign up for and nothing to complete: open any page and read.</p></li>
 </ol>
 
 ## What you need
