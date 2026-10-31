@@ -1,0 +1,140 @@
+# Molecules & Models — site configuration
+# Navigation (website.sidebar) is GENERATED into _sidebar.yml by
+# scripts/build_course_data.py, which Quarto runs as a pre-render step.
+# Do not hand-edit _sidebar.yml.
+
+project:
+  type: website
+  output-dir: _site
+  execute-dir: project          # code cells run from the repo root: pd.read_csv("data/...") works everywhere
+  pre-render:
+    - scripts/build_course_data.py
+  post-render:
+    - scripts/post_render.py
+  render:
+    - "*.qmd"
+    - "**/labs/*-solutions.ipynb"
+    - "!_review/"
+    - "!_generated/"
+    - "!scripts/"
+    - "!tests/"
+  resources:
+    - "data/*.csv"
+    - "data/README.md"
+    - "**/labs/*.ipynb"
+    - "scripts/check_env.py"
+    - "environment.yml"
+    - "requirements.txt"
+    - "CITATION.cff"
+
+metadata-files:
+  - _sidebar.yml
+
+# --- Site-wide settings used by the mm extension and the templates ---
+site-title: "Molecules & Models"
+site-tagline: "A practical path from data science to cheminformatics and bioinformatics"
+github-repo: "YOUR-USER/molecules-and-models"
+github-branch: "main"
+author-name: "YOUR NAME"
+course-version: "0.1.0"
+
+website:
+  title: "Molecules & Models"
+  description: "An open, step-by-step course taking graduates in informatics, chemistry, biology or mathematics from scientific Python through machine learning into cheminformatics and bioinformatics."
+  site-url: "https://YOUR-USER.github.io/molecules-and-models/"
+  repo-url: "https://github.com/YOUR-USER/molecules-and-models"
+  repo-branch: main
+  favicon: brand/favicon.svg
+  open-graph: true
+  page-navigation: false        # the mm extension renders its own previous/next cards
+  bread-crumbs: false           # the mm title block renders its own breadcrumb
+  back-to-top-navigation: false
+  search:
+    location: navbar
+    type: overlay
+    show-item-context: true
+    copy-button: false
+    keyboard-shortcut: ["/", "s"]
+  navbar:
+    logo: brand/logo.svg
+    logo-alt: "Molecules & Models logo: a hexagonal ring of connected nodes"
+    logo-href: index.qmd
+    title: "Molecules & Models"
+    collapse-below: lg
+    left:
+      - text: "Foundations"
+        href: part-1-foundations/index.qmd
+      - text: "Cheminformatics"
+        href: part-2-cheminformatics/index.qmd
+      - text: "Bioinformatics"
+        href: part-3-bioinformatics/index.qmd
+      - text: "Generative"
+        href: part-4-generative/index.qmd
+    tools:
+      - icon: github
+        href: "https://github.com/YOUR-USER/molecules-and-models"
+        text: "GitHub repository"
+        aria-label: "GitHub repository"
+  page-footer:
+    left: |
+      Text licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, code under the <a href="https://github.com/YOUR-USER/molecules-and-models/blob/main/LICENSE">MIT licence</a>.
+      No cookies, no analytics, no trackers.
+    right:
+      - text: "About"
+        href: about.qmd
+      - text: "Cite this course"
+        href: cite.qmd
+      - text: "Roadmap"
+        href: index.qmd#roadmap
+
+brand:
+  light: brand/light.yml
+  dark: brand/dark.yml
+
+format:
+  html:
+    lang: en
+    theme:
+      dark: [brand, assets/scss/mm-dark.scss]
+      light: [brand, assets/scss/mm-light.scss]
+    highlight-style:
+      dark: assets/highlight/mm-dark.theme
+      light: assets/highlight/mm-light.theme
+    html-math-method: plain      # KaTeX is self-hosted and attached by the mm extension (no CDN)
+    toc: true
+    toc-location: right
+    toc-depth: 3
+    toc-title: "On this page"
+    toc-expand: 2
+    anchor-sections: true
+    code-copy: true
+    code-overflow: scroll
+    code-tools: false
+    code-line-numbers: false
+    smooth-scroll: false
+    link-external-newwindow: false
+    fig-width: 7
+    fig-height: 4.2
+    fig-responsive: true
+    df-print: default
+    template-partials:
+      - _extensions/mm/partials/title-block.html
+    include-in-header:
+      - assets/html/head.html
+    grid:
+      sidebar-width: 290px
+      body-width: 860px
+      margin-width: 250px
+      gutter-width: 1.5rem
+
+filters:
+  - mm
+
+execute:
+  freeze: auto                  # local renders reuse cached results; CI renders everything
+  echo: true
+  warning: true                 # warnings are errors for us: we fix the cause rather than hide them
+  error: false
+  daemon: 300
+
+jupyter: python3

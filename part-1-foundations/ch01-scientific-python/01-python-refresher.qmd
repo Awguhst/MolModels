@@ -1,0 +1,336 @@
+---
+title: "Python refresher for scientists"
+chapter: 1
+episode: 1
+teaching: 25
+exercises: 15
+level: beginner
+questions:
+  - "Which parts of Python do I actually need for data work, and which can wait?"
+  - "When should I reach for a list and when for a dictionary?"
+  - "How do I print a number with two decimals, or a table that lines up?"
+  - "An error message just filled my screen. Where do I start reading?"
+objectives:
+  - "Choose between lists and dictionaries for scientific data such as sample names and atomic masses."
+  - "Write a function with default arguments and a docstring, and call it from a loop or a comprehension."
+  - "Format numbers and tables with f-strings and format specifications such as `:.2f` and `:>8`."
+  - "Build file paths with `pathlib.Path`, test whether a file exists and list the files in a directory."
+  - "Read a Python traceback from the bottom up and locate the line that caused it."
+keypoints:
+  - "A list keeps things in order and you look them up by position; a dictionary looks things up by name. Atomic masses are a dictionary, a series of readings is a list."
+  - "Indexing starts at 0 and slices stop *before* the end index, so `items[2:5]` holds exactly three items."
+  - "A comprehension, `[f(x) for x in items]`, builds a new list in one readable line; use it instead of a loop that only appends."
+  - "Every function you write gets a docstring and sensible defaults; future you is a user too."
+  - "f-strings with format specs (`{x:.2f}`, `{name:>8}`) are the fastest way to readable output."
+  - "`pathlib.Path` builds file paths that work on every operating system; `path.exists()` saves you from confusing errors later."
+  - "Read a traceback from the bottom: the last line names the error, the line above it points at your code."
+prerequisites: [ch00-ep03]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+Suppose you have just weighed out three compounds, dissolved each in 250 mL of buffer and want to know the molar concentration of every solution. On paper that is one division per sample. In a lab with hundreds of samples, a plate reader and a deadline, it is a small program. This episode collects the handful of Python features that such programs are built from, nothing more. If you can already write a loop and a function you will find most of it familiar; the point is to agree on the idioms this course uses before NumPy and pandas arrive in the next two episodes.
+
+::: {.prereq}
+You should have completed the [Chapter 0 self-check](../ch00-start-here/03-self-check.html), so that the notebook you are reading this in can run the cells below. Programmers with Python experience can skim to the sections on f-strings, `pathlib` and tracebacks.
+:::
+
+## Values and their types
+
+Every value in Python has a type, and the type decides what you can do with it. Four cover almost all scientific data:
+
+```{python}
+molar_mass = 18.015      # float: a number with a decimal point, in g/mol
+n_samples = 3            # int: a whole number
+sample = "buffer_A"      # str: text, in quotes
+is_control = True        # bool: True or False
+
+type(molar_mass), type(n_samples), type(sample), type(is_control)
+```
+
+There is also `None`, Python's way of saying "no value here": a measurement that was not taken, a result not yet computed. You will meet its tabular cousin, `NaN`, in [episode 1.3](03-pandas-dataframes.html).
+
+Python converts between types only when you ask it to. Dividing two integers gives a float (`7 / 2` is `3.5`), but adding a string to a number is an error, and `"3.5"` read from a file is text until you call `float("3.5")` on it. Most of the puzzling errors in data work come from a value that has the wrong type, so when in doubt, ask `type(x)`.
+
+## Lists and dictionaries
+
+A **list** is an ordered sequence; you look things up by position. It is the right container when the order means something: the samples in the order you measured them, the time points of a kinetics run.
+
+```{python}
+samples = ["buffer_A", "buffer_B", "buffer_C"]
+masses_mg = [12.4, 9.8, 15.1]
+
+samples[0], masses_mg[-1]
+```
+
+Position 0 is the first item and `-1` is the last. A **dictionary** (`dict`) maps keys to values; you look things up by name. It is the right container when you would otherwise be scanning a table with your finger:
+
+```{python}
+atomic_mass = {"H": 1.008, "C": 12.011, "N": 14.007, "O": 15.999}
+
+atomic_mass["O"]
+```
+
+::: {.bridge audience="chem"}
+A dictionary is the periodic table reduced to the one column you need. `atomic_mass["O"]` is exactly what you do when you glance at the table on the lab wall: find the symbol, read off the mass. The same shape fits any lookup you do by name: `pKa[acid]`, `extinction_coefficient[dye]`, `density[solvent]`. In [episode 1.3](03-pandas-dataframes.html) you will see that a pandas Series is a dictionary that also knows how to do arithmetic.
+:::
+
+Which to use? If you would naturally say "the third one", use a list. If you would say "the one called oxygen", use a dict. Adding to each looks different: `masses_mg.append(11.0)` extends a list; `atomic_mass["S"] = 32.06` adds a key to a dict.
+
+::: {.pitfall title="Lists are not vectors"}
+`masses_mg * 2` does not double the masses; it gives a list of six items, the original three repeated twice. Arithmetic on whole collections is exactly what NumPy adds in [episode 1.2](02-numpy-arrays.html). Until then, loop.
+:::
+
+## Slicing
+
+A slice takes a contiguous part of a list: `items[start:stop]` gives the items from position `start` up to, but not including, `stop`. Leaving out `start` means "from the beginning"; leaving out `stop` means "to the end".
+
+```{python}
+time_points_min = [0, 5, 10, 15, 20, 25, 30]
+
+time_points_min[1:4], time_points_min[:2], time_points_min[4:]
+```
+
+::: {.bridge audience="math"}
+Python indexes from 0 and slices are *half-open intervals*: `items[a:b]` is the set of positions $\{i : a \le i < b\}$, so it holds exactly $b - a$ items and `items[:k]` followed by `items[k:]` partitions the list without overlap. The convention looks odd for a day and then becomes the one you want, because lengths and differences of indices agree. Mathematicians who write $x_1, \dots, x_n$ should remember that NumPy and pandas inherit the same convention: the first row is row 0.
+:::
+
+Strings slice the same way, which is handy for sample codes: `"PLATE07_B03"[-3:]` is `"B03"`.
+
+## Loops and comprehensions
+
+To convert the three masses to concentrations you loop over them. The `for` statement visits each item in turn:
+
+```{python}
+volume_L = 0.250
+
+concentrations = []
+for mass in masses_mg:
+    mmol = mass / molar_mass            # mg / (g/mol) = mmol
+    concentrations.append(mmol / volume_L)
+
+concentrations
+```
+
+That loop does only one thing: build a new list from an old one. Python has a one-line form for exactly that pattern, the {{< term comprehension >}}:
+
+```{python}
+concentrations = [mass / molar_mass / volume_L for mass in masses_mg]
+concentrations
+```
+
+Read it as "the value `mass / molar_mass / volume_L`, for each `mass` in `masses_mg`". A comprehension can also filter: `[m for m in masses_mg if m > 10]` keeps only the larger masses. When a loop body grows beyond one expression, or needs to do something other than build a list, go back to a plain `for` loop. Readability wins.
+
+To walk two lists in step, use `zip`; to count as you go, use `enumerate`:
+
+```{python}
+for i, (name, conc) in enumerate(zip(samples, concentrations)):
+    print(i, name, conc)
+```
+
+Those numbers have far too many digits. Fixing that is what f-strings are for, two sections from now.
+
+## Functions, defaults and docstrings
+
+The concentration calculation will be needed again, in another notebook, next month. Wrap it in a function:
+
+```{python}
+def molar_concentration(mass_mg, molar_mass, volume_L=0.250):
+    """Return the concentration in mmol/L of `mass_mg` of a compound dissolved in `volume_L`.
+
+    `molar_mass` is in g/mol. The default volume is the 250 mL used in this lab.
+    """
+    return mass_mg / molar_mass / volume_L
+
+
+molar_concentration(12.4, 18.015), molar_concentration(12.4, 18.015, volume_L=1.0)
+```
+
+Three habits, each cheap now and valuable later:
+
+- **A docstring**, the string on the first line, says what the function returns and what units it expects. `help(molar_concentration)` prints it, and so do the tooltips in your editor.
+- **Default arguments** (`volume_L=0.250`) cover the common case and still let the caller override it.
+- **Keyword arguments** at the call site (`volume_L=1.0`) say which number is which. `molar_concentration(12.4, 18.015, 1.0)` works too, but a month later you will not remember whether the third number was a volume or a temperature.
+
+::: {.pitfall title="Mutable defaults"}
+Never use a list or dict as a default value (`def f(results=[])`): the same list is shared between *every* call, so results from one call leak into the next. Use `results=None` and create the list inside the function.
+:::
+
+## f-strings and format specifications
+
+An {{< term f-string >}} is a string with an `f` in front; anything inside braces is evaluated and inserted. After the expression, a colon introduces a *format specification* that says how to print it:
+
+| spec | meaning | example |
+|---|---|---|
+| `:.2f` | fixed point, 2 decimals | `2.753` |
+| `:.3g` | 3 significant figures | `2.75` |
+| `:>8` | right-align in 8 characters | `    0.28` |
+| `:<10` | left-align in 10 characters | `buffer_A  ` |
+| `:,` | thousands separator | `1,128` |
+| `:.1%` | percentage | `37.5%` |
+
+Specs combine: `{conc:>8.2f}` right-aligns the number in 8 characters with 2 decimals. That is enough to print a readable table:
+
+```{python}
+print(f"{'sample':<10}{'mass (mg)':>10}{'conc (mmol/L)':>15}")
+for name, mass, conc in zip(samples, masses_mg, concentrations):
+    print(f"{name:<10}{mass:>10.1f}{conc:>15.2f}")
+```
+
+Headers use the same widths as the rows, which is what makes the columns line up. Units go in the header, always.
+
+::: {.predict}
+What does `f"{1234.5678:>12,.1f}"` print? Work out the width, the separator and the decimals, then run it.
+:::
+
+```{python}
+f"{1234.5678:>12,.1f}"
+```
+
+Twelve characters wide, right-aligned, one decimal, with a comma. If you guessed right, you can read any format spec you will meet in this course.
+
+## Files and paths with pathlib
+
+Data lives in files, and file paths are where notebooks break when they move between machines: Windows uses backslashes, macOS and Linux use forward slashes, and `"data" + "/" + "penguins.csv"` is fragile on both. {{< term pathlib >}} fixes this with a `Path` object that you join with `/`:
+
+```{python}
+from pathlib import Path
+
+data_dir = Path("data")
+penguins_file = data_dir / "penguins.csv"
+
+penguins_file, penguins_file.exists()
+```
+
+`exists()` is the check to run *before* you try to read a file: a `FileNotFoundError` deep inside pandas is harder to understand than a clear message from you. A `Path` also knows its parts (`penguins_file.name`, `.suffix`, `.parent`), and it can list a directory:
+
+```{python}
+sorted(p.name for p in data_dir.iterdir())
+```
+
+`iterdir()` yields every entry; `glob("*.csv")` yields only those matching a pattern. Both give `Path` objects, so you can chain straight into `.exists()`, `.stat().st_size` or `pd.read_csv(p)`.
+
+::: {.note title="Where does a relative path start?"}
+`Path("data")` is relative to the *current working directory* of the Python process, usually the folder the notebook was launched from. In this course every notebook runs from the repository root, so `data/penguins.csv` always works. If `exists()` returns `False` when you are sure the file is there, print `Path.cwd()` and you will usually see why.
+:::
+
+## Imports and modules
+
+A *module* is a file of Python code that someone else has written and you can use. `import math` makes the standard library's maths functions available as `math.sqrt`, `math.log10` and so on; the dotted prefix says where the name comes from. Scientific Python has three conventions you will type thousands of times:
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+```
+
+The `as np` part gives the module a short alias. These three abbreviations are universal: every example on the web, every colleague's notebook and every episode here uses them, so use them too. `from pathlib import Path` is the other form: it pulls one name out of a module so that you write `Path(...)` rather than `pathlib.Path(...)`.
+
+Imports go at the top of a notebook or script, once. Re-running an import cell is harmless, and the {{< term kernel >}} remembers imported names until you restart it.
+
+::: {.pitfall title="`from module import *`"}
+Importing everything with a star fills your namespace with hundreds of names you did not ask for, some of which silently shadow your own variables (`sum`, `min`, `max`). Import the module, or the specific names you need.
+:::
+
+## Reading a traceback
+
+Things will go wrong, and Python's error report, the {{< term traceback >}}, is long enough that beginners often stop reading before the useful part. Run the next cell; it is meant to fail.
+
+```{python}
+#| error: true
+def formula_mass(formula):
+    """Return the molar mass in g/mol of a formula given as {symbol: count}."""
+    return sum(atomic_mass[symbol] * count for symbol, count in formula.items())
+
+
+formula_mass({"C": 6, "H": 12, "O": 6})     # glucose: works
+formula_mass({"Na": 1, "Cl": 1})            # sodium chloride: fails
+```
+
+Read it from the **bottom up**:
+
+1. **The last line is the error itself**: `KeyError: 'Na'`. A `KeyError` means a dictionary was asked for a key it does not have, and the key was `'Na'`. That alone is usually enough to guess the cause: `atomic_mass` only holds H, C, N and O.
+2. **The lines above it are the call stack**, innermost last. The deepest frames are inside `formula_mass`, at `atomic_mass[symbol]` (the generator expression inside `sum(...)` even gets a frame of its own, labelled `<genexpr>`); the top frame is the cell that called `formula_mass`, with an arrow at line 7. Each frame shows the file (or cell), the line number and the line of code.
+3. **Everything else is context.** Frames inside libraries you did not write (NumPy, pandas) are rarely where the bug is; look for the last frame that is in *your* code.
+
+The fix is to add the missing elements, or better, to make the error message say what to do. `atomic_mass.get(symbol)` returns `None` instead of raising, and a one-line `if` can turn that into a message naming the element. Either way, the traceback told you *what* went wrong (missing key), *where* (inside `formula_mass`), and *why* (sodium is not in the table).
+
+::: {.tip title="The three errors you will see most"}
+`KeyError` (a dict, Series or DataFrame does not have that key or column; check spelling and `df.columns`), `TypeError` (an operation applied to the wrong type, such as `"3" + 1`), and `ValueError` (the type is right but the value is not, such as `float("abc")` or mismatched array shapes). `NameError` means you used a variable before the cell that defines it ran; restart the kernel and run the notebook top to bottom.
+:::
+
+::: {.instructor}
+Timing: lists versus dicts and slicing take about 10 minutes with a live demo; spend the saved time on the traceback walk-through, which is the single highest-value skill in this episode. Ask learners to name the error, the line and the cause before you say anything. The mutable-default pitfall can be dropped if the group is short on time. Programmers in the room will be bored by types; pair them with a chemist or biologist for the exercises.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Mass of a molecule"}
+Using the `atomic_mass` dictionary and the `formula_mass` function above, compute the molar mass of ethanol, C₂H₆O, and of urea, CH₄N₂O. Print each with two decimals and the unit. Then add sulfur (S, 32.06 g/mol) to the dictionary and compute the molar mass of methionine, C₅H₁₁NO₂S.
+
+:::: {.solution}
+```{python}
+atomic_mass["S"] = 32.06
+
+for name, formula in [
+    ("ethanol", {"C": 2, "H": 6, "O": 1}),
+    ("urea", {"C": 1, "H": 4, "N": 2, "O": 1}),
+    ("methionine", {"C": 5, "H": 11, "N": 1, "O": 2, "S": 1}),
+]:
+    print(f"{name:<12}{formula_mass(formula):>8.2f} g/mol")
+```
+
+The formula is a dict because the natural question is "how many of element *X*?", a lookup by name. The loop runs over a list of `(name, formula)` pairs because their order is what you want to print. Adding sulfur is one assignment; after it, `formula_mass` works for any formula over those five elements without being edited, which is the point of separating the data (the table) from the logic (the function).
+::::
+:::
+
+::: {.challenge level=2 title="A results table"}
+Write a function `print_table(names, values, unit, decimals=2)` that prints a header row and one line per sample, with names left-aligned in 12 characters and values right-aligned in 10 characters with `decimals` decimal places. Call it on `samples` and `concentrations` with the unit `"mmol/L"`, then again with `decimals=4`. Hint: a format spec can itself contain a variable, as in `f"{x:>10.{decimals}f}"`.
+
+:::: {.solution}
+```{python}
+def print_table(names, values, unit, decimals=2):
+    """Print `names` and `values` as two aligned columns, with `unit` in the header."""
+    print(f"{'sample':<12}{unit:>10}")
+    for name, value in zip(names, values):
+        print(f"{name:<12}{value:>10.{decimals}f}")
+
+
+print_table(samples, concentrations, "mmol/L")
+print()
+print_table(samples, concentrations, "mmol/L", decimals=4)
+```
+
+The nested braces `{decimals}` are evaluated first, so the inner spec becomes `.4f` before the outer one is applied. Making `decimals` a default argument means the common case stays short while a one-off call can still ask for more precision. Notice that the header uses the same widths as the rows; if you change one, change the other, or better, store the widths in variables.
+::::
+:::
+
+::: {.challenge level=3 title="Inventory of the data directory"}
+Using `pathlib` only (no pandas yet), list every `.csv` file under `data/`, and for each print its name, its size in kB with one decimal, and the number of lines it contains (open it with `p.open()` and count the lines with a loop or `sum(1 for _ in f)`). Make the function robust: if `data/` does not exist, print a clear message instead of raising.
+
+:::: {.solution}
+```{python}
+def inventory(directory="data"):
+    """Print name, size and line count of every CSV file in `directory`."""
+    directory = Path(directory)
+    if not directory.exists():
+        print(f"no directory called {directory} under {Path.cwd()}")
+        return
+    print(f"{'file':<16}{'size (kB)':>12}{'lines':>8}")
+    for p in sorted(directory.glob("*.csv")):
+        with p.open(encoding="utf8") as f:
+            n_lines = sum(1 for _ in f)
+        print(f"{p.name:<16}{p.stat().st_size / 1000:>12.1f}{n_lines:>8}")
+
+
+inventory()
+inventory("no_such_dir")
+```
+
+`glob("*.csv")` returns only matching files, so `README.md` is skipped. The `with` block closes the file when you leave it, even if an error occurs. The line count is one more than the number of rows, because the first line is the header: `penguins.csv` has 345 lines for 344 penguins. Checking `exists()` first turns a cryptic error into a message that names the directory *and* the working directory, which is almost always what a confused user needs to see.
+::::
+:::
+
+## Where this is going
+
+Everything here is scaffolding for the next two episodes. Lists of numbers become {{< term ndarray plural >}} in [episode 1.2](02-numpy-arrays.html), where arithmetic on whole collections finally works and a million concentrations take a millisecond. Dictionaries grow into pandas Series and {{< term dataframe plural >}} in [episode 1.3](03-pandas-dataframes.html), where the atomic-mass lookup becomes a table of penguins and later, in Chapter 5, a table of molecular descriptors. `pathlib` is how every dataset in the course is loaded, and the traceback-reading habit is what you will use on the first day a model refuses to fit.

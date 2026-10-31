@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Molecules & Models lab page front matter",
+  "type": "object",
+  "required": ["title", "chapter", "lab", "duration", "minutes", "level", "objectives", "summary", "notebook"],
+  "properties": {
+    "title": { "type": "string", "minLength": 3 },
+    "chapter": { "type": "integer", "minimum": 0 },
+    "lab": { "type": "integer", "minimum": 1 },
+    "duration": { "type": "string" },
+    "minutes": { "type": "integer", "minimum": 15, "maximum": 240 },
+    "level": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+    "objectives": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "prerequisites-text": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": "string", "minLength": 10 },
+    "dataset": { "type": "string" },
+    "notebook": { "type": "string", "pattern": "^lab-[0-9]{2}-[a-z0-9-]+$" }
+  }
+}

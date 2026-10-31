@@ -1,0 +1,6 @@
+---
+title: "Glossary"
+subtitle: "Every term introduced in the course, in one place."
+---
+
+{{< glossary >}}

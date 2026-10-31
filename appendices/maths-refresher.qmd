@@ -1,0 +1,509 @@
+---
+title: "Maths refresher"
+subtitle: "The vectors, derivatives, statistics and logarithms that Chapters 1–2 lean on. Dip in as needed."
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+This appendix is for readers who met vectors, derivatives and standard deviations once, in a first-year course, and have not touched them since: chemists, biologists and anyone whose maths is rusty. If you have a mathematics or physics degree, skip it; nothing here will be new. Nothing here is required reading *before* the episodes either. Each section opens with the episodes that use the idea, so you can come back when a formula or a line of NumPy stops you, read the one section you need, and return.
+
+Every section is built the same way: the idea in words, the minimal notation, and a few small NumPy cells that make it concrete. The cells run top to bottom, so copy any of them into a notebook and change the numbers. Each section ends with a ★ self-check and a hidden solution.
+
+```{python}
+import numpy as np
+import pandas as pd
+```
+
+## Vectors and matrices
+
+*Used in* [episode 1.2](../part-1-foundations/ch01-scientific-python/02-numpy-arrays.html) (arrays) and [episode 2.2](../part-1-foundations/ch02-ml-fundamentals/02-linear-regression.html) (the linear model and the normal equation).
+
+A **vector** is a list of numbers in a fixed order. The vector you will meet most often in this course is the description of one sample: the four measurements of one penguin, or the handful of descriptors of one molecule. Each position in the list is one {{< term feature >}}, and the order never changes, so position 3 always means "flipper length". In NumPy a vector is a one-dimensional {{< term ndarray >}}.
+
+```{python}
+penguin = np.array([39.1, 18.7, 181.0, 3750.0])  # bill length, bill depth, flipper length (mm), body mass (g)
+penguin.shape
+```
+
+The {{< term shape >}} `(4,)` says: one axis, four entries.
+
+A **matrix** is a table of numbers. Stack the feature vectors of several samples as rows and you get the matrix that every scikit-learn model expects: one row per sample, one column per feature. This is the {{< term xy-convention >}}, and it is worth fixing in your head now because every `.fit(X, y)` in the course relies on it.
+
+```{python}
+penguins = pd.read_csv("data/penguins.csv").dropna()
+columns = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]
+X = penguins[columns].head(3).to_numpy()
+X
+```
+
+```{python}
+X.shape
+```
+
+Shape is always `(rows, columns)`, that is `(n_samples, n_features)`. `X[0]` is the first penguin's feature vector; `X[:, 3]` is the body mass of every penguin. The **transpose** `X.T` swaps rows and columns, so its shape is `(4, 3)`: one row per feature, one column per penguin.
+
+```{python}
+X.T.shape
+```
+
+### Multiplying a matrix by a vector
+
+Give each feature a weight $w_j$. The matrix–vector product `X @ w` computes, for every row, the sum of each feature times its weight. In other words it is *one dot product per row* (dot products are the subject of the next section). A linear model predicts exactly this way, $\hat{y} = X w$, so `X @ w` is the whole of `LinearRegression.predict` in one line.
+
+```{python}
+w = np.array([0.1, -0.2, 0.05, 0.001])
+X @ w
+```
+
+```{python}
+np.sum(X[0] * w)  # the first entry, done by hand
+```
+
+The shapes must agree: `(3, 4) @ (4,)` gives `(3,)`. If the number of weights does not match the number of columns, NumPy refuses, which is a useful error to see early.
+
+### Multiplying two matrices
+
+`A @ B` is the matrix whose entry in row $i$, column $j$ is the dot product of row $i$ of `A` with column $j$ of `B`. The inner dimensions must match: `(m, k) @ (k, n)` gives `(m, n)`. The product you will see in [episode 2.2](../part-1-foundations/ch02-ml-fundamentals/02-linear-regression.html) is $X^\top X$, which is square with one row and column per feature.
+
+```{python}
+(X.T @ X).shape
+```
+
+::: {.pitfall title="`*` is not matrix multiplication"}
+In NumPy `X * w` multiplies element by element (and broadcasts `w` across the rows); `X @ w` is the matrix product. Both run without error on the arrays above, and only one of them is what the linear model does. If a hand calculation disagrees with your code, check which operator you used.
+:::
+
+### Identity, inverse, and why we `solve`
+
+The **identity matrix** $I$ is the "1" of matrices: `I @ v` returns `v` unchanged. The **inverse** $A^{-1}$ undoes $A$: $A^{-1} A = I$. If you can form the inverse, you can solve the equation $A\theta = b$ for the unknown vector $\theta$ by "dividing by $A$": $\theta = A^{-1} b$. That is how the {{< term normal-equation >}} of linear regression is usually *written*.
+
+It is not how it is *computed*. Forming an inverse explicitly is slower and loses precision, so numerical code asks NumPy to solve the equation directly. `np.linalg.solve(A, b)` returns the $\theta$ that satisfies $A\theta = b$ without ever building $A^{-1}$.
+
+```{python}
+A = np.array([[2.0, 1.0], [1.0, 3.0]])
+b = np.array([3.0, 5.0])
+theta = np.linalg.solve(A, b)
+theta, A @ theta  # the second value should be b again
+```
+
+The check `A @ theta` returning `b` is the whole story: `solve` found the $\theta$ that makes the equation true. scikit-learn's `LinearRegression` uses a still more careful least-squares routine, but the idea is the same.
+
+::: {.challenge level=1 title="Read the shapes"}
+A feature matrix has 200 samples and 5 features. What are the shapes of `X`, `X.T`, `X @ w` (for a weight vector `w` with one weight per feature) and `X.T @ X`?
+
+:::: {.solution}
+`X` is `(200, 5)`; `X.T` is `(5, 200)`; `X @ w` is `(200,)`, one prediction per sample; `X.T @ X` is `(5, 200) @ (200, 5)`, so `(5, 5)`, one row and column per feature. The rule is "inner dimensions must match, outer dimensions remain": `(5, 200) @ (200, 5)` keeps the outer 5 and 5.
+::::
+:::
+
+::: {.challenge level=1 title="One dot product per row"}
+Without running code, compute `M @ v` for `M = [[1, 2], [3, 4], [5, 6]]` and `v = [10, 1]`. Then check with NumPy.
+
+:::: {.solution}
+Row by row: $1 \times 10 + 2 \times 1 = 12$, $3 \times 10 + 4 \times 1 = 34$, $5 \times 10 + 6 \times 1 = 56$.
+
+```{python}
+M = np.array([[1, 2], [3, 4], [5, 6]])
+v = np.array([10, 1])
+M @ v
+```
+
+Each output entry is the dot product of one row of `M` with `v`, which is why the result has one entry per row (shape `(3,)`).
+::::
+:::
+
+## Dot products and distances
+
+*Used in* [episode 2.5](../part-1-foundations/ch02-ml-fundamentals/05-classification.html) (nearest neighbours) and [episode 2.6](../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) (feature scaling).
+
+The **dot product** of two vectors of the same length is the sum of the products of matching entries:
+
+$$
+a \cdot b = \sum_{i} a_i b_i .
+$$
+
+```{python}
+a = np.array([3.0, 4.0])
+b = np.array([4.0, 3.0])
+a @ b, np.sum(a * b)  # the same number two ways
+```
+
+Written as a sum it looks like bookkeeping. Its geometric meaning is what makes it useful: $a \cdot b = \lVert a \rVert \, \lVert b \rVert \cos\theta$, where $\theta$ is the angle between the two vectors and $\lVert a \rVert$ is the **norm**, the length of $a$. The length is Pythagoras in as many dimensions as you like, $\lVert a \rVert = \sqrt{\sum_i a_i^2} = \sqrt{a \cdot a}$, and NumPy computes it with `np.linalg.norm`.
+
+```{python}
+np.linalg.norm(a), np.sqrt(a @ a)
+```
+
+Divide the dot product by both lengths and you are left with $\cos\theta$: $1$ when the vectors point the same way, $0$ when they are perpendicular, $-1$ when they are opposite. For $a = (3, 4)$ and $b = (4, 3)$ the angle is small.
+
+```{python}
+cos_theta = (a @ b) / (np.linalg.norm(a) * np.linalg.norm(b))
+cos_theta, np.degrees(np.arccos(cos_theta))
+```
+
+The other reading of the dot product is **projection**: $a \cdot b / \lVert b \rVert$ is the length of the shadow that $a$ casts on the line through $b$. That is what `X @ w` in the previous section computes for every row: how far each sample's feature vector extends along the direction the weights define. Cosine similarity comes back when you compare molecular fingerprints in Part II.
+
+### Distance between two samples
+
+The **Euclidean distance** between two feature vectors is the length of their difference:
+
+$$
+d(a, b) = \lVert a - b \rVert = \sqrt{\sum_i (a_i - b_i)^2} .
+$$
+
+```{python}
+np.linalg.norm(a - b)
+```
+
+This is the distance {{< term knn >}} uses to decide which training samples are "nearest" to a new one, and it is where units come in. Take one penguin of each species and compute the three pairwise distances on the raw measurements.
+
+```{python}
+three = penguins.groupby("species").head(1)
+three[["species"] + columns]
+```
+
+```{python}
+P = three[columns].to_numpy()
+raw = np.array([[np.linalg.norm(p - q) for q in P] for p in P])
+pd.DataFrame(raw, index=three["species"], columns=three["species"]).round(0)
+```
+
+The distances are 250, 750 and 1000: almost exactly the differences in body mass in grams. The bills differ by a few millimetres and the flippers by a few tens, and those numbers are tiny next to hundreds of grams, so they contribute nothing. Distance on raw features is a body-mass ranking in disguise.
+
+{{< term feature-scaling >}} fixes this by putting every feature on the same footing. Standardise each column (subtract its mean, divide by its standard deviation; see [the statistics section](#mean-variance-and-distributions)) and compute the distances again.
+
+```{python}
+Z = (penguins[columns] - penguins[columns].mean()) / penguins[columns].std()
+Pz = Z.loc[three.index].to_numpy()
+scaled = np.array([[np.linalg.norm(p - q) for q in Pz] for p in Pz])
+pd.DataFrame(scaled, index=three["species"], columns=three["species"]).round(2)
+```
+
+Now all four measurements count, and the answer changes: on raw numbers the Gentoo's nearest neighbour was the Adelie (750 g apart); after scaling it is the Chinstrap, because the Gentoo and Adelie bills are very different in depth and that difference is finally visible. A kNN classifier would have flipped its vote. This is why scaling is part of the model, not a cosmetic step, and why [episode 2.6](../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) puts it inside a pipeline fitted on the training set only.
+
+::: {.challenge level=1 title="Dot product and distance by hand"}
+For $a = (1, 2, 2)$ and $b = (2, 0, 0)$, compute $a \cdot b$, $\lVert a \rVert$, $\lVert b \rVert$, $\cos\theta$ and the Euclidean distance $d(a, b)$. Then check with NumPy.
+
+:::: {.solution}
+$a \cdot b = 2 + 0 + 0 = 2$; $\lVert a \rVert = \sqrt{1 + 4 + 4} = 3$; $\lVert b \rVert = 2$; $\cos\theta = 2 / (3 \times 2) = 1/3$; $d(a, b) = \sqrt{(1-2)^2 + 2^2 + 2^2} = \sqrt{9} = 3$.
+
+```{python}
+a3 = np.array([1.0, 2.0, 2.0])
+b3 = np.array([2.0, 0.0, 0.0])
+a3 @ b3, np.linalg.norm(a3), np.linalg.norm(b3), np.linalg.norm(a3 - b3)
+```
+
+A cosine of $1/3$ means the vectors point in broadly different directions (about 71°). Note that scaling a vector changes the distance but not the angle: $(2, 4, 4)$ makes the same angle with $b$ as $(1, 2, 2)$ does.
+::::
+:::
+
+## Derivatives and gradients
+
+*Used in* [episode 2.2](../part-1-foundations/ch02-ml-fundamentals/02-linear-regression.html) (fitting by gradient descent) and, in spirit, by every model trained in Part IV.
+
+The **derivative** of a function $f$ at a point $x$ is its rate of change there: how much $f$ moves for a tiny step in $x$. Geometrically it is the slope of the tangent line to the curve at $x$. The definition is a ratio of small changes,
+
+$$
+f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h},
+$$
+
+and that definition is also a way to *check* a derivative numerically. Pick a small $h$ and compute the ratio; the symmetric version $(f(x+h) - f(x-h)) / 2h$ is more accurate. Here the rules give $f'(x) = 2x - 3$ for $f(x) = x^2 - 3x$, and the finite difference agrees.
+
+```{python}
+def f(x):
+    return x**2 - 3 * x
+
+
+x0, h = 2.5, 1e-6
+(f(x0 + h) - f(x0 - h)) / (2 * h), 2 * x0 - 3  # numeric, exact
+```
+
+The rules you need in this course fit in three lines. Powers: $\frac{d}{dx} x^k = k x^{k-1}$. Constants and sums pass through: $\frac{d}{dx}(c\,g + u) = c\,g' + u'$. And the **chain rule** for a function inside a function: $\frac{d}{dx} f(g(x)) = f'(g(x)) \, g'(x)$, the outer derivative times the inner derivative. The chain rule is the one that matters for machine learning, because a loss is always "a function of the prediction, which is a function of the parameters".
+
+### A loss curve and its tangent
+
+Suppose a one-parameter model $\hat{y} = w x$ fitted to three points. The {{< term mse >}} as a function of $w$ is a curve, and the derivative at any $w$ is the slope of the tangent there.
+
+```{python}
+x = np.array([1.0, 2.0, 3.0])
+y = np.array([2.0, 4.0, 5.0])
+
+
+def loss(w):
+    return np.mean((y - w * x) ** 2)
+
+
+w0 = 0.8
+slope = (loss(w0 + h) - loss(w0 - h)) / (2 * h)
+loss(w0), slope
+```
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A U-shaped loss curve, mean squared error against the weight w, with a dot on the left arm at w = 0.8 and a dashed tangent line through it sloping steeply downwards to the right. The minimum of the curve is near w = 1.8."
+import matplotlib.pyplot as plt
+
+ws = np.linspace(0, 3.2, 200)
+span = np.linspace(w0 - 0.6, w0 + 0.6, 2)
+fig, ax = plt.subplots()
+ax.plot(ws, [loss(w) for w in ws], label="loss L(w)")
+ax.plot(span, loss(w0) + slope * (span - w0), linestyle="--", label=f"tangent at w = {w0}")
+ax.scatter([w0], [loss(w0)], zorder=3)
+ax.set(xlabel="weight w", ylabel="mean squared error", title="A 1-D loss curve and its tangent")
+ax.legend()
+plt.show()
+```
+
+At $w = 0.8$ the slope is negative: the loss falls if $w$ increases. At the bottom of the bowl the slope is zero, and to the right it is positive. So the *sign* of the derivative tells you which way to move to reduce the loss, and its *size* tells you how steep the curve is. That is all gradient descent needs.
+
+### Several parameters: partial derivatives and the gradient
+
+Real models have many parameters. A **partial derivative** $\partial L / \partial \theta_j$ is the ordinary derivative with respect to one parameter while all the others are held fixed. The {{< term gradient >}} $\nabla L$ is the vector of all the partials, one per parameter. It points in the direction in which $L$ increases fastest, and its length says how fast.
+
+```{python}
+def g(a, b):
+    return (a - 1) ** 2 + 2 * (b + 2) ** 2
+
+
+grad = np.array([
+    (g(0 + h, 0) - g(0 - h, 0)) / (2 * h),  # dg/da at (0, 0)
+    (g(0, 0 + h) - g(0, 0 - h)) / (2 * h),  # dg/db at (0, 0)
+])
+grad.round(4)
+```
+
+By the rules, $\partial g/\partial a = 2(a - 1)$ and $\partial g/\partial b = 4(b + 2)$, which at $(0, 0)$ give $(-2, 8)$. Since the gradient points *uphill*, {{< term gradient-descent >}} steps the other way: $\theta \leftarrow \theta - \eta \nabla L$, with a small {{< term learning-rate >}} $\eta$. Twenty such steps walk from the origin to the minimum at $(1, -2)$.
+
+```{python}
+theta, eta = np.array([0.0, 0.0]), 0.1
+for step in range(20):
+    grad = np.array([2 * (theta[0] - 1), 4 * (theta[1] + 2)])
+    theta = theta - eta * grad
+theta.round(3)
+```
+
+For linear regression with predictions $\hat{y} = X\theta$ and loss $L(\theta) = \frac{1}{n}\lVert y - X\theta \rVert^2$, the chain rule gives the gradient in closed form:
+
+$$
+\nabla L(\theta) = -\frac{2}{n} X^\top (y - X\theta).
+$$
+
+The $2$ comes from differentiating the square, the $-$ from the inner derivative of $y - X\theta$, and $X^\top$ collects "one dot product per feature" over the residuals. The deep dive in [episode 2.2](../part-1-foundations/ch02-ml-fundamentals/02-linear-regression.html) derives it line by line.
+
+::: {.challenge level=1 title="Check a derivative"}
+What is the derivative of $f(x) = 3x^2 + 2x$ at $x = 1$? Confirm with a finite difference.
+
+:::: {.solution}
+By the power rule, $f'(x) = 6x + 2$, so $f'(1) = 8$.
+
+```{python}
+def f2(x):
+    return 3 * x**2 + 2 * x
+
+
+(f2(1 + h) - f2(1 - h)) / (2 * h)
+```
+
+The numeric value matches to many decimals. If it had not, either the hand derivative or the function would be wrong, which is exactly why this check is worth a line of code whenever you implement a gradient yourself.
+::::
+:::
+
+::: {.challenge level=1 title="Which way is downhill?"}
+For $L(a, b) = a^2 + b^2$, write down the gradient at $(1, 2)$. In which direction does one gradient-descent step move, and where does the method end up?
+
+:::: {.solution}
+$\nabla L = (2a, 2b) = (2, 4)$ at $(1, 2)$. A step moves in the direction $-(2, 4)$, that is, towards the origin, and shrinks both coordinates in proportion. Repeated steps with a sensible learning rate converge to $(0, 0)$, the minimum, where the gradient is $(0, 0)$ and the updates stop changing anything.
+::::
+:::
+
+## Mean, variance and distributions
+
+*Used in* [episode 1.4](../part-1-foundations/ch01-scientific-python/04-visualisation.html), [episode 1.5](../part-1-foundations/ch01-scientific-python/05-eda-solubility.html) (exploring data) and [episode 2.6](../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) (standardisation).
+
+The **mean** of $n$ values is their sum divided by $n$. The **median** is the middle value when they are sorted. The **variance** is the mean of the squared deviations from the mean, and the **standard deviation** is its square root, which puts it back in the units of the data:
+
+$$
+\bar{x} = \frac{1}{n}\sum_i x_i, \qquad s^2 = \frac{1}{n - \text{ddof}}\sum_i (x_i - \bar{x})^2, \qquad s = \sqrt{s^2}.
+$$
+
+The odd `ddof` in the denominator ("delta degrees of freedom") is a real source of confusion. Dividing by $n$ gives the *population* variance of the numbers you have; dividing by $n - 1$ gives the *sample* variance, the unbiased estimate of the variance of the larger population the numbers were drawn from. Libraries disagree about the default, so check rather than assume: draw twenty values from a seeded {{< term rng >}} and ask NumPy and pandas for the standard deviation.
+
+```{python}
+rng = np.random.default_rng(42)
+sample = rng.normal(loc=10, scale=2, size=20)
+np.std(sample), pd.Series(sample).std()
+```
+
+```{python}
+np.std(sample, ddof=1)  # now equal to the pandas value
+```
+
+NumPy uses `ddof=0` and pandas uses `ddof=1`. scikit-learn's `StandardScaler` uses `ddof=0`, like NumPy. With a few hundred samples the difference is well under 1%; what matters is knowing which one a number is before you compare it with another.
+
+### Standardisation: z-scores
+
+Subtracting the mean and dividing by the standard deviation turns any measurement into a **z-score**: how many standard deviations it sits above (positive) or below (negative) the typical value. The result has mean 0 and standard deviation 1 whatever the original units, which is what makes features comparable in the distance section above.
+
+```{python}
+mass = penguins["body_mass_g"]
+z = (mass - mass.mean()) / mass.std()
+z.describe().round(2)
+```
+
+::: {.bridge audience="bio"}
+Expression heatmaps are almost always z-scored gene by gene before plotting. Each row is centred on that gene's own mean and scaled by its own spread, so the colour says "above or below this gene's usual level in this sample", not "high or low counts". Without that step the few highly expressed genes would set the colour scale and everything else would look flat.
+:::
+
+### The normal distribution
+
+Many measurements, and most noise, pile up around a central value in a symmetric bell shape: the **normal distribution**, fixed entirely by its mean $\mu$ and standard deviation $\sigma$. The rule of thumb worth memorising is **68–95–99.7**: about 68% of values lie within one standard deviation of the mean, 95% within two and 99.7% within three. A large random sample confirms it.
+
+```{python}
+big = rng.normal(loc=0, scale=1, size=100_000)
+[np.mean(np.abs(big) < k).round(3) for k in (1, 2, 3)]
+```
+
+Real data is rarely this tidy. Here is the {{< term histogram >}} of penguin body mass with the normal curve of the same mean and standard deviation drawn over it.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A histogram of penguin body mass in grams, from about 2700 to 6300 g, with a smooth bell-shaped normal curve overlaid. The histogram is not a single bell: a tall hump around 3500 g and a lower, broader hump around 5000 g, so the right tail is heavier than the curve predicts."
+mu, sigma = mass.mean(), mass.std()
+grid = np.linspace(2000, 7000, 300)
+normal_pdf = np.exp(-0.5 * ((grid - mu) / sigma) ** 2) / (sigma * np.sqrt(2 * np.pi))
+
+fig, ax = plt.subplots()
+ax.hist(mass, bins=25, density=True, alpha=0.6, label="penguins")
+ax.plot(grid, normal_pdf, label="normal curve, same mean and sd")
+ax.set(xlabel="body mass (g)", ylabel="density", title="Body mass of 333 penguins")
+ax.legend()
+plt.show()
+```
+
+The curve is a poor summary. The data have two humps, Adelie and Chinstrap penguins around 3500 g and the larger Gentoo around 5000 g, so the right tail is heavier than a single bell predicts. This **skew** is why the mean (about 4207 g) sits above the median (4050 g). The mean follows the tail; the median does not. The median is also **robust**: one bad entry in a spreadsheet barely moves it.
+
+```{python}
+with_typo = np.append(mass.to_numpy(), 42070.0)  # one mass entered with an extra zero
+(mass.mean(), with_typo.mean()), (mass.median(), np.median(with_typo))
+```
+
+The mean jumps by over 100 g; the median moves by nothing worth mentioning. When a quantity is skewed or may contain {{< term outlier plural >}}, report the median alongside the mean, or fix the skew with a logarithm (next section).
+
+### Correlation
+
+The {{< term correlation >}} (Pearson's $r$) is the mean of the product of two variables' z-scores. It lies between $-1$ and $1$: near $1$ the two rise together along a line, near $-1$ one falls as the other rises, near $0$ there is no *linear* relationship. Flipper length and body mass in penguins are strongly correlated.
+
+```{python}
+np.corrcoef(penguins["flipper_length_mm"], penguins["body_mass_g"])[0, 1].round(3)
+```
+
+Two cautions. Correlation measures straight-line association only: a perfect U-shaped relationship scores close to zero. And it can reverse when groups are mixed: bill length and bill depth are *negatively* correlated across all penguins but *positively* correlated within each species, because the species differ in both. Always look at the scatter plot, coloured by group, before trusting a single $r$.
+
+::: {.challenge level=1 title="Statistics by hand"}
+For the values 2, 4, 4, 4, 5, 5, 7, 9, compute the mean, the median, the population variance and standard deviation (`ddof=0`), and the sample standard deviation (`ddof=1`). Check with NumPy and pandas.
+
+:::: {.solution}
+Mean $= 40 / 8 = 5$. Median: the sorted middle pair is 4 and 5, so $4.5$. Squared deviations: $9, 1, 1, 1, 0, 0, 4, 16$, summing to $32$. Population variance $= 32/8 = 4$, standard deviation $2$. Sample variance $= 32/7 \approx 4.57$, standard deviation $\approx 2.14$.
+
+```{python}
+vals = np.array([2, 4, 4, 4, 5, 5, 7, 9])
+vals.mean(), np.median(vals), vals.var(), vals.std(), pd.Series(vals).std()
+```
+
+`vals.std()` gives 2 and `pd.Series(vals).std()` gives 2.14: the same data, two defaults.
+::::
+:::
+
+## Logarithms
+
+*Used in* [episode 1.5](../part-1-foundations/ch01-scientific-python/05-eda-solubility.html) (the solubility target) and throughout Part II.
+
+The logarithm answers the question "ten to what power gives this number?". If $10^y = x$ then $y = \log_{10} x$: $\log_{10} 1000 = 3$, $\log_{10} 1 = 0$, $\log_{10} 0.001 = -3$. Logarithms of zero or of negative numbers do not exist, which is why NumPy returns `-inf` or `nan` (and a warning) if you ask for them.
+
+```{python}
+np.log10([1, 10, 100, 1000, 0.001])
+```
+
+Two bases are in everyday use. **log₁₀** counts powers of ten and is what chemists mean by pH and {{< term logs >}}. The **natural logarithm**, $\ln$, uses the base $e \approx 2.718$ and is what calculus prefers, because its derivative is simply $1/x$. The two differ by a constant factor, $\ln x \approx 2.303 \log_{10} x$, so they never disagree about *order*, only about *scale*.
+
+```{python}
+np.log(10.0), np.log10(10.0)
+```
+
+::: {.pitfall title="`np.log` is the natural logarithm"}
+`np.log(100)` is about 4.6, not 2. If you want powers of ten, write `np.log10`. The same trap exists in pandas, R and most calculators' `LN` button.
+:::
+
+The rules all follow from the rules for powers. Because $10^a \times 10^b = 10^{a+b}$, a **product becomes a sum**, a quotient becomes a difference, and a **power becomes a multiple**:
+
+$$
+\log(ab) = \log a + \log b, \qquad \log\frac{a}{b} = \log a - \log b, \qquad \log a^k = k \log a .
+$$
+
+```{python}
+a, b = 200.0, 50.0
+np.log10(a * b), np.log10(a) + np.log10(b)
+```
+
+### Why scientists work in logs
+
+Measured solubilities in the ESOL dataset run from about $10^{-11.6}$ to $10^{1.6}$ mol/L: thirteen orders of magnitude. On a linear axis the soluble handful would fill the plot and the rest would be a smear at zero. On a log axis each unit is a factor of ten and the whole range is visible. More importantly for modelling, errors and effects in chemistry and biology are usually *multiplicative* ("twice as soluble", "a three-fold increase in expression"), and a logarithm turns multiplicative into additive, which is what a linear model and a squared-error loss assume. That is the point of a {{< term log-transform >}}.
+
+::: {.bridge audience="chem"}
+You already think in logs: pH $= -\log_{10}[\mathrm{H^+}]$, so pH 3 to pH 6 is a thousand-fold drop in hydrogen-ion concentration, and p$K_a$, logP and logS work the same way. An ESOL model with an RMSE of 0.5 logS units is therefore typically wrong by a factor of $10^{0.5} \approx 3$ in solubility. Keep that conversion in your head whenever a chapter reports an error in log units.
+:::
+
+### Geometric versus arithmetic mean
+
+For quantities spanning orders of magnitude the ordinary (arithmetic) mean is dominated by the largest values. The **geometric mean** is the $n$-th root of the product, which is the same as averaging the logarithms and undoing the log. It is the honest "typical value" for concentrations, fold-changes and rate constants.
+
+```{python}
+conc = np.array([1e-6, 1e-5, 1e-4, 1e-3, 1e-2])  # mol/L
+conc.mean(), 10 ** np.mean(np.log10(conc))
+```
+
+The arithmetic mean, $2.2 \times 10^{-3}$, is larger than four of the five values; the geometric mean, $10^{-4}$, is the middle one.
+
+### Undoing a log
+
+To get back from a log value to the quantity, raise the base to that power: `10 ** x` for $\log_{10}$, `np.exp(x)` for $\ln$. A predicted logS of $-3.5$ is a solubility of $10^{-3.5} \approx 3.2 \times 10^{-4}$ mol/L.
+
+```{python}
+logS = -3.5
+10**logS
+```
+
+### Making a skewed quantity symmetric
+
+Many positive quantities are **log-normal**: their logarithms are normal, so the raw values pile up near zero with a long right tail. Taking the log gives you back the bell.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Two histograms side by side. Left: a log-normal sample on its raw scale, strongly right-skewed with most values below 3 and a thin tail stretching past 10; the mean (dashed line) sits to the right of the median (dotted line). Right: the base-10 logarithm of the same values, a symmetric bell centred on zero, with the mean and median lines almost on top of each other."
+skewed = rng.lognormal(mean=0, sigma=0.8, size=2000)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.5, 4))
+for ax, values, label in [(ax1, skewed, "raw value"), (ax2, np.log10(skewed), "log10(value)")]:
+    ax.hist(values, bins=40)
+    ax.axvline(values.mean(), linestyle="--", color="0.3", label="mean")
+    ax.axvline(np.median(values), linestyle=":", color="0.3", label="median")
+    ax.set(xlabel=label, ylabel="count")
+ax1.set(title="Raw: skewed")
+ax2.set(title="After log10: symmetric")
+ax1.legend()
+plt.show()
+```
+
+On the raw scale the mean is pulled far to the right of the median by the tail. After the log transform the two coincide, the standard deviation means what the 68–95–99.7 rule says it means, and a squared-error loss no longer spends all its effort on the few largest values. This is why the solubility target is modelled as logS and never as mol/L.
+
+::: {.challenge level=1 title="Factors of ten"}
+Compound A has logS $= -2$ and compound B has logS $= -5$. How many times more soluble is A? What is the solubility of B in mol/L? And what is `np.log(1000)`, roughly: 3, or something else?
+
+:::: {.solution}
+The difference in logS is 3, so A is $10^3 = 1000$ times more soluble. B's solubility is $10^{-5}$ mol/L (10 µmol/L). `np.log(1000)` is the *natural* log, about 6.9; `np.log10(1000)` is 3.
+
+```{python}
+10 ** (-2 - (-5)), 10**-5, np.log(1000), np.log10(1000)
+```
+::::
+:::

@@ -1,0 +1,23 @@
+---
+title: "Reproducibility toolkit"
+subtitle: "Appendix C · coming soon"
+---
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This appendix is planned and not yet written.</p>
+
+## What it will cover
+
+- git for scientists: commits, branches, what to commit and what to ignore
+- Environments: conda/mamba, uv, lock files, and recording versions
+- Project layout: data/, notebooks/, src/, tests/, results/
+- Seeds, logging and recording the exact inputs of every result
+- Turning a notebook into a script and a script into a package
+- Sharing: README, licence, citation, and a one-command rebuild
+
+## Planned learning outcomes
+
+1. Keep a project under version control and explain every commit.
+2. Reproduce a result from a clean clone with one command.
+3. Package a small analysis so that a colleague can run and extend it.
+
+Until then, the reproducibility checklist in [episode 2.6](../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) and the [Setup](../part-1-foundations/ch00-start-here/02-setup.html) episode cover the essentials.

@@ -1,0 +1,368 @@
+---
+title: "Visualising data with matplotlib and seaborn"
+chapter: 1
+episode: 4
+teaching: 30
+exercises: 20
+level: beginner
+questions:
+  - "Why should I draw a picture before I compute a statistic?"
+  - "What are a Figure and an Axes, and why does the course always write `fig, ax = plt.subplots()`?"
+  - "Which plot do I use for one variable, two variables, or a whole table of them?"
+objectives:
+  - "Build a scatter plot with the matplotlib object-oriented API and label it with units."
+  - "Compare distributions across groups with `sns.histplot`, `sns.boxplot` and `sns.violinplot`."
+  - "Survey a whole table at once with `sns.pairplot` and a correlation heatmap."
+  - "Choose colour-blind-safe palettes and arrange several panels with `plt.subplots(1, 2)`."
+  - "Save a figure at publication resolution with `fig.savefig`."
+keypoints:
+  - "Plot first, summarise second: a histogram or scatter plot shows shape, outliers and gaps that a mean and a standard deviation hide."
+  - "Always create figures with `fig, ax = plt.subplots()` and draw on `ax`. The stateful `plt.plot` interface is for one-off sketches, not for work you will reuse."
+  - "One variable: histogram (with a KDE if the sample is large enough). One variable per group: box plot or violin. Two variables: scatter. Many variables: pairplot and a correlation heatmap."
+  - "seaborn's axes-level functions take `ax=`; figure-level functions such as `pairplot` build their own figure, so call them alone in a cell."
+  - "Label every axis with its unit, give every figure a title or caption, and use a colour-blind-safe palette. Never encode a contrast as red against green."
+  - "`fig.savefig(\"name.png\", dpi=150)` writes exactly the figure you see; `bbox_inches=\"tight\"` stops labels being cut off."
+prerequisites: [ch01-ep03]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+In [episode 1.3](03-pandas-dataframes.html) you computed, per species, the mean flipper length and body mass of 344 penguins. Two numbers per species. Now imagine a reviewer asks: "Are the three species really separate, or do they overlap? Is anything odd in the data?" Those questions are about *shape*, and shape is what a picture shows and a summary statistic hides. The same reviewer will ask the same question of every solubility, toxicity or expression dataset you meet later in this course, so this episode builds the habit of looking before computing.
+
+Two libraries do almost all of the work. **matplotlib** draws: it owns the canvas, the axes, the text. **seaborn** sits on top of it and knows about {{< term dataframe plural >}}: give it a table and a column name, and it draws a statistical plot with sensible defaults. You will use both in every later chapter.
+
+## Anatomy of a matplotlib figure
+
+Load the penguins and the two libraries. The hidden setup cell at the top of each episode applies the course's plotting style, so your figures will look like these if you copy the code.
+
+```{python}
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+penguins = pd.read_csv("data/penguins.csv")
+penguins.head(3)
+```
+
+Every matplotlib picture is built from two objects:
+
+- a **Figure**, the page or window that everything is drawn on;
+- one or more **Axes**, a plotting area with an x axis and a y axis. (One Axes, several Axes. It is matplotlib's word for a panel, not the plural of "axis".)
+
+`plt.subplots()` creates both and hands them back as a pair. From then on, you draw by calling methods on the Axes.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Scatter plot of body mass in grams against flipper length in millimetres for 342 penguins. The points form a rising band from about 170 mm and 3000 g to about 230 mm and 6000 g, with two visible clusters."
+fig, ax = plt.subplots()
+ax.scatter(penguins["flipper_length_mm"], penguins["body_mass_g"], alpha=0.6)
+ax.set(
+    xlabel="flipper length (mm)",
+    ylabel="body mass (g)",
+    title="Heavier penguins have longer flippers",
+)
+plt.show()
+```
+
+Three things in that cell matter more than they look:
+
+- `ax.scatter(x, y)` draws a {{< term scatter-plot >}}: one marker per row. The two missing-measurement rows you found in episode 1.3 are silently skipped.
+- `ax.set(...)` sets several properties at once. The labels carry **units**. A plot without units is a sketch, not a figure.
+- `plt.show()` ends the cell. In a notebook it displays the figure; in a script it opens a window.
+
+`alpha=0.6` makes the markers slightly transparent, so places where many points overlap appear darker. We return to that below.
+
+::: {.bridge audience="cs"}
+matplotlib has two interfaces. The **stateful** one, `plt.plot(...)`, `plt.xlabel(...)`, acts on whatever matplotlib considers the "current" figure and axes, a hidden global. It is fine for a two-line sketch at a prompt. The **object-oriented** one, used throughout this course, names the objects explicitly: `fig` and `ax` are ordinary variables you pass to functions, store in lists and return from helpers. With several panels the stateful style becomes a guessing game about which panel `plt.xlabel` will hit; the OO style never has that ambiguity. Every seaborn function that draws on one panel accepts `ax=`, so the two libraries mix cleanly.
+:::
+
+::: {.pitfall title="State that leaks between cells"}
+`plt.xlabel("mass")` labels the *current* Axes. If an earlier cell left a figure open, or you created two panels with `plt.subplots(1, 2)`, the current Axes is whichever one matplotlib touched last, usually the right-hand panel. The label lands in the wrong place and nothing warns you. Writing `ax.set(xlabel=...)` on the Axes you mean removes the guesswork, which is why the course never uses `plt.xlabel`.
+:::
+
+## Colour by group
+
+The scatter plot shows two clusters, and you already know there are three species. The first way to colour by group is a loop: draw each species separately, give each call a `label`, then ask for a legend.
+
+::: {.predict}
+Before you run the next cell: which species will sit at the top right (long flippers, heavy)? Gentoo, the largest species in the table of means from episode 1.3? Write down your guess and whether the other two will be separable.
+:::
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "The same scatter plot of body mass against flipper length, now with one colour per species and a legend. Gentoo points form a separate cluster at the top right; Adelie and Chinstrap overlap at the bottom left."
+fig, ax = plt.subplots()
+for species, group in penguins.groupby("species"):
+    ax.scatter(group["flipper_length_mm"], group["body_mass_g"], alpha=0.6, label=species)
+ax.set(xlabel="flipper length (mm)", ylabel="body mass (g)")
+ax.legend(title="species")
+plt.show()
+```
+
+Gentoo penguins are indeed the separate cluster. Adelie and Chinstrap overlap almost completely in these two measurements, something a table of means (3,701 g versus 3,733 g) hinted at but could not show.
+
+The loop works, but seaborn does the same in one call. `hue` colours by a {{< term categorical >}} column; `style` changes the marker shape by another one.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Scatter plot of body mass against flipper length, coloured by species and with marker shape by sex. Within each species, male penguins sit higher and further right than females."
+fig, ax = plt.subplots()
+sns.scatterplot(
+    data=penguins, x="flipper_length_mm", y="body_mass_g",
+    hue="species", style="sex", alpha=0.7, ax=ax,
+)
+ax.set(xlabel="flipper length (mm)", ylabel="body mass (g)")
+plt.show()
+```
+
+Two encodings on one plot is about the limit before a figure becomes a puzzle. Here it pays off: within each species, males are heavier and longer-flippered than females, so part of the spread inside each cluster is sex, not noise. The penguins with missing sex are left out of the plot without comment, which is one more reason to check `isna()` before you draw.
+
+## One variable: histograms and density curves
+
+A scatter plot needs two variables. To see the *distribution* of one, bin it and count: a {{< term histogram >}}. `sns.histplot` does the binning, and `kde=True` overlays a {{< term kde "kernel density estimate" >}}, a smoothed curve that shows the shape without the staircase of the bins. `hue` splits the histogram by group, exactly as in the scatter plot.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Overlapping histograms of flipper length for the three penguin species with smooth density curves. Adelie peaks near 190 mm, Chinstrap near 196 mm and Gentoo near 217 mm; Gentoo barely overlaps the other two."
+fig, ax = plt.subplots()
+sns.histplot(data=penguins, x="flipper_length_mm", hue="species", kde=True, bins=25, ax=ax)
+ax.set(xlabel="flipper length (mm)", ylabel="number of penguins")
+plt.show()
+```
+
+The density curves make the comparison easy to read: three roughly bell-shaped distributions, with Gentoo clearly shifted right. Two cautions. The curve is a smoothed *estimate*, so with a few dozen points it can invent bumps that are not there; and the number of bins changes how a histogram looks. Try `bins=10` and `bins=50` and see how much your impression changes, then report the one that is honest rather than the one that is pretty.
+
+## One variable per group: box plots and violins
+
+When you have several groups and one measurement, overlapping histograms get crowded. A {{< term box-plot >}} summarises each group as a box from the first to the third quartile with a line at the median, whiskers that reach the most extreme points within 1.5 box-lengths, and individual markers for anything beyond them. A violin plot replaces the box with a mirrored density curve, so you see the shape as well as the quartiles. Draw them side by side with `plt.subplots(1, 2)`, which returns one Figure and an array of two Axes.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Two panels. Left: box plots of body mass for Adelie, Chinstrap and Gentoo, with Gentoo's box clearly higher. Right: violin plots of the same data; the Gentoo violin is wide and slightly bimodal, the other two are narrower."
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.5, 4.2))
+sns.boxplot(data=penguins, x="species", y="body_mass_g", hue="species", legend=False, ax=ax1)
+ax1.set(xlabel="", ylabel="body mass (g)", title="Box plot")
+sns.violinplot(data=penguins, x="species", y="body_mass_g", hue="species", legend=False, ax=ax2)
+ax2.set(xlabel="", ylabel="body mass (g)", title="Violin plot")
+plt.show()
+```
+
+Read the box plot for the numbers: the Gentoo median is about 1,300 g above the other two, and its box does not overlap theirs. Read the violin for the shape: the Gentoo violin bulges twice, around 4,700 g and 5,500 g, which is the female and male groups you saw in the scatter plot. A box plot would never have told you that.
+
+(`hue="species"` together with `legend=False` is how seaborn 0.13 colours each box by its own category without adding a redundant legend.)
+
+::: {.note title="Which plot, when"}
+| You want to see | Use |
+|---|---|
+| the shape of one variable | `histplot` (add `kde=True` with more than about 50 points) |
+| one variable across a few groups | `boxplot` for the summary, `violinplot` for the shape, both if space allows |
+| how two variables relate | `scatterplot` (with `hue` for a third, categorical variable) |
+| a trend over an ordered axis (time, dose) | `ax.plot` with lines joining the points |
+| every pair of columns at once | `pairplot` |
+| the strength of every pairwise relationship | a correlation heatmap |
+:::
+
+## Many variables at once
+
+With four measurements you could draw six scatter plots by hand. `sns.pairplot` draws all of them in a grid, with each variable's distribution on the diagonal. It is a **figure-level** function: it creates its own Figure and arranges the panels, so you do not call `plt.subplots()` first, and you call it alone in a cell. `corner=True` drops the mirror-image upper half.
+
+```{python}
+#| echo: false
+# seaborn's figure-level functions manage their own layout (tight_layout);
+# the course style turns constrained layout on, so switch it off for this cell.
+plt.rcParams["figure.constrained_layout.use"] = False
+```
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A lower-triangular grid of scatter plots for every pair of bill length, bill depth, flipper length and body mass, coloured by species, with density curves on the diagonal. Gentoo is separated in every panel that involves bill depth or flipper length; Adelie and Chinstrap separate only in bill length."
+measurements = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]
+sns.pairplot(penguins[measurements + ["species"]], hue="species", corner=True, height=2.1)
+plt.show()
+```
+
+```{python}
+#| echo: false
+plt.rcParams["figure.constrained_layout.use"] = True
+```
+
+Look along the bottom row and down the first column. Flipper length and body mass separate Gentoo from the rest; bill length is the measurement that separates Adelie from Chinstrap. That is exactly the kind of observation that decides which features go into a classifier in Chapter 2, and you got it from one picture.
+
+A pairplot shows the relationships; a {{< term correlation >}} matrix puts a number on each. The Pearson correlation runs from −1 (one variable falls exactly as the other rises) through 0 (no linear relationship) to +1. `df.corr()` computes it for every pair of numeric columns, and `sns.heatmap` colours the resulting table. Drop `year` first: it is a number, but the correlation between a measurement and the year it was taken is not something you want in the picture.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A four-by-four heatmap of Pearson correlations between bill length, bill depth, flipper length and body mass, with the values printed in each cell. Flipper length and body mass correlate at 0.87; bill depth correlates negatively with flipper length (−0.58) and body mass (−0.47)."
+numeric = penguins.select_dtypes("number").drop(columns="year")
+fig, ax = plt.subplots(figsize=(6, 4.8))
+sns.heatmap(numeric.corr(), annot=True, fmt=".2f", vmin=-1, vmax=1, cmap="vlag", ax=ax)
+ax.set(title="Pearson correlation between measurements")
+plt.show()
+```
+
+The strongest pair is flipper length and body mass (0.87), which you already saw as the tight band in the first scatter plot. The surprise is bill depth: it is *negatively* correlated with flipper length and body mass. Scroll back to the pairplot before you believe it. Within each species, deeper bills go with heavier birds; across species the sign flips because Gentoo penguins are heavy and shallow-billed. A single correlation coefficient has averaged over the three species and reported a relationship that holds for none of them. This is Simpson's paradox, and it is the strongest argument in this episode for plotting before summarising.
+
+::: {.pitfall title="Overplotting"}
+With 344 points, markers rarely hide one another. With 10,000 molecules or 50,000 cells, a scatter plot becomes a solid blob and the densest region, which is usually the one you care about, is invisible. Three fixes, in order of effort: lower the opacity (`alpha=0.2`), shrink the markers (`s=8`), or replace the scatter plot with a two-dimensional histogram (`ax.hexbin(x, y, gridsize=40)` or `sns.histplot(x=..., y=...)`). When a plot looks like a blob, the fix is never a bigger figure.
+:::
+
+## Figure hygiene
+
+A figure that goes into a thesis, a paper or a report to a project team has to survive without you standing next to it. The rules are short.
+
+1. **Units on every axis.** `flipper length (mm)`, `body mass (g)`, `logS (log10 mol/L)`. If a quantity has no unit, say what it is: `number of penguins`.
+2. **A title or a caption, not both.** In a notebook, a title on the Axes. In a paper, a caption below the figure and no title on the Axes.
+3. **Colour that everyone can read.** Around 8% of men and 0.5% of women have red–green colour vision deficiency, so never make red versus green carry the meaning. The course style uses a {{< term colour-blind-safe >}} palette by default. In your own work, `sns.set_palette("colorblind")` or `sns.color_palette("colorblind")` gives you one for categories; for an ordered quantity (a dose, a count, a probability) use a sequential colourmap such as `viridis`, which is also safe and reads correctly in greyscale.
+4. **A legend that names what the colours mean**, placed where it hides no data.
+5. **Save at a resolution the medium needs.** The PNG a notebook shows is a screen-resolution preview. For a document, write the file explicitly:
+
+```python
+fig.savefig("penguins-mass-vs-flipper.png", dpi=150, bbox_inches="tight")
+fig.savefig("penguins-mass-vs-flipper.pdf")   # vector output for a paper
+```
+
+`dpi=150` is plenty for a slide or a web page; journals usually ask for 300. `bbox_inches="tight"` trims the margins and keeps long tick labels from being cut off. A PDF or SVG stays sharp at any size and is what you want for print.
+
+::: {.bridge audience="bio"}
+Think of Figure 1 in a paper describing a new dataset. It almost always contains the plots from this episode in the same order: a histogram or box plot of the main measurement per condition (does the treatment shift the distribution, or only a few outliers?), a scatter plot of two measurements coloured by condition (do the groups separate?), and sometimes a correlation heatmap across all measured variables (which readouts are redundant?). The penguins play the role of three cell lines or three genotypes; `species` is the condition column. Everything you draw here transfers directly to a plate of measurements.
+:::
+
+::: {.discussion}
+A colleague shows a bar chart of mean body mass per species with error bars for the standard deviation, and argues that it "says the same thing" as the violin plot. What does the bar chart hide that the violin shows? When is the bar chart the better choice?
+:::
+
+::: {.instructor}
+Timing: the first three scatter plots take about 10 minutes; let learners type them rather than copy. The histogram and box/violin pair takes 10, and the pairplot and heatmap the rest. The Simpson's paradox moment at the heatmap (bill depth versus body mass) is the point of the episode; ask the room to explain the negative correlation *before* you point them back to the pairplot. If time is short, drop the figure-hygiene list to a reading assignment and keep the overplotting pitfall, which bites everyone in Part II.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Bill length by species"}
+Draw a histogram of `bill_length_mm` split by species, with a density curve on top and 20 bins. Label both axes with units. Which two species does bill length separate that flipper length could not?
+
+:::: {.solution}
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Overlapping histograms of bill length by species with density curves. Adelie peaks near 39 mm, clearly left of Chinstrap and Gentoo, which both peak near 47 to 49 mm and overlap each other."
+fig, ax = plt.subplots()
+sns.histplot(data=penguins, x="bill_length_mm", hue="species", kde=True, bins=20, ax=ax)
+ax.set(xlabel="bill length (mm)", ylabel="number of penguins")
+plt.show()
+```
+
+Bill length separates **Adelie** from **Chinstrap**: Adelie bills peak near 39 mm, Chinstrap near 49 mm. Flipper length put those two species on top of each other. Gentoo now overlaps Chinstrap instead, which is why no single measurement classifies all three species; a classifier in Chapter 2 will need at least two.
+::::
+:::
+
+::: {.challenge level=1 title="Debug this"}
+A labmate's two-panel figure comes out with the axis labels in the wrong places and a legend missing. Find three problems.
+
+```python
+fig, axes = plt.subplots(1, 2)
+axes[0].scatter(penguins["bill_length_mm"], penguins["body_mass_g"], c="green")
+axes[1].scatter(penguins["bill_depth_mm"], penguins["body_mass_g"], c="red")
+plt.xlabel("bill length")
+plt.ylabel("mass")
+plt.show()
+```
+
+:::: {.solution}
+1. **Stateful labels on a multi-panel figure.** `plt.xlabel` and `plt.ylabel` act on the *current* Axes, which after the two `scatter` calls is `axes[1]`. The left panel gets no labels and the right panel gets the wrong ones. Use `axes[0].set(xlabel=..., ylabel=...)` and `axes[1].set(...)`.
+2. **No units.** `bill length` should be `bill length (mm)`, `mass` should be `body mass (g)`.
+3. **Red and green as the only distinction**, and no `label=` on either call, so `ax.legend()` would have nothing to show anyway. Let the course palette choose the colours and pass `label="bill length"` or, better, title each panel.
+
+Corrected:
+
+```python
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 4))
+ax1.scatter(penguins["bill_length_mm"], penguins["body_mass_g"], alpha=0.6)
+ax1.set(xlabel="bill length (mm)", ylabel="body mass (g)")
+ax2.scatter(penguins["bill_depth_mm"], penguins["body_mass_g"], alpha=0.6)
+ax2.set(xlabel="bill depth (mm)", ylabel="body mass (g)")
+plt.show()
+```
+::::
+:::
+
+::: {.challenge level=2 title="A 2 × 2 grid"}
+Draw a 2 × 2 grid of scatter plots of body mass against each of the four measurements (bill length, bill depth, flipper length, and body mass against itself is dull, so use `year` as the fourth x variable instead), coloured by species. Use `plt.subplots(2, 2, figsize=(9, 7))` and loop over `axes.flat` together with the column names. Give every panel labelled axes with units, and show one legend only.
+
+:::: {.solution}
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A two-by-two grid of scatter plots of body mass against bill length, bill depth, flipper length and year, coloured by species. Body mass rises with bill length and flipper length, falls with bill depth across species, and shows no trend with year."
+columns = {
+    "bill_length_mm": "bill length (mm)",
+    "bill_depth_mm": "bill depth (mm)",
+    "flipper_length_mm": "flipper length (mm)",
+    "year": "year of observation",
+}
+fig, axes = plt.subplots(2, 2, figsize=(9, 7))
+for i, (ax, (col, label)) in enumerate(zip(axes.flat, columns.items())):
+    sns.scatterplot(
+        data=penguins, x=col, y="body_mass_g", hue="species",
+        alpha=0.6, legend=(i == 0), ax=ax,
+    )
+    ax.set(xlabel=label, ylabel="body mass (g)")
+axes[1, 1].set(xticks=[2007, 2008, 2009])
+plt.show()
+```
+
+`axes.flat` iterates over the 2 × 2 array in reading order, `zip` pairs each panel with a column, and `enumerate` counts the panels so that `legend=(i == 0)` draws the legend on the first panel only. The same colours mean the same species in every panel, so repeating the legend four times would add clutter without information. The `year` panel is deliberately dull: three vertical stripes with no trend. Checking that a bookkeeping column carries no signal is a legitimate use of a plot.
+::::
+:::
+
+::: {.challenge level=2 title="Pairplot for one species"}
+Chinstrap penguins were the hardest to separate from Adelie. Restrict the data to Chinstrap and draw a pairplot of the four measurements coloured by `sex`. Do male and female Chinstrap penguins separate on any pair of measurements?
+
+:::: {.solution}
+```{python}
+#| echo: false
+plt.rcParams["figure.constrained_layout.use"] = False
+```
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A lower-triangular pairplot of bill length, bill depth, flipper length and body mass for Chinstrap penguins only, coloured by sex. Males are shifted to larger values on every measurement, and the panel of bill depth against bill length separates the sexes with only a few birds overlapping."
+chinstrap = penguins[penguins["species"] == "Chinstrap"]
+sns.pairplot(chinstrap[measurements + ["sex"]], hue="sex", corner=True, height=2.1)
+plt.show()
+```
+
+```{python}
+#| echo: false
+plt.rcParams["figure.constrained_layout.use"] = True
+```
+
+Yes, mostly. Males are larger on every measurement, but no single one is clean: bill depths between about 17.5 and 19.5 mm occur in both sexes. The panel of bill depth against bill length does much better, because males are both deeper- and longer-billed, and only a handful of birds sit on the wrong side of the divide. Within a single species the measurements are also positively correlated with each other, which is the "within-group" relationship that the all-species heatmap averaged away. Filtering with a boolean mask (episode 1.3) before plotting is a habit worth keeping: most questions about a dataset are questions about a subset of it.
+::::
+:::
+
+::: {.challenge level=3 title="Annotate the heaviest penguin"}
+Redraw the scatter plot of body mass against flipper length coloured by species, then find the heaviest penguin with `idxmax()` and mark it with `ax.annotate`, giving the species and mass in the label and an arrow pointing at the marker. Look up `ax.annotate` in the matplotlib documentation; you need the `xy`, `xytext` and `arrowprops` arguments.
+
+:::: {.solution}
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Scatter plot of body mass against flipper length coloured by species, with an arrow and the label 'Gentoo, 6300 g' pointing to the single highest point at 221 mm and 6300 g."
+heaviest = penguins.loc[penguins["body_mass_g"].idxmax()]
+
+fig, ax = plt.subplots()
+sns.scatterplot(data=penguins, x="flipper_length_mm", y="body_mass_g", hue="species", alpha=0.6, ax=ax)
+ax.annotate(
+    f"{heaviest['species']}, {heaviest['body_mass_g']:.0f} g",
+    xy=(heaviest["flipper_length_mm"], heaviest["body_mass_g"]),
+    xytext=(185, 5900),
+    arrowprops={"arrowstyle": "->", "color": "0.4"},
+)
+ax.set(xlabel="flipper length (mm)", ylabel="body mass (g)")
+plt.show()
+```
+
+`idxmax()` returns the *index label* of the largest value, and `.loc` fetches that row as a Series, so `heaviest["species"]` and the measurements are one lookup away. `xy` is the point the arrow touches, in data coordinates; `xytext` is where the text sits, chosen by hand to land in empty space. Annotating the one point that matters is far more effective than a paragraph describing it, and it is how you flag an outlier to a collaborator without accusing the data of anything yet.
+::::
+:::
+
+## Where this is going
+
+The next episode, [1.5](05-eda-solubility.html), turns these plots on a chemical dataset: the histogram becomes the distribution of measured solubility, the scatter plots become solubility against molecular weight and polar surface area, and the heatmap tells you which descriptors are worth feeding to a model. From Chapter 2 on, two further figures join the set, the parity plot and the residual plot of [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html), both built with the same `fig, ax = plt.subplots()` pattern. In Part II the points become molecules and the clusters become chemical series, and the overplotting pitfall becomes a daily concern.

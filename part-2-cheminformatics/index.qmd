@@ -1,0 +1,13 @@
+---
+title: "Part II · Cheminformatics"
+subtitle: "Molecules as data: representations, property prediction done honestly, graph neural networks, and structure-based design with docking. All four chapters are planned."
+---
+
+<div class="mm-cards">
+<div class="mm-card"><h3><a href="ch05-molecules-as-data/index.html">5 · Molecules as data</a> <span class="mm-chip">soon</span></h3><p>How a molecule becomes something a computer can compute with: SMILES strings, RDKit molecule objects, descriptors and fingerprints, and similarity search.</p></div>
+<div class="mm-card"><h3><a href="ch06-qsar-property-prediction/index.html">6 · QSAR and property prediction</a> <span class="mm-chip">soon</span></h3><p>Quantitative structure–activity relationships done honestly: scaffold splits, applicability domain, uncertainty, and the leakage traps of chemical data.</p></div>
+<div class="mm-card"><h3><a href="ch07-graph-neural-networks/index.html">7 · Graph neural networks for molecules</a> <span class="mm-chip">soon</span></h3><p>Molecules as graphs: message passing, learned representations, and when GNNs beat fingerprints (and when they do not).</p></div>
+<div class="mm-card"><h3><a href="ch08-structure-based-design/index.html">8 · Structure-based design</a> <span class="mm-chip">soon</span></h3><p>Proteins as structures: binding sites, molecular docking with AutoDock Vina, and machine-learned rescoring of poses.</p></div>
+</div>
+
+See the full [roadmap](../index.html#roadmap) for how the Parts connect.

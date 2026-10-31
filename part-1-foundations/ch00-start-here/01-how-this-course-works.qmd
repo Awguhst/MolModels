@@ -1,0 +1,155 @@
+---
+title: "How this course works"
+chapter: 0
+episode: 1
+teaching: 10
+exercises: 5
+level: beginner
+questions:
+  - "How is the course organised, and what does a number like 2.3 mean?"
+  - "What are all the boxes on a page for, and which ones can I skip?"
+  - "How do I keep track of where I am?"
+objectives:
+  - "Find any episode from its number and read its Overview and Key points cards."
+  - "Recognise each kind of callout box and know what it asks you to do."
+  - "Use the progress tracker, the view and theme switches, glossary tooltips and search."
+keypoints:
+  - "Four Parts, sixteen chapters; episode 2.3 is the third episode of Chapter 2. Chapters 0–2 are available now; the rest are marked *soon*."
+  - "Read the Overview card first and the Key points card last; they are the contract for the page."
+  - "Predict boxes and checkpoints work only if you commit to an answer before looking."
+  - "Exercises are graded ★ (check), ★★ (apply), ★★★ (stretch). Do all the ★ ones, and at least one ★★ per episode."
+  - "Progress is stored in your browser only; the Instructor view adds notes for teachers and changes nothing else."
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+By the end of this course you will build a model that predicts whether a molecule dissolves in water, another that classifies tumours from measurements, and later ones that work on protein sequences and molecular graphs. Before any of that, this short page shows how the pages themselves work, so that nothing about the *format* gets between you and the ideas.
+
+## The shape of the course
+
+The course has four Parts. Part I (Foundations) teaches scientific Python and the core of machine learning on small, well-understood datasets. Part II (Cheminformatics) turns molecules into numbers and models them. Part III (Bioinformatics) does the same for sequences and expression data. Part IV (Generative) covers models that propose new molecules. Together they contain sixteen chapters, numbered 0 to 15, each a handful of episodes plus a lab.
+
+Episodes are numbered *chapter.episode*: **2.3** is the third episode of Chapter 2, and that is how the text refers to them. Chapters 0, 1 and 2 are built now. The later chapters appear in the sidebar and on the roadmap marked *soon*, dimmed, with a page describing what is planned.
+
+::: {.bridge audience="cs"}
+The repository mirrors the site: one directory per chapter, one file per episode (`NN-slug.qmd`), and a `labs/` folder with the notebooks. Every page's footer has *Edit this page*, which opens that file on GitHub, and *Report a problem*, which opens an issue with the page already named.
+:::
+
+## Reading a page from top to bottom
+
+Under the title of every episode are three chips: **Teaching** (minutes to read and run the code), **Exercises** (minutes for the exercises at the end) and a **level** (beginner, intermediate or advanced). Below them is the **Overview card**. *Questions* are what you should be able to answer afterwards, phrased the way you would ask them; *Objectives* are the concrete things you will be able to do. Read both first; if you can already answer every question, skim the episode and go straight to its exercises.
+
+The body alternates short prose with code cells, which show exactly what you would type, with the output directly beneath:
+
+```{python}
+molecule = "ethanol"
+print(f"{molecule} has {len(molecule)} letters")
+```
+
+Run these yourself, in order, in a {{< term notebook >}} of your own (the next episode sets that up). Each cell introduces one idea; checking its output against your expectation is the actual lesson.
+
+At the bottom of every episode is the **Key points card**: what you should remember a month later. If a key point surprises you, go back; you missed something.
+
+::: {.tip title="A reading rhythm that works"}
+Overview card, then the body with the code running beside you, then the exercises, then the Key points card. The teaching time assumes you type the code, not just read it.
+:::
+
+## The boxes
+
+Boxes interrupt the text for a reason, and each kind asks something different of you. Here is one of each.
+
+::: {.note title="Note"}
+A note is an aside or a definition: context that helps but does not change what you do next. Skipping a note never breaks the thread.
+:::
+
+::: {.pitfall title="Common mistake"}
+A pitfall names a mistake that real learners make at this exact point, usually one that produces no error message. Read these even when you skim everything else.
+:::
+
+::: {.deep-dive title="Deep dive: the maths behind it"}
+Deep dives are collapsed by default and hold the mathematics: derivations, the formal statement of what the body said in words. They are never required to follow the episode. Mathematicians will want them open; everyone else can come back later.
+:::
+
+::: {.bridge audience="chem"}
+A bridge box is written for one background. This one is a *Chemist's corner*; there are also a Biologist's corner, a Maths corner and a box *For programmers*. Read yours first, and the others when you are curious how the same idea looks from the next bench over.
+:::
+
+::: {.discussion}
+A discussion prompt has no single answer. Write two or three sentences before moving on; in a taught course the instructor uses these to start a conversation.
+:::
+
+### Exercises and solutions
+
+Exercises come at the end of each episode with a star rating: ★☆☆ checks understanding, ★★☆ applies the idea to something new, ★★★ is a stretch. Every exercise has a collapsed **Show solution** button, and the solution explains *why*, not just what. Do all of the ★ exercises and at least one ★★; the ★★★ ones are optional. The **Expand all solutions** button under the title opens every solution on the page at once, handy when revising or teaching, and dangerous when learning.
+
+### Predict, then check
+
+Two kinds of box ask you to commit to an answer before you look. A *Predict before you run* box sits immediately above a code cell and asks what the output will be. A *Checkpoint* is a multiple-choice question; each option opens to show whether it was right and why. Both work only if you honestly decide first; guessing and then reading the answer feels like learning and is not.
+
+::: {.predict}
+Before you click anything in the checkpoint below: what do you think happens when you choose a *wrong* option? Does it tell you, or stay silent? And what does the page remember afterwards?
+:::
+
+::: {.checkpoint title="What does 2.3 refer to?"}
+In this course, "episode 2.3" means:
+
+- [ ] Chapter 3, episode 2
+
+  The chapter comes first. 2.3 is the third episode of Chapter 2.
+- [x] Chapter 2, episode 3
+
+  The first number is the chapter, the second is the episode within it. Episode 2.3, *Evaluating models honestly*, is the course's model for every other episode.
+- [ ] The third lab of Part II
+
+  Labs are named by chapter (Lab 2 belongs to Chapter 2), not numbered like episodes, and Parts are numbered with Roman numerals (Part II), never with a decimal.
+:::
+
+Every option tells you something, including the wrong ones, and a small running score appears once you have answered. Nothing is sent anywhere; reloading clears the score.
+
+## Tools on the page
+
+**Mark episode complete.** The button in the footer records that you finished the page: a tick appears next to the episode in the sidebar, the chapter page shows a progress bar, and the home page offers a *Continue* card pointing at the next unfinished episode. All of this is stored in your browser only (no server, no account), so it does not follow you to another browser or device. *Reset progress* in the sidebar clears it.
+
+**Learner / Instructor view.** The switch in the navigation bar shows or hides *Instructor notes*: timing advice, sticking points and discussion starters for whoever is teaching. It changes nothing else, and curious learners may switch it on. Opening any page with `?view=instructor` on the end of the address does the same and remembers the choice.
+
+::: {.instructor}
+This is what an instructor note looks like. Episode 0.1 is best done live in the first ten minutes of a first session: open the page on the projector, click through the checkpoint, mark the episode complete and reset progress, so that nobody wonders later whether the site is tracking them. Then send everyone to the setup episode and give the room twenty minutes to get a green `check_env` output.
+:::
+
+**Dark / Light / Auto.** The theme switch next to the view switch; *Auto* follows your operating system. Figures are rendered in both themes and swap with the page.
+
+**Glossary tooltips.** Technical terms carry a dotted underline the first time they appear in each episode, like {{< term kernel >}} here. Hover or focus for a one-sentence definition; click for the full entry in the [glossary](../../appendices/glossary.html).
+
+**Search.** Press `/` anywhere on the site (or click the magnifier) to search every page. Results show the chapter and section they come from.
+
+## Choosing your path
+
+Graduates in informatics, chemistry, biology and mathematics will each find different chapters easy. The chapter page has a short [table of suggested paths by background](index.html#suggested-paths-by-background): what to speed through, where to slow down, and which parts of the [maths refresher](../../appendices/maths-refresher.html) to skim first. Read your row before Chapter 1.
+
+## Exercises
+
+::: {.challenge level=1 title="Find your way around"}
+Without using search:
+
+1. Open the glossary and find the definition of *kernel*.
+2. Open episode 2.3 and find its ★★★ exercise. What published model does it ask you to compare against?
+3. Come back here and mark this episode complete. Where does the tick appear?
+
+:::: {.solution}
+1. The glossary is under *Appendices* in the sidebar; *kernel* is defined as the Python process that runs notebook cells and keeps your variables between them.
+2. Episode 2.3 is *Evaluating models honestly* in Chapter 2. Its ★★★ exercise, *Compare with Delaney's published model*, asks you to evaluate the predictions of Delaney's original ESOL model on your own test molecules, and then to think about whether that comparison is fair.
+3. A tick appears next to *0.1 How this course works* in the sidebar, and the Chapter 0 page shows the chapter progress bar moving.
+::::
+:::
+
+::: {.challenge level=2 title="What the browser knows"}
+Mark this episode complete, then open the same page in a private or incognito window of the same browser. Is it still marked complete? Explain what that tells you about where progress is stored, and what the *Reset progress* button in the sidebar actually deletes.
+
+:::: {.solution}
+In the private window the episode is *not* marked complete. Progress lives in the browser's local storage for this site, which a private window does not share with your normal session, and which no server ever sees; the theme and view choices live there too. *Reset progress* deletes the stored list of completed pages (after asking you to confirm) and nothing else. Two machines mean two independent progress records, which is the price of keeping no accounts.
+::::
+:::
+
+## Where this is going
+
+Every later page uses exactly the furniture you have just seen, so this is the last time it will be explained. The [next episode](02-setup.html) gets Python running, in the browser or on your machine, and the [self-check](03-self-check.html) after it tells you whether to begin [Chapter 1](../ch01-scientific-python/index.html) straight away. From there the predict boxes stop being about the website and start being about data: one in [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html) asks you to guess how much worse a model does on molecules it has never seen.

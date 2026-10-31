@@ -1,0 +1,30 @@
+---
+title: "Machine learning on sequences"
+chapter-index: true
+summary: "From k-mers and one-hot encodings to convolutional networks and protein language model embeddings, with sequence-identity splits as the honest evaluation."
+---
+
+{{< generated ch10-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- k-mer counting and one-hot encoding of sequences
+- Sequence-identity splits and why random splits lie
+- 1-D convolutional networks for motifs
+- Protein language model embeddings (ESM-style) as features
+- Function and localisation prediction tasks
+- Lab 10: embed a protein family and predict a property with identity-aware CV
+:::
+
+## Planned learning outcomes
+
+1. Turn sequences into feature matrices in several ways and compare them.
+2. Train a small CNN on sequence data and visualise what it learned.
+3. Use pre-trained protein embeddings with an honest sequence-identity split.
+
+## In the meantime
+
+Everything here builds on Part I, in particular the evaluation habits of [Chapter 2](../../part-1-foundations/ch02-ml-fundamentals/index.html). Episode [2.6](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) already introduces the group splits that become sequence-identity splits here.

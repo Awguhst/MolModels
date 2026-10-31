@@ -1,0 +1,59 @@
+---
+title: "Guided EDA: the breast cancer Wisconsin dataset"
+chapter: 1
+lab: 1
+duration: "60–90 min"
+minutes: 75
+level: beginner
+objectives:
+  - "Inspect a new table systematically: shape, types, missing values, class balance and summary statistics."
+  - "Compare feature distributions between two classes with histograms, KDE curves and box plots."
+  - "Read a correlation heatmap and a pairplot to spot redundant features and well-separated classes."
+  - "Rank features by how well they separate the classes and write a short, honest summary."
+prerequisites-text: ["Episodes 1.3 (pandas) and 1.4 (visualisation)", "A working environment (episode 0.2) or Google Colab"]
+summary: "Run the EDA checklist from episode 1.5 on the breast cancer Wisconsin dataset, from shape and class balance to a feature ranking and a written summary, with checks after every task."
+dataset: "Breast cancer Wisconsin (diagnostic), via scikit-learn; no download needed"
+notebook: lab-01-guided-eda
+---
+
+Episode 1.5 walked you through an exploratory data analysis with a tutor typing ahead of you. This lab takes the stabilisers off: you run the same checklist on a dataset you have not seen, in a notebook where the code cells are yours to write and a check cell after each task tells you whether you are on track.
+
+The data are the **breast cancer Wisconsin (diagnostic)** set: 569 tumours imaged by fine-needle aspiration, 30 numbers describing the cell nuclei in each image, and a pathologist's diagnosis, malignant or benign, as the label. It ships with scikit-learn, so there is nothing to download, and it has no missing values, so you can concentrate on the questions rather than the plumbing. Chapter 2 trains its first classifier on exactly this table; the features you identify today as the most informative are the ones that model will lean on.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/part-1-foundations/ch01-scientific-python/labs/lab-01-guided-eda.ipynb">Open in Colab</a>
+<a class="mm-btn" href="lab-01-guided-eda.ipynb" download>Download .ipynb</a>
+<a class="mm-btn" href="lab-01-guided-eda-solutions.html">View solutions</a>
+</div>
+
+## How to work on this lab
+
+- Run the cells from top to bottom. The setup cell installs nothing unless a package is missing, which on Colab it will not be.
+- Cells that begin with `# TODO` are yours. The comment line states the task; the markdown above it explains what to look for.
+- Cells marked ✅ are checks. They assert something about the variable the task asked you to create and print a friendly message. If one fails, read the message, fix the cell above, and run both again.
+- Make a real attempt at every task before opening the solutions. If you are stuck for more than ten minutes, ask for help or peek at that one task's solution, then close it again.
+- Plan on 60–90 minutes. The written summary in Task 9 is part of the lab, not an optional extra.
+
+## The tasks
+
+1. **Shape, types and missing values.** `df.shape`, `df.dtypes`, and the total number of missing values.
+2. **Class balance.** Count malignant and benign tumours and draw a bar chart with the object-oriented matplotlib API.
+3. **Summary statistics.** Build the list of ten `mean ...` features and read their `describe()` table; notice the scales.
+4. **Distributions by diagnosis.** A 2 × 2 grid of histograms with KDE curves for four features, split by diagnosis.
+5. **Box plots.** Three box plots by diagnosis, and the median `mean radius` of each class.
+6. **Correlation heatmap.** The 10 × 10 Pearson correlation matrix of the `mean` features, annotated.
+7. **Pairplot.** Four features, coloured by diagnosis, corner only.
+8. **Which features separate the classes best?** The standardised mean difference for all 30 features, ranked, with a point-biserial correlation as a cross-check.
+9. **A short written summary.** Five bullets: size and balance, scales, redundancy, signal, caution.
+
+## What to hand in
+
+Your completed notebook with every check cell showing ✅, the Task 9 summary in your own words, and written answers to these reflection questions:
+
+1. The dataset is 63% benign. If a model predicted "benign" for every tumour, what would its accuracy be, and what would be wrong with reporting that number? Which single number from this lab would you quote instead?
+2. Radius, perimeter and area correlate at 0.99 or above. Would you remove two of the three before training a model? What might you lose, and what might you gain?
+3. The standardised mean difference in Task 8 only sees the *means* of each class. Describe a feature that could separate the classes well yet score a low $d$, and which plot from this lab would reveal it.
+
+::: {.tip title="Saving your work in Colab"}
+Colab opens the notebook from GitHub as a temporary copy: close the tab and your edits are gone. Before you start, choose *File → Save a copy in Drive*, and work in that copy. To hand the notebook in, *File → Download → Download .ipynb*. If you work locally, the downloaded `.ipynb` is an ordinary file; save it as you would any other.
+:::

@@ -1,0 +1,30 @@
+---
+title: "Molecules as data"
+chapter-index: true
+summary: "How a molecule becomes something a computer can compute with: SMILES strings, RDKit molecule objects, descriptors and fingerprints, and similarity search."
+---
+
+{{< generated ch05-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- SMILES: reading, writing and canonicalising molecular structures
+- RDKit: parsing, drawing and sanitising molecules
+- Descriptors: molecular weight, logP, TPSA, H-bond counts, rotatable bonds
+- Fingerprints: Morgan/ECFP bit vectors and what the bits mean
+- Tanimoto similarity and nearest-neighbour search
+- Lab 5: recompute the ESOL descriptors from SMILES and rebuild the Chapter 2 model
+:::
+
+## Planned learning outcomes
+
+1. Convert SMILES to RDKit molecules, compute descriptors and fingerprints, and build an X matrix from them.
+2. Explain what a Morgan fingerprint encodes and compute Tanimoto similarities.
+3. Find the nearest neighbours of a query molecule in a library and judge whether they are chemically sensible.
+
+## In the meantime
+
+Everything here builds on Part I, in particular the evaluation habits of [Chapter 2](../../part-1-foundations/ch02-ml-fundamentals/index.html). Episode [2.6](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) already introduces the group splits that become scaffold splits here.

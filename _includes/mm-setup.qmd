@@ -1,0 +1,103 @@
+```{python}
+#| echo: false
+#| output: false
+# ---------------------------------------------------------------------------
+# Hidden setup cell, included at the top of every episode via
+#     the mm-setup include shortcode (see AUTHORING.md)
+# It (1) applies the course's matplotlib style and (2) registers a small IPython
+# hook so that every code cell that leaves a figure open emits two versions of
+# it: the light one and a restyled dark one. Such cells carry
+# `#| renderings: [light, dark]` and end with `plt.show()`; Quarto then shows
+# whichever version matches the reader's theme. Learner-visible code stays
+# clean, and learners who copy it simply get the light figure.
+# Everything lives in closures so that Quarto's end-of-notebook `%reset` cannot
+# break the hook, and the hook never prints (Quarto parses the kernel's stdout).
+# ---------------------------------------------------------------------------
+import matplotlib.pyplot as _plt
+
+_plt.style.use("assets/mpl/mm-light.mplstyle")
+
+
+def _mm_install():
+    import matplotlib as mpl
+    from IPython import get_ipython
+
+    LIGHT = {"bg": "#FFFFFF", "text": "#1B1F27", "axis": "#5B6573", "grid": "#D5DAE2"}
+    DARK = {"bg": "#161A21", "text": "#E6E9EE", "axis": "#A0A8B4", "grid": "#29303B"}
+
+    def same(c1, c2):
+        try:
+            return mpl.colors.to_hex(c1, keep_alpha=False).upper() == mpl.colors.to_hex(c2, keep_alpha=False).upper()
+        except (ValueError, TypeError):
+            return False
+
+    def swap(colour, key):
+        return DARK[key] if same(colour, LIGHT[key]) else colour
+
+    def restyle_dark(fig):
+        """Recolour the chrome of a figure (backgrounds, text, spines, ticks, grid, legend frames)
+        for the dark theme. Data colours are left alone: the palette reads on both backgrounds."""
+        from matplotlib.collections import PathCollection
+        from matplotlib.patches import Patch
+        from matplotlib.text import Text
+
+        fig.patch.set_facecolor(swap(fig.patch.get_facecolor(), "bg"))
+        for ax in fig.axes:
+            ax.patch.set_facecolor(swap(ax.patch.get_facecolor(), "bg"))
+            for spine in ax.spines.values():
+                spine.set_edgecolor(swap(spine.get_edgecolor(), "axis"))
+            ax.tick_params(colors=DARK["axis"], labelcolor=DARK["text"], which="both")
+            for line in ax.get_xgridlines() + ax.get_ygridlines():
+                line.set_color(swap(line.get_color(), "grid"))
+            legend = ax.get_legend()
+            if legend is not None:
+                frame = legend.get_frame()
+                frame.set_facecolor(swap(frame.get_facecolor(), "bg"))
+                frame.set_edgecolor(swap(frame.get_edgecolor(), "grid"))
+            for coll in ax.collections:
+                if isinstance(coll, PathCollection):
+                    ec = coll.get_edgecolor()
+                    if len(ec) and all(same(c, LIGHT["bg"]) for c in ec):
+                        coll.set_edgecolor(DARK["bg"])
+            for patch in ax.patches:
+                if isinstance(patch, Patch) and same(patch.get_edgecolor(), LIGHT["bg"]):
+                    patch.set_edgecolor(DARK["bg"])
+        for text in fig.findobj(Text):
+            text.set_color(swap(text.get_color(), "text"))
+        for legend in fig.legends:
+            frame = legend.get_frame()
+            frame.set_facecolor(swap(frame.get_facecolor(), "bg"))
+        return fig
+
+    def _mm_post_execute():
+        """Emit light + dark versions of every figure still open at the end of a cell.
+        Every figure cell therefore needs `#| renderings: [light, dark]` (tests enforce this)."""
+        try:
+            import matplotlib.pyplot as plt
+            from IPython.display import display
+
+            for num in plt.get_fignums():
+                fig = plt.figure(num)
+                display(fig)
+                restyle_dark(fig)
+                display(fig)
+                plt.close(fig)
+        except Exception:
+            pass  # a broken hook must never take the kernel down or write to stdout
+
+    ip = get_ipython()
+    if ip is None:
+        return
+    post = ip.events.callbacks["post_execute"]
+    if not any(getattr(cb, "__name__", "") == "_mm_post_execute" for cb in post):
+        post.insert(0, _mm_post_execute)  # must run before matplotlib-inline flushes figures
+    # `plt.show()` is what learners type at the end of a figure cell. Under this hook it must
+    # NOT flush the figure early (the hook does that), so make it a no-op during rendering.
+    import matplotlib.pyplot as plt
+
+    plt.show = lambda *args, **kwargs: None
+
+
+_mm_install()
+del _mm_install
+```

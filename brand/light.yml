@@ -1,0 +1,77 @@
+# Brand (light mode). The same tokens are exposed as CSS custom properties in assets/scss/.
+meta:
+  name: Molecules & Models
+  link: https://YOUR-USER.github.io/molecules-and-models/
+color:
+  palette:
+    bg: "#FFFFFF"
+    surface: "#F4F6F9"
+    surface-2: "#E9EDF2"
+    code-bg: "#F3F5F8"
+    border: "#D5DAE2"
+    text: "#1B1F27"
+    text-muted: "#5B6573"
+    violet: "#5B4BD6"
+    amber: "#8A5A00"
+    green: "#176E43"
+    coral: "#B5382A"
+  foreground: text
+  background: bg
+  primary: violet
+  secondary: text-muted
+  success: green
+  warning: amber
+  danger: coral
+  info: "#0A5A8F"
+typography:
+  fonts:
+    - family: IBM Plex Sans
+      source: file
+      files:
+        - path: ../assets/fonts/IBMPlexSans-Regular.woff2
+          weight: 400
+          style: normal
+        - path: ../assets/fonts/IBMPlexSans-Italic.woff2
+          weight: 400
+          style: italic
+        - path: ../assets/fonts/IBMPlexSans-Medium.woff2
+          weight: 500
+          style: normal
+        - path: ../assets/fonts/IBMPlexSans-SemiBold.woff2
+          weight: 600
+          style: normal
+    - family: Source Serif 4
+      source: file
+      files:
+        - path: ../assets/fonts/SourceSerif4-Semibold.woff2
+          weight: 600
+          style: normal
+        - path: ../assets/fonts/SourceSerif4-SemiboldIt.woff2
+          weight: 600
+          style: italic
+    - family: JetBrains Mono
+      source: file
+      files:
+        - path: ../assets/fonts/JetBrainsMono-Regular.woff2
+          weight: 400
+          style: normal
+        - path: ../assets/fonts/JetBrainsMono-Italic.woff2
+          weight: 400
+          style: italic
+        - path: ../assets/fonts/JetBrainsMono-Bold.woff2
+          weight: 700
+          style: normal
+  base:
+    family: IBM Plex Sans
+    size: 17px
+    line-height: 1.65
+  headings:
+    family: Source Serif 4
+    weight: 600
+    line-height: 1.2
+  monospace:
+    family: JetBrains Mono
+    size: 0.853rem
+  link:
+    color: violet
+    decoration: underline

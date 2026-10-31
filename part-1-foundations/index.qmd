@@ -1,0 +1,14 @@
+---
+title: "Part I · Foundations: ML & data science"
+subtitle: "Everything the rest of the course stands on: scientific Python, honest machine learning, and the first steps into deep learning. Chapters 0–2 are complete; 3 and 4 are planned."
+---
+
+<div class="mm-cards">
+<div class="mm-card"><h3><a href="ch00-start-here/index.html">0 · Start here</a></h3><p>How the course is organised, how to read a page, and how to get a working Python environment in the browser or on your own machine. A short self-check tells you whether to begin at Chapter 1 or take a Python refresher first.</p></div>
+<div class="mm-card"><h3><a href="ch01-scientific-python/index.html">1 · Scientific Python for data work</a></h3><p>The tools every later chapter assumes: NumPy arrays for fast numerical work, pandas DataFrames for tables of measurements, and matplotlib and seaborn for figures you can trust. You will practise on real data, from Antarctic penguins to a medical imaging dataset, and finish with a full exploratory analysis of the aqueous solubility of small molecules, the question Chapter 2 then tries to predict.</p></div>
+<div class="mm-card"><h3><a href="ch02-ml-fundamentals/index.html">2 · Machine learning fundamentals</a></h3><p>What a model is, how to fit one, and above all how to find out honestly whether it works. You will build regression and classification models with scikit-learn on real chemistry and medical data, and learn the evaluation habits that separate a useful model from a misleading one.</p></div>
+<div class="mm-card"><h3><a href="ch03-beyond-linear-models/index.html">3 · Beyond linear models</a> <span class="mm-chip">soon</span></h3><p>Trees, ensembles and support vector machines for the cases a straight line cannot handle; unsupervised learning for finding structure without labels; and how to interpret what a model has learned.</p></div>
+<div class="mm-card"><h3><a href="ch04-deep-learning-essentials/index.html">4 · Deep learning essentials with PyTorch</a> <span class="mm-chip">soon</span></h3><p>Tensors, automatic differentiation and the training loop, built up from the gradient descent you wrote in Chapter 2, then multilayer perceptrons on tabular scientific data.</p></div>
+</div>
+
+See the full [roadmap](../index.html#roadmap) for how the Parts connect.

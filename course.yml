@@ -1,0 +1,54 @@
+# Course structure that is not derivable from the chapter directories.
+# Chapters themselves are discovered from part-*/ch*/_metadata.yml by scripts/build_course_data.py.
+parts:
+  - number: 1
+    dir: part-1-foundations
+    title: "Foundations: ML & data science"
+    short: "Foundations"
+    roman: "I"
+    accent: violet
+  - number: 2
+    dir: part-2-cheminformatics
+    title: "Cheminformatics"
+    short: "Cheminformatics"
+    roman: "II"
+    accent: amber
+  - number: 3
+    dir: part-3-bioinformatics
+    title: "Bioinformatics"
+    short: "Bioinformatics"
+    roman: "III"
+    accent: green
+  - number: 4
+    dir: part-4-generative
+    title: "Generative models & frontiers"
+    short: "Generative"
+    roman: "IV"
+    accent: coral
+
+appendices:
+  - letter: A
+    title: "Maths refresher"
+    file: appendices/maths-refresher.qmd
+  - letter: B
+    title: "Glossary"
+    file: appendices/glossary.qmd
+  - letter: C
+    title: "Reproducibility toolkit"
+    file: appendices/reproducibility.qmd
+    stub: true
+  - letter: D
+    title: "Further reading"
+    file: appendices/further-reading.qmd
+    stub: true
+
+# "Resources" block at the bottom of the sidebar
+resources:
+  - text: "Setup"
+    file: part-1-foundations/ch00-start-here/02-setup.qmd
+  - text: "Glossary"
+    file: appendices/glossary.qmd
+  - text: "Maths refresher"
+    file: appendices/maths-refresher.qmd
+  - text: "Chapter key points"
+    file: appendices/key-points.qmd

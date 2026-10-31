@@ -1,0 +1,43 @@
+---
+title: "About this course"
+subtitle: "Who it is for, how it is built, and how to get involved."
+---
+
+## Who it is for
+
+*Molecules & Models* is written for fresh graduates in informatics, chemistry, biology or mathematics who have taken one or two introductory programming or maths courses and want to work with machine learning on molecules, proteins, sequences and omics data. It assumes you can write a loop and a function, and that you have seen first-year calculus, some linear algebra and some statistics. It does not assume pandas, NumPy, git, the command line, any machine learning, or any chemistry or biology.
+
+Each page is written to be read by all four audiences at once. *Bridge boxes* speak to one background at a time: a chemist's corner, a biologist's corner, a maths corner and a corner for programmers. Mathematics beyond the minimum lives in collapsible deep dives.
+
+## What is here now
+
+This is iteration 1. **Part I** is complete through Chapter 2: Start here, Scientific Python for data work, and Machine learning fundamentals, with two labs, a chapter checkpoint, a maths refresher and the glossary. Chapters 3–15 are planned and appear as "coming soon" outlines; see the [roadmap](index.html#roadmap) and [ROADMAP.md](https://github.com/YOUR-USER/molecules-and-models/blob/main/ROADMAP.md) in the repository.
+
+## Design principles
+
+- **Why before how.** Every method starts from a scientific question.
+- **Honest evaluation first.** Chapter 2 is built around not fooling yourself; later chapters inherit scaffold splits, sequence-identity splits and baselines from it.
+- **Runnable, reproducible code.** Every code cell on the site is executed when the site is built, with pinned library versions and fixed seeds. No warnings are allowed in the output.
+- **Small, open data.** Datasets are under 5 MB, openly licensed, and documented with their source, licence, citation and checksum in [data/README.md](https://github.com/YOUR-USER/molecules-and-models/blob/main/data/README.md).
+- **No GPU, no accounts, no trackers.** Labs run on free Colab or a laptop CPU in minutes. The site sets no cookies and loads nothing from third-party servers; your progress is stored in your own browser.
+- **Accessible.** Colour-blind-safe palettes, alt text on every figure, keyboard navigation, text contrast of at least 4.5:1, and a light theme for those who prefer it.
+
+## How it is built
+
+The site is a [Quarto](https://quarto.org) website rendered from `.qmd` files with Python executed through Jupyter. Lesson structure (callouts, glossary tooltips, key points, progress tracking) is implemented once as a Quarto extension and a small amount of JavaScript, so that authors write plain Markdown. The pedagogical patterns, such as the Overview box, timed episodes, challenges with hidden solutions, key points and learner/instructor views, follow the conventions popularised by [The Carpentries](https://carpentries.org); the design, code and text are original. See [AUTHORING.md](https://github.com/YOUR-USER/molecules-and-models/blob/main/AUTHORING.md) for the conventions.
+
+## Datasets and credits
+
+- **Palmer penguins**: Horst AM, Hill AP, Gorman KB (2020), CC0. Data from Gorman, Williams & Fraser (2014).
+- **ESOL / Delaney solubility**: Delaney JS (2004) *J. Chem. Inf. Comput. Sci.* 44(3):1000–1005, distributed via MoleculeNet (Wu et al. 2018). Downloaded at build time with checksum verification.
+- **Breast cancer Wisconsin (diagnostic)**: Wolberg, Street & Mangasarian (1995), UCI Machine Learning Repository, loaded through scikit-learn.
+
+Fonts: IBM Plex Sans, Source Serif 4 and JetBrains Mono, all under the SIL Open Font License, self-hosted. Maths is rendered by KaTeX (MIT), also self-hosted.
+
+## Licence
+
+Text and figures are licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/); code under the [MIT licence](https://github.com/YOUR-USER/molecules-and-models/blob/main/LICENSE). You are welcome to teach from it, adapt it and translate it, with attribution. See [Cite this course](cite.html).
+
+## Contributing
+
+Found a mistake, a difficulty jump, or an unclear sentence? Every page has *Edit this page* and *Report a problem* links at the bottom. Larger contributions, including new chapters, follow [CONTRIBUTING.md](https://github.com/YOUR-USER/molecules-and-models/blob/main/CONTRIBUTING.md).

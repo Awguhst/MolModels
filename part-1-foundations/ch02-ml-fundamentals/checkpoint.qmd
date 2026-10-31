@@ -1,0 +1,150 @@
+---
+title: "Chapter 2 checkpoint"
+chapter: 2
+checkpoint-quiz: true
+subtitle: "Ten questions. Click an option to see why it is right or wrong."
+---
+
+These ten questions cover the whole of Chapter 2, from what a model is to how a pipeline keeps an evaluation honest. Answer each one before opening the feedback; the explanation under every option says why it is right or wrong, so a wrong guess is as useful as a right one. Aim for eight or more before starting [Lab 2](labs/lab-02-first-ml-project.html).
+
+::: {.checkpoint title="Supervised or not?"}
+You have 5,000 compounds, each with a measured IC₅₀ against a kinase, and you want a model that predicts IC₅₀ for new compounds. Which kind of problem is this?
+
+- [x] Supervised learning (regression)
+
+  Correct: every training compound comes with a numeric label (its IC₅₀), and the goal is to predict that label for new inputs. A numeric target makes it regression rather than classification.
+- [ ] Unsupervised learning
+
+  Unsupervised methods such as clustering or PCA work on inputs *without* labels. Here you have a measured label for every compound and want to predict it, which is the definition of supervised learning.
+- [ ] Supervised learning (classification)
+
+  It would be classification if the target were a category such as "active / inactive". IC₅₀ is a continuous number, so this is regression. (You could turn it into classification by thresholding, but that throws information away.)
+:::
+
+::: {.checkpoint title="What does the loss do?"}
+In linear regression, what role does the mean squared error loss play during fitting?
+
+- [x] It measures how far the current predictions are from the labels; fitting means choosing the parameters that make it as small as possible
+
+  Correct: the loss turns "how wrong is the model?" into a single number of the parameters, and fitting (by the normal equation or by gradient descent) is the search for the parameters that minimise it on the training data.
+- [ ] It is reported as the final test metric and nothing else
+
+  The loss is the quantity *optimised* during training. You may also report it (or its square root, RMSE) on the test set, but its defining role is to guide the fit.
+- [ ] It counts how many predictions are exactly right
+
+  Exact matches are essentially never achieved with a continuous target. MSE averages the *squared distance* between predictions and labels, so every prediction contributes, not just the exact hits.
+:::
+
+::: {.checkpoint title="A baseline that worries you"}
+A colleague reports 90% accuracy for a classifier that flags toxic compounds. The dataset contains 9 non-toxic compounds for every toxic one. What is the first thing to check?
+
+- [x] The accuracy of a `DummyClassifier` that always predicts "non-toxic", which would also be 90%
+
+  Correct: with 90% of compounds non-toxic, predicting "non-toxic" for everything scores 90% while finding no toxic compound at all. A model that does not beat that baseline has learned nothing. Every reported score needs a baseline next to it.
+- [ ] Whether they used `random_state=42`
+
+  A fixed seed makes the result reproducible, but reproducibly meaningless is still meaningless. The seed does not tell you whether 90% is good.
+- [ ] Whether the model used enough features
+
+  More features might help or hurt, but the question is whether 90% is impressive at all. Compare against the trivial model before worrying about the real one.
+:::
+
+::: {.checkpoint title="MAE or RMSE?"}
+Two solubility models have the same MAE of 0.8 logS, but model A has RMSE 0.9 and model B has RMSE 1.5. What does the difference tell you?
+
+- [x] Model B makes a few very large errors; model A's errors are more uniform in size
+
+  Correct: RMSE squares the errors before averaging, so a handful of large misses inflate it far more than they inflate MAE. Equal MAE with a larger RMSE means a heavier tail of big errors. The gap between the two numbers is itself diagnostic.
+- [ ] Model B is better because a larger RMSE means more variance explained
+
+  RMSE is an *error*: smaller is better. Variance explained is R², a different quantity, and it falls as RMSE rises.
+- [ ] Nothing: MAE and RMSE always move together
+
+  They often do, but not here. RMSE can never be smaller than MAE, and how much larger it is depends on how unevenly the errors are distributed.
+:::
+
+::: {.checkpoint title="A negative R²"}
+A regression model has R² = −0.3 on the test set. What does that mean?
+
+- [x] The model's predictions are worse than always predicting the mean of the target
+
+  Correct: R² compares the model's squared error with that of the constant mean prediction. R² = 0 means "as good as the mean"; a negative value means the model does worse, which happens with a badly overfitted or badly mis-specified model evaluated on new data.
+- [ ] A bug: R² is a squared quantity, so it cannot be negative
+
+  Despite the name, R² is defined as 1 minus a ratio of squared errors, and that ratio can exceed 1 on held-out data. On the *training* data of an ordinary least-squares fit it cannot be negative; on the test set it can.
+- [ ] The model explains 30% of the variance, with the sign indicating a negative correlation
+
+  R² is not a correlation and carries no direction. 0.3 would mean 30% of the variance explained; −0.3 means the model is worse than the mean baseline.
+:::
+
+::: {.checkpoint title="Spotting overfitting"}
+You fit a model and evaluate it both on its training data and on a held-out test set. Which pattern is the clearest sign that it is overfitting?
+
+- [x] Training error is tiny and the test (or cross-validated) error is much larger
+
+  Correct: a large gap between training and held-out performance is the signature of a model that has memorised the training examples, including their noise. This is also why the training score is never evidence on its own: fitting chose the parameters to make exactly those errors small. Simplify the model, regularise it, or get more data.
+- [ ] Training error and test error are both high
+
+  Both high means the model has not captured the signal at all: that is *underfitting*. A straight line through curved data behaves like this. The cure is a more flexible model or better features.
+- [ ] The test error is slightly lower than the training error
+
+  A small difference either way is normal sampling noise, and a test error slightly *below* the training error is not a problem. If it were far below, you would suspect leakage, not overfitting.
+:::
+
+::: {.checkpoint title="Ridge versus lasso"}
+You have 200 descriptors and suspect only a dozen matter. You want a model whose coefficients tell you which ones. Which penalty should you reach for, and why?
+
+- [x] Lasso (L1), because it drives many coefficients exactly to zero and so performs feature selection
+
+  Correct: the L1 penalty on the sum of absolute coefficients has corners that make exact zeros the optimum for weak features. The surviving non-zero coefficients are your selected descriptors. Scale the features first, or the penalty is unfair across units.
+- [ ] Ridge (L2), because it sets unimportant coefficients to zero
+
+  Ridge *shrinks* all coefficients towards zero but almost never makes any of them exactly zero. It is excellent for stabilising a model with correlated features, but it will not hand you a short list.
+- [ ] Neither: a penalty only makes the fit worse on the training data
+
+  A penalty does raise training error slightly, by design: it trades a little bias for a lot less variance, and usually *lowers* the test error. That trade is the point of regularisation.
+:::
+
+::: {.checkpoint title="Why cross-validate?"}
+Compared with a single train/test split, what does 5-fold cross-validation give you?
+
+- [x] A less noisy estimate of generalisation error, using every sample once as a test sample, and a sound way to choose hyperparameters without touching the test set
+
+  Correct: each fold is a different train/validation split, so the average score is less dependent on which molecules happened to land in the held-out set. It also gives a spread across folds. Hyperparameter choices made this way leave the final test set untouched for the one evaluation at the end.
+- [ ] A model trained on five times as much data
+
+  Each fold trains on 80% of the training data, not on more data than you have. The benefit is a better *estimate*, not a bigger model.
+- [ ] Permission to skip the test set, since cross-validation already measures generalisation
+
+  Cross-validation scores are used to *choose* between models and settings, which makes them slightly optimistic for the winner. A separate, untouched test set is still needed for the final number.
+:::
+
+::: {.checkpoint title="Precision or recall in a screen?"}
+You screen a 100,000-compound library with a classifier and will test the predicted actives experimentally; the assay is expensive, so you can afford only 500 compounds. Which metric matters most for the compounds you send to the assay?
+
+- [x] Precision: of the 500 you test, you want as many true actives as possible
+
+  Correct: precision is the fraction of predicted positives that are really positive. With a fixed, small assay budget, every false positive costs a slot, so you raise the decision threshold to keep precision high and accept that some actives are missed.
+- [ ] Recall: you must find every active compound in the library
+
+  Recall is the fraction of all true actives that the model flags. Maximising it means flagging many compounds, which you cannot afford to test. Recall matters when missing a positive is the costly error, for example in a diagnostic test.
+- [ ] Accuracy: the overall fraction of correct predictions
+
+  With actives rare, accuracy is dominated by the correctly predicted inactives and barely changes with how well you find actives. It is the wrong summary for an imbalanced screen.
+:::
+
+::: {.checkpoint title="Leaks and pipelines"}
+Which of these workflows gives a test score that overstates how the model will do on new data?
+
+- [x] Fitting a `StandardScaler` and selecting the 20 features most correlated with the target on the full dataset, then splitting and evaluating
+
+  Correct: both steps are fitted before the split, so they have seen the test rows. The scaler leak is small, but selecting features by their correlation with the *target* on all rows bakes the test labels into the feature set. On pure noise this produces a positive test R². Fit every preprocessing step inside a pipeline, on training data only.
+- [ ] Fitting a pipeline of `StandardScaler` and `Ridge` on the training set and calling `.score` on the test set
+
+  This is the correct workflow: the pipeline is one estimator, so `fit` learns the scaler from the training rows only and `.score` merely applies it to the test rows. Inside `GridSearchCV` the same guarantee holds fold by fold.
+- [ ] Removing exact duplicate molecules before splitting
+
+  Removing duplicates *before* the split is the fix, not the leak. Duplicates that straddle the split would let the model be tested on molecules it has memorised.
+:::
+
+That is the whole chapter in ten questions. If a couple of them caught you out, the feedback names the episode to reread. When you are ready, [Lab 2](labs/lab-02-first-ml-project.html) puts everything together on the solubility problem in one notebook. Chapter 3, beyond linear models (trees, ensembles and a first look at neural networks), is coming soon.

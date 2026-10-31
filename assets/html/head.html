@@ -1,0 +1,20 @@
+<!-- Early theme + view bootstrap: runs before first paint so there is no flash of the wrong theme.
+     Without JavaScript the page is dark (the author default) and in learner view. -->
+<script>
+(function () {
+  var root = document.documentElement;
+  try {
+    var t = localStorage.getItem('mm-theme') || 'dark';
+    var dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-mm-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-mm-theme-pref', t);
+    var q = new URLSearchParams(location.search).get('view');
+    if (q === 'instructor' || q === 'learner') { localStorage.setItem('mm-view', q); }
+    root.setAttribute('data-mm-view', localStorage.getItem('mm-view') || 'learner');
+  } catch (e) {
+    root.setAttribute('data-mm-theme', 'dark');
+    root.setAttribute('data-mm-view', 'learner');
+  }
+})();
+</script>
+<meta name="color-scheme" content="dark light">

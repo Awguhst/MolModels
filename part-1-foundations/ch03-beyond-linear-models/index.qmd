@@ -1,0 +1,30 @@
+---
+title: "Beyond linear models"
+chapter-index: true
+summary: "Trees, ensembles and support vector machines for the cases a straight line cannot handle; unsupervised learning for finding structure without labels; and how to interpret what a model has learned."
+---
+
+{{< generated ch03-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Decision trees and why they overfit; random forests and gradient boosting
+- Support vector machines and the kernel idea
+- Unsupervised learning: principal component analysis and k-means clustering
+- Model interpretation: permutation importance, partial dependence, SHAP-style explanations
+- Choosing between model families with cross-validation
+- Lab 3: a tabular modelling bake-off on the solubility and breast cancer data
+:::
+
+## Planned learning outcomes
+
+1. Train and tune tree ensembles and SVMs with scikit-learn, and say when each is appropriate.
+2. Use PCA and clustering to explore a dataset without labels and interpret the components.
+3. Explain a fitted model's behaviour to a scientist using permutation importance and partial dependence.
+
+## In the meantime
+
+Chapters [0](../ch00-start-here/index.html), [1](../ch01-scientific-python/index.html) and [2](../ch02-ml-fundamentals/index.html) are complete and are the prerequisites for this chapter.

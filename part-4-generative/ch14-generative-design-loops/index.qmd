@@ -1,0 +1,30 @@
+---
+title: "Generative design loops"
+chapter-index: true
+summary: "Closing the loop: multi-objective optimisation, docking-guided generation, active learning and an introduction to protein design."
+---
+
+{{< generated ch14-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Multi-objective optimisation and Pareto fronts
+- Scoring functions, property predictors and docking in the loop
+- Active learning and Bayesian optimisation for experiments
+- Protein design concepts
+- Pitfalls: reward hacking, synthesisability, leakage into the scorer
+- Lab 14: a design loop that optimises solubility and a docking score
+:::
+
+## Planned learning outcomes
+
+1. Set up a generate–score–select loop with several objectives.
+2. Use active learning to choose the next experiments under a budget.
+3. Recognise and guard against the failure modes of optimisation against a learned scorer.
+
+## In the meantime
+
+Part IV assumes Parts I–III. Start with [Chapter 0](../../part-1-foundations/ch00-start-here/index.html) if you are new.

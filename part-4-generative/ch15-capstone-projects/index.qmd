@@ -1,0 +1,30 @@
+---
+title: "Capstone projects"
+chapter-index: true
+summary: "Open-ended projects that combine the course: a property prediction benchmark, a virtual screening campaign, a sequence function predictor, and a design loop."
+---
+
+{{< generated ch15-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Project briefs with data, success criteria and a reporting template
+- A property-prediction benchmark with scaffold splits
+- A virtual screening campaign with docking and rescoring
+- A sequence-to-function predictor with identity-aware evaluation
+- A generative design loop with experimental constraints
+- Peer review and reproducibility checklist
+:::
+
+## Planned learning outcomes
+
+1. Scope, execute and document an end-to-end project with honest evaluation.
+2. Communicate results to domain scientists with the right plots and uncertainty.
+3. Package a project so that someone else can reproduce it.
+
+## In the meantime
+
+Part IV assumes Parts I–III. Start with [Chapter 0](../../part-1-foundations/ch00-start-here/index.html) if you are new.

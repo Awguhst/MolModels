@@ -1,0 +1,95 @@
+// Design tokens for Molecules & Models.
+// These mixins emit CSS custom properties. The dark set is the default theme; the light set is
+// layered in by Quarto's light theme file. Values are verified for contrast by scripts/check_contrast.py,
+// which parses this file, so keep the `--mm-name: #RRGGBB;` form.
+
+@mixin mm-tokens-dark {
+  --mm-bg: #0F1217;
+  --mm-surface: #161A21;
+  --mm-surface-2: #1D222B;
+  --mm-code-bg: #0B0D11;
+  --mm-border: #29303B;
+  --mm-text: #E6E9EE;
+  --mm-text-muted: #A0A8B4;
+  --mm-accent-1: #A99BFF;   // Part I   Foundations (violet)
+  --mm-accent-2: #F2B84B;   // Part II  Cheminformatics (amber)
+  --mm-accent-3: #5FD39B;   // Part III Bioinformatics (green)
+  --mm-accent-4: #FF8C7A;   // Part IV  Generative (coral)
+  --mm-link: #A99BFF;
+  --mm-focus: #F2B84B;
+  --mm-note: #7CC4FA;
+  --mm-tip: #5FD3C4;
+  --mm-pitfall: #F5A855;
+  --mm-challenge: #F27BA6;
+  --mm-solution: #8FDC8A;
+  --mm-discussion: #9BB0FF;
+  --mm-bridge-chem: #F2B84B;
+  --mm-bridge-bio: #5FD39B;
+  --mm-bridge-math: #A99BFF;
+  --mm-bridge-cs: #7CC4FA;
+  --mm-instructor: #94A3B8;
+  --mm-checkpoint: #D6B4FF;
+  --mm-prereq: #A0A8B4;
+  --mm-deep-dive: #9BB0FF;
+  --mm-done: #5FD39B;
+  // syntax colours (mirrors assets/highlight/mm-dark.theme; used for the contrast audit and inline code)
+  --mm-syntax-keyword: #B9A8FF;
+  --mm-syntax-string: #8FDC8A;
+  --mm-syntax-number: #F2B84B;
+  --mm-syntax-comment: #8B95A5;
+  --mm-syntax-function: #7CC4FA;
+  --mm-syntax-builtin: #5FD3C4;
+  --mm-syntax-type: #F5A855;
+  --mm-syntax-attribute: #FF8C7A;
+  --mm-syntax-operator: #C9CED6;
+  --mm-syntax-special: #F27BA6;
+  --mm-syntax-other: #9BB0FF;
+  --mm-tint-alpha: 8%;
+  --mm-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 24px -12px rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+
+@mixin mm-tokens-light {
+  --mm-bg: #FFFFFF;
+  --mm-surface: #F4F6F9;
+  --mm-surface-2: #E9EDF2;
+  --mm-code-bg: #F3F5F8;
+  --mm-border: #D5DAE2;
+  --mm-text: #1B1F27;
+  --mm-text-muted: #5B6573;
+  --mm-accent-1: #5B4BD6;
+  --mm-accent-2: #8A5A00;
+  --mm-accent-3: #176E43;
+  --mm-accent-4: #B5382A;
+  --mm-link: #5B4BD6;
+  --mm-focus: #5B4BD6;
+  --mm-note: #0A5A8F;
+  --mm-tip: #0B6E63;
+  --mm-pitfall: #8A4B00;
+  --mm-challenge: #B0205B;
+  --mm-solution: #1F6E1F;
+  --mm-discussion: #3B4FBF;
+  --mm-bridge-chem: #8A5A00;
+  --mm-bridge-bio: #176E43;
+  --mm-bridge-math: #5B4BD6;
+  --mm-bridge-cs: #0A5A8F;
+  --mm-instructor: #475569;
+  --mm-checkpoint: #6A3FB5;
+  --mm-prereq: #475569;
+  --mm-deep-dive: #3B4FBF;
+  --mm-done: #176E43;
+  --mm-syntax-keyword: #5B3FC4;
+  --mm-syntax-string: #1F6E1F;
+  --mm-syntax-number: #7A5000;
+  --mm-syntax-comment: #5B6573;
+  --mm-syntax-function: #0A5A8F;
+  --mm-syntax-builtin: #0B6E63;
+  --mm-syntax-type: #8A4B00;
+  --mm-syntax-attribute: #B03A2E;
+  --mm-syntax-operator: #3A4150;
+  --mm-syntax-special: #B0205B;
+  --mm-syntax-other: #3B4FBF;
+  --mm-tint-alpha: 7%;
+  --mm-shadow: 0 1px 2px rgba(20, 24, 32, .08), 0 8px 24px -12px rgba(20, 24, 32, .18);
+  color-scheme: light;
+}

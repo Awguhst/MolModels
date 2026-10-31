@@ -1,0 +1,36 @@
+---
+title: "Scientific Python for data work"
+chapter-index: true
+summary: "The tools every later chapter assumes: NumPy arrays for fast numerical work, pandas DataFrames for tables of measurements, and matplotlib and seaborn for figures you can trust. You will practise on real data, from Antarctic penguins to a medical imaging dataset, and finish with a full exploratory analysis of the aqueous solubility of small molecules, the question Chapter 2 then tries to predict."
+---
+
+{{< generated ch01-hero >}}
+
+## What you will be able to do
+
+::: {.mm-outcomes-wrap}
+- Write short, readable Python for scientific data: lists and dictionaries as lookup tables, functions with docstrings, f-strings for formatted output, `pathlib` for files, and tracebacks read from the bottom up.
+- Store measurements in NumPy arrays, select them with slices and boolean masks, replace loops with vectorised arithmetic and broadcasting, and generate reproducible random numbers with a seeded generator.
+- Recognise the $X$ (samples × features) / $y$ (targets) convention that every model in this course consumes.
+- Load, inspect, filter, group, merge and reshape tables with pandas, and handle missing values and categorical columns deliberately rather than by accident.
+- Draw histograms, scatter plots, box plots and small multiples with matplotlib and seaborn, with units on every axis and colours that work for everyone.
+- Carry out an exploratory data analysis of the ESOL solubility dataset end to end, and repeat the workflow on the breast cancer Wisconsin dataset in the guided lab.
+:::
+
+## Schedule
+
+{{< generated ch01-schedule >}}
+
+## Lab
+
+{{< generated ch01-labs >}}
+
+## Before you start
+
+::: {.prereq}
+You need a working Python environment and the habit of running code in a notebook. If you have not done so, work through [Chapter 0](../ch00-start-here/index.html) and make sure you pass its [self-check](../ch00-start-here/03-self-check.html): it confirms that NumPy, pandas, matplotlib and scikit-learn import correctly and that `data/penguins.csv` is where this chapter expects it.
+:::
+
+::: {.bridge audience="cs"}
+If you already write Python for a living, skim [episode 1.1](01-python-refresher.html) for the scientific examples and the `pathlib` and f-string conventions this course uses, then start properly at [episode 1.2](02-numpy-arrays.html). NumPy's broadcasting rules and pandas' label-based indexing are where experienced programmers most often trip, so slow down there.
+:::

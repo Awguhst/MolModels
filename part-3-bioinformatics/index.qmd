@@ -1,0 +1,13 @@
+---
+title: "Part III · Bioinformatics"
+subtitle: "Sequences, omics and protein structures as data, with sequence-identity splits as the honest evaluation. All four chapters are planned."
+---
+
+<div class="mm-cards">
+<div class="mm-card"><h3><a href="ch09-biological-sequences/index.html">9 · Biological sequences and databases</a> <span class="mm-chip">soon</span></h3><p>DNA, RNA and protein sequences as data: Biopython, FASTA and other formats, pairwise alignment, and the ideas behind BLAST.</p></div>
+<div class="mm-card"><h3><a href="ch10-ml-on-sequences/index.html">10 · Machine learning on sequences</a> <span class="mm-chip">soon</span></h3><p>From k-mers and one-hot encodings to convolutional networks and protein language model embeddings, with sequence-identity splits as the honest evaluation.</p></div>
+<div class="mm-card"><h3><a href="ch11-omics-data/index.html">11 · Omics data</a> <span class="mm-chip">soon</span></h3><p>Gene expression and single-cell analysis: normalisation, dimensionality reduction, clustering and differential expression with scanpy.</p></div>
+<div class="mm-card"><h3><a href="ch12-protein-structure/index.html">12 · Protein structure</a> <span class="mm-chip">soon</span></h3><p>Predicted structures (AlphaFold/ESMFold-style), confidence measures, and features derived from structure for downstream models.</p></div>
+</div>
+
+See the full [roadmap](../index.html#roadmap) for how the Parts connect.

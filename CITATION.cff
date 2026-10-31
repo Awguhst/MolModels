@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this course, please cite it as below."
+title: "Molecules & Models: a practical path from data science to cheminformatics and bioinformatics"
+type: software
+version: 0.1.0
+date-released: "2026-10-31"
+license: "CC-BY-4.0 AND MIT"
+url: "https://YOUR-USER.github.io/molecules-and-models/"
+repository-code: "https://github.com/YOUR-USER/molecules-and-models"
+abstract: >-
+  An open educational website with runnable code and Jupyter notebooks that takes graduates in
+  informatics, chemistry, biology or mathematics from scientific Python through machine learning
+  into cheminformatics and bioinformatics.
+keywords:
+  - machine learning
+  - cheminformatics
+  - bioinformatics
+  - education
+  - python
+authors:
+  - family-names: "NAME"
+    given-names: "YOUR"

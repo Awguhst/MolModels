@@ -1,0 +1,36 @@
+---
+title: "Machine learning fundamentals"
+chapter-index: true
+summary: "What a model is, how to fit one, and above all how to find out honestly whether it works. You will build regression and classification models with scikit-learn on real chemistry and medical data, and learn the evaluation habits that separate a useful model from a misleading one."
+---
+
+{{< generated ch02-hero >}}
+
+## What you will be able to do
+
+::: {.mm-outcomes-wrap}
+- Explain supervised learning as fitting a function $f(x;\theta)$ by minimising a loss, and say where it helps and where it fails in chemistry and biology.
+- Fit linear regression from scratch with the normal equation and gradient descent, then with scikit-learn's estimator API.
+- Evaluate a model honestly against a baseline with a held-out test set, MAE, RMSE, $R^2$, parity plots and residual analysis.
+- Diagnose overfitting with learning and validation curves, and control it with ridge, lasso and cross-validated hyperparameter search.
+- Build and judge classifiers with confusion matrices, precision, recall, F1, ROC and precision–recall curves, including imbalanced classes.
+- Assemble leak-free pipelines with scaling, imputation and encoding, and recognise the leakage patterns that plague scientific datasets.
+:::
+
+## Schedule
+
+{{< generated ch02-schedule >}}
+
+## Lab
+
+{{< generated ch02-labs >}}
+
+## Before you start
+
+::: {.prereq}
+You should be comfortable with the material of [Chapter 1](../ch01-scientific-python/index.html): NumPy arrays and the $X$ / $y$ convention, pandas DataFrames, and matplotlib's `fig, ax` interface. If you skipped it, do at least episodes [1.2](../ch01-scientific-python/02-numpy-arrays.html) and [1.5](../ch01-scientific-python/05-eda-solubility.html), because this chapter picks up the solubility question exactly where 1.5 leaves it.
+:::
+
+::: {.bridge audience="math"}
+If you want the derivations behind the methods, the [maths refresher](../../appendices/maths-refresher.html) covers vectors, dot products, gradients and the normal distribution. Each episode also has collapsible *deep dive* boxes with the mathematics; they are optional.
+:::

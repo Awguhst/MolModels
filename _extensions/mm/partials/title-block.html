@@ -1,0 +1,54 @@
+<div class="mm-title">
+$if(episode)$
+<nav class="mm-crumb" aria-label="Breadcrumb">
+<span class="mm-part-dot" aria-hidden="true"></span>
+<a href="$chapter-href$">$if(part-title)$$part-title$ · $endif$Chapter $chapter$: $chapter-title$</a>
+</nav>
+<h1 class="title"><span class="mm-ep-label">$chapter$.$episode$</span> $title$</h1>
+<div class="mm-chips">
+<span class="mm-chip-lg"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.3 1.6"/></svg>Teaching $teaching$ min</span>
+<span class="mm-chip-lg"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14V2.5h8.5L9.8 5.2l1.7 2.7H3"/></svg>Exercises $exercises$ min</span>
+<span class="mm-chip-lg mm-level-$level$"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 13V9.5M6.2 13V6.5M9.8 13V4M13.5 13V2.5"/></svg>$level$</span>
+</div>
+<div class="mm-chapter-progress" data-mm-chapter-progress="$chapter-id$" hidden>
+<span class="mm-progress" aria-hidden="true"><span></span></span>
+<span class="mm-pct-text"></span>
+</div>
+<div class="mm-instructor-only">
+<p class="mm-instructor-timing"><strong>Instructor timing:</strong> $teaching$ min teaching + $exercises$ min exercises. Instructor notes are shown on this page.</p>
+</div>
+$if(questions)$
+<div class="mm-overview">
+<div class="mm-questions"><h2>Questions</h2><ul>$for(questions)$<li>$questions$</li>$endfor$</ul></div>
+<div class="mm-objectives"><h2>Objectives</h2><ul>$for(objectives)$<li>$objectives$</li>$endfor$</ul></div>
+</div>
+$endif$
+$else$
+$if(lab)$
+<nav class="mm-crumb" aria-label="Breadcrumb">
+<span class="mm-part-dot" aria-hidden="true"></span>
+<a href="$chapter-href$">$if(part-title)$$part-title$ · $endif$Chapter $chapter$: $chapter-title$</a>
+</nav>
+<h1 class="title"><span class="mm-ep-label">Lab $lab$</span> $title$</h1>
+<div class="mm-chips">
+<span class="mm-chip-lg"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.3 1.6"/></svg>$duration$</span>
+<span class="mm-chip-lg mm-level-$level$"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 13V9.5M6.2 13V6.5M9.8 13V4M13.5 13V2.5"/></svg>$level$</span>
+</div>
+$if(objectives)$
+<div class="mm-overview">
+<div class="mm-questions"><h2>You will</h2><ul>$for(objectives)$<li>$objectives$</li>$endfor$</ul></div>
+<div class="mm-objectives"><h2>Before you start</h2><ul>$for(prerequisites-text)$<li>$prerequisites-text$</li>$endfor$</ul></div>
+</div>
+$endif$
+$else$
+$if(chapter-index)$
+$else$
+$if(part-title)$
+<nav class="mm-crumb" aria-label="Breadcrumb"><span class="mm-part-dot" aria-hidden="true"></span><span>$part-title$</span></nav>
+$endif$
+<h1 class="title">$title$</h1>
+$if(subtitle)$<p class="subtitle lead">$subtitle$</p>$endif$
+$endif$
+$endif$
+$endif$
+</div>

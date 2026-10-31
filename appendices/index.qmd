@@ -1,0 +1,8 @@
+---
+title: "Appendices"
+---
+
+- [A · Maths refresher](maths-refresher.html)
+- [B · Glossary](glossary.html)
+- [C · Reproducibility toolkit](reproducibility.html) (coming soon)
+- [D · Further reading](further-reading.html) (coming soon)

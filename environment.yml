@@ -1,0 +1,36 @@
+# Primary environment for "Molecules & Models".
+#   mamba env create -f environment.yml   (or: conda env create -f environment.yml)
+#   mamba activate molecules-models
+# conda-forge is used because later chapters add RDKit, Open Babel, AutoDock Vina,
+# PyTorch, Biopython and scanpy, which are easiest to install from conda-forge.
+name: molecules-models
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - numpy=2.5.4
+  - pandas=3.1.0
+  - matplotlib=3.10.9        # 3.11 makes seaborn 0.13.2 emit deprecation warnings; pinned until seaborn updates
+  - seaborn=0.13.2
+  - scikit-learn=1.9.1
+  - joblib=1.6.0
+  - jupyterlab=4.6.5
+  - ipykernel=7.4.0
+  # --- tooling (authoring, tests, CI) ---
+  - pytest=9.2.0
+  - nbclient=0.11.0
+  - nbformat=5.11.1
+  - pyyaml=6.0.3
+  - jsonschema=4.26.0
+  - pip
+  - pip:
+      - nbmake==1.5.5
+      - playwright==1.64.1     # accessibility + screenshot checks (then run: playwright install chromium)
+  # --- Part II–IV (do NOT install yet; added by later iterations) ---
+  # - rdkit
+  # - openbabel
+  # - vina
+  # - pytorch
+  # - biopython
+  # - scanpy

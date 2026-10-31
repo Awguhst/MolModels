@@ -1,0 +1,12 @@
+---
+title: "Part IV · Generative models & frontiers"
+subtitle: "Generating molecules and proteins, closing the design loop, and capstone projects that combine the whole course. All three chapters are planned."
+---
+
+<div class="mm-cards">
+<div class="mm-card"><h3><a href="ch13-generative-models-for-molecules/index.html">13 · Generative models for molecules</a> <span class="mm-chip">soon</span></h3><p>Variational autoencoders, SMILES and SELFIES language models, and diffusion and flow models, with the evaluation questions that matter for generated molecules.</p></div>
+<div class="mm-card"><h3><a href="ch14-generative-design-loops/index.html">14 · Generative design loops</a> <span class="mm-chip">soon</span></h3><p>Closing the loop: multi-objective optimisation, docking-guided generation, active learning and an introduction to protein design.</p></div>
+<div class="mm-card"><h3><a href="ch15-capstone-projects/index.html">15 · Capstone projects</a> <span class="mm-chip">soon</span></h3><p>Open-ended projects that combine the course: a property prediction benchmark, a virtual screening campaign, a sequence function predictor, and a design loop.</p></div>
+</div>
+
+See the full [roadmap](../index.html#roadmap) for how the Parts connect.

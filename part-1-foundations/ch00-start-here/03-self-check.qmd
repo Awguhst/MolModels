@@ -1,0 +1,313 @@
+---
+title: "Python self-check"
+chapter: 0
+episode: 3
+teaching: 5
+exercises: 15
+level: beginner
+questions:
+  - "Is the Python I already know enough to start Chapter 1?"
+  - "Which habits (indexing, slicing, tracebacks, floats) will trip me up if I do not fix them now?"
+objectives:
+  - "Predict the output of short Python snippets involving types, lists, dicts, slicing, loops, functions, f-strings and comprehensions."
+  - "Read a traceback from the bottom up and name the line that caused it."
+  - "Explain why `0.1 + 0.2 == 0.3` is `False` and why `7 / 2` and `7 // 2` differ."
+  - "Decide, honestly, whether to start Chapter 1 or take a one-week refresher first."
+keypoints:
+  - "Python indexes from 0 and slices are half-open: `xs[1:4]` is items 1, 2 and 3, and `range(n)` stops at n − 1."
+  - "A function without `return` returns `None`; assigning a list to a second name does not copy it."
+  - "Read tracebacks from the last line upwards: the error first, then the nearest line of your own code."
+  - "Floats are binary approximations: never compare them with `==`; use a tolerance such as `math.isclose`."
+  - "`/` always gives a float, `//` gives floor division and `%` the remainder; mixing them up silently changes results."
+  - "Seven or more out of ten right: start Chapter 1. Fewer: spend a week with one of the free refreshers and come back."
+prerequisites: [ch00-ep02]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+Chapter 1 assumes you can already write a loop and a function in Python and are not frightened by an error message. It does *not* assume NumPy, pandas or anything scientific. The ten questions below test exactly that boundary. For each one, read the snippet, decide what it prints (or what is wrong with it), write your answer down, and only then open the solution. Keep score; the last section tells you what to do with it.
+
+::: {.predict}
+This whole page is one long *predict before you run* exercise. The solutions contain the real output, so the honesty rule matters more than usual: commit to an answer, in writing, before you click *Show solution*. If you want to run the snippets yourself, use the notebook you created in the [setup episode](02-setup.html).
+:::
+
+::: {.bridge audience="math"}
+Two conventions will fight your intuition. First, Python counts from **0**: the first element of a list is `xs[0]`, and the $n$-th is `xs[n-1]`. Second, ranges and slices are **half-open intervals** $[a, b)$: `range(2, 5)` is $\{2, 3, 4\}$ and `xs[2:5]` takes positions 2, 3 and 4. The pay-off is that `len(xs[a:b])` is simply $b - a$, and `xs[:k] + xs[k:]` is always `xs` again, with no $\pm 1$ bookkeeping. Once you see 0-based indices as *offsets from the start* rather than ordinal positions, both conventions feel natural.
+:::
+
+## The questions
+
+::: {.challenge level=1 title="1. Types and variables"}
+What does this print?
+
+```python
+mass = 46
+name = "ethanol"
+print(type(mass), type(name), type(mass / 2))
+```
+
+:::: {.solution}
+```{python}
+mass = 46
+name = "ethanol"
+print(type(mass), type(name), type(mass / 2))
+```
+
+`46` is an `int`, text in quotes is a `str`, and dividing with `/` always produces a `float`, even when the result is a whole number (`46 / 2` is `23.0`, not `23`). Python chooses the type from the value; you never declare it. The type matters because it decides what operations mean: `"46" + "2"` is `"462"`, while `46 + 2` is `48`.
+::::
+:::
+
+::: {.challenge level=1 title="2. Lists and dicts"}
+What does this print, and which line would fail if you swapped `masses` for `elements` in the last `print`?
+
+```python
+elements = ["H", "C", "O"]
+masses = {"H": 1.008, "C": 12.011, "O": 15.999}
+print(elements[1], masses["C"])
+print(len(elements), len(masses))
+```
+
+:::: {.solution}
+```{python}
+elements = ["H", "C", "O"]
+masses = {"H": 1.008, "C": 12.011, "O": 15.999}
+print(elements[1], masses["C"])
+print(len(elements), len(masses))
+```
+
+A list is ordered and indexed by *position*, so `elements[1]` is the second item, `"C"`. A dict maps *keys* to values, so `masses["C"]` looks up the key `"C"`. Swapping them, `elements["C"]` raises `TypeError: list indices must be integers or slices, not str`, and `masses[1]` raises `KeyError: 1`, because no key equals the integer 1. Use a list when order matters, a dict when you look things up by name.
+::::
+:::
+
+::: {.challenge level=1 title="3. Slicing"}
+What do the four expressions evaluate to?
+
+```python
+s = "ethanol"
+s[1:4], s[-1], s[:3], s[3:]
+```
+
+:::: {.solution}
+```{python}
+s = "ethanol"
+s[1:4], s[-1], s[:3], s[3:]
+```
+
+`s[1:4]` starts at index 1 (`t`) and stops *before* index 4, giving three characters. Negative indices count from the end, so `s[-1]` is the last character. An omitted start means "from the beginning" and an omitted end means "to the end"; `s[:3]` and `s[3:]` together rebuild the string with nothing lost or duplicated. Exactly the same rules apply to lists, and in Chapter 1 to NumPy arrays and pandas rows.
+::::
+:::
+
+::: {.challenge level=1 title="4. for and range"}
+What does this print?
+
+```python
+total = 0
+for i in range(2, 10, 3):
+    total += i
+    print(i, end=" ")
+print("| total:", total)
+```
+
+:::: {.solution}
+```{python}
+total = 0
+for i in range(2, 10, 3):
+    total += i
+    print(i, end=" ")
+print("| total:", total)
+```
+
+`range(start, stop, step)` produces `2, 5, 8` and stops before reaching 10. `end=" "` replaces the newline that `print` normally adds with a space, which is why the three numbers share a line. The final `print` is outside the loop (not indented), so it runs once. Indentation is not decoration in Python; it *is* the block structure.
+::::
+:::
+
+::: {.challenge level=2 title="5. Functions and return"}
+What does this print? There is a bug; find it.
+
+```python
+def double(x):
+    x * 2
+
+result = double(21)
+print(result)
+```
+
+:::: {.solution}
+```{python}
+def double(x):
+    x * 2
+
+result = double(21)
+print(result)
+```
+
+The function computes `x * 2` and throws the value away: without a `return` statement every function returns `None`. The fix is `return x * 2`. This bug produces no error at the call site; the `None` travels on until something tries to use it, typically with a confusing `TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'` several lines later. When a value is unexpectedly `None`, look for a missing `return` first.
+::::
+:::
+
+::: {.challenge level=1 title="6. f-strings"}
+What does this print?
+
+```python
+mass = 46.0689
+print(f"{mass:.2f} g/mol")
+print(f"{mass = }")
+```
+
+:::: {.solution}
+```{python}
+mass = 46.0689
+print(f"{mass:.2f} g/mol")
+print(f"{mass = }")
+```
+
+An {{< term f-string >}} evaluates whatever is inside the braces and inserts it into the text. After a colon comes a format specifier: `.2f` means "fixed-point with two decimals". `{mass = }` is a debugging shortcut that prints the expression and its value. You will use `:.3f` constantly to report model metrics; printing a raw float with sixteen digits tells the reader nothing and hides the number.
+::::
+:::
+
+::: {.challenge level=2 title="7. A comprehension"}
+What does this evaluate to? Then write the equivalent `for` loop.
+
+```python
+[n * n for n in range(6) if n % 2 == 0]
+```
+
+:::: {.solution}
+```{python}
+[n * n for n in range(6) if n % 2 == 0]
+```
+
+A {{< term comprehension >}} reads left to right as "the value `n * n`, for each `n` in `range(6)`, keeping those where `n` is even". The equivalent loop is:
+
+```{python}
+squares = []
+for n in range(6):
+    if n % 2 == 0:
+        squares.append(n * n)
+squares
+```
+
+Both are fine. The comprehension is preferred when the transformation fits on one line; the loop is clearer when it does not. If you ever need to run something *for its side effect* (printing, saving), write the loop.
+::::
+:::
+
+::: {.challenge level=2 title="8. Read the traceback"}
+This code was run and produced the traceback below. Which line is the problem, and what is the fix?
+
+```python
+masses = {"H": 1.008, "C": 12.011, "O": 15.999}
+
+def molar_mass(formula):
+    total = 0
+    for element in formula:
+        total += masses[element]
+    return total
+
+print(molar_mass("He"))
+```
+
+```text
+Traceback (most recent call last):
+  File "molar.py", line 9, in <module>
+    print(molar_mass("He"))
+  File "molar.py", line 6, in molar_mass
+    total += masses[element]
+KeyError: 'e'
+```
+
+:::: {.solution}
+Read it from the bottom. The last line is the error: `KeyError: 'e'`, meaning the dict was asked for a key `'e'` it does not have. The line just above says *where*: line 6, `total += masses[element]`, inside `molar_mass`. The line above that is the call that got us there, line 9. So the {{< term traceback >}} is a trail from your top-level call down to the failing line, innermost last.
+
+Why `'e'`? Iterating over a string gives one *character* at a time: `for element in "He"` yields `"H"` and then `"e"`. The function therefore works for `"CO"` by accident and fails for any two-letter element. The fix has two parts: pass a *list* of element symbols rather than a string, so that `"He"` stays one token, and add helium to the dict:
+
+```{python}
+masses = {"H": 1.008, "C": 12.011, "O": 15.999, "He": 4.0026}
+
+
+def molar_mass(symbols):
+    return sum(masses[s] for s in symbols)
+
+
+molar_mass(["C", "O", "O"]), molar_mass(["He"])
+```
+
+The habit to take away: last line first, then the nearest line of *your* code, then ask what value made that line fail.
+::::
+:::
+
+::: {.challenge level=1 title="9. Importing a module"}
+What is wrong here, and what does the corrected version print?
+
+```python
+import math
+print(sqrt(16))
+```
+
+:::: {.solution}
+`import math` makes the *module* available under the name `math`; its contents are reached with a dot. `sqrt` on its own is undefined, so the second line raises `NameError: name 'sqrt' is not defined`. Either qualify it or import the name explicitly:
+
+```{python}
+import math
+
+print(math.sqrt(16))
+
+from math import sqrt
+
+print(sqrt(16))
+```
+
+Both print `4.0` (a float, because `sqrt` always returns one). In this course you will see `import numpy as np` and `import pandas as pd`: the `as` gives the module a short alias, after which everything is `np.something`. `from numpy import *` is never used, because it hides where names come from.
+::::
+:::
+
+::: {.challenge level=2 title="10. Floats and division"}
+What does each line print? One of them surprises almost everyone.
+
+```python
+print(0.1 + 0.2 == 0.3)
+print(0.1 + 0.2)
+print(7 / 2, 7 // 2, 7 % 2, -7 // 2)
+```
+
+:::: {.solution}
+```{python}
+print(0.1 + 0.2 == 0.3)
+print(0.1 + 0.2)
+print(7 / 2, 7 // 2, 7 % 2, -7 // 2)
+```
+
+Neither 0.1 nor 0.2 can be stored exactly in binary floating point, any more than 1/3 can be written exactly in decimal. The tiny rounding errors in each add up to a number that is not the same float as `0.3`. The rule is: **never compare floats with `==`**; compare with a tolerance instead:
+
+```{python}
+import math
+
+math.isclose(0.1 + 0.2, 0.3)
+```
+
+For division: `/` is true division and always returns a float; `//` is *floor* division, rounding towards negative infinity, which is why `-7 // 2` is `-4` and not `-3`; `%` is the remainder. Mixing up `/` and `//` is a quiet way to turn an index into a float (`xs[n / 2]` fails with `TypeError`, `xs[n // 2]` works). NumPy arrays follow the same rules, and `np.isclose` plays the role of `math.isclose` for whole arrays.
+::::
+:::
+
+::: {.instructor}
+Running this as a diagnostic at the start of a cohort: give it as homework before the first session, ask for a score out of ten, and do not collect the answers. The distribution tells you how much of Chapter 1's first episode to do live. Questions 5, 8 and 10 separate those who have *written* Python from those who have only read it; anyone with those three right can be pointed at Chapter 1 immediately, whatever the rest of their score.
+:::
+
+## Scoring, and if you struggled
+
+Count the questions you got right before opening the solution.
+
+- **7 or more**: start [Chapter 1](../ch01-scientific-python/index.html). Its first episode revisits the ideas above in the context of real data, so a wobble on one or two questions will fix itself.
+- **4 to 6**: start Chapter 1, but do its first episode slowly and all of its exercises, and keep one of the refreshers below open beside it.
+- **3 or fewer**: spend a week with one refresher first. This is not a judgement on you; it is simply where the course starts, and a week now saves many hours later.
+
+All three refreshers are free and go well beyond what this page tests:
+
+- [The official Python tutorial](https://docs.python.org/3/tutorial/), chapters 3 to 6 (informal introduction, control flow, data structures, modules). Terse and complete; best if you already program in another language.
+- [Software Carpentry: Programming with Python](https://swcarpentry.github.io/python-novice-inflammation/). A hands-on lesson built around a small scientific dataset, with the same spirit as this course. Best for chemists and biologists.
+- [Think Python](https://greenteapress.com/wp/think-python/) by Allen Downey. A full book, free to read online, that teaches programming from nothing. Best if the words "function" and "loop" are themselves new.
+
+Whichever you pick, type every example rather than reading it. The questions on this page are the kind of thing you will meet again, with arrays and tables in place of lists, in the first two episodes of Chapter 1.
+
+## Where this is going
+
+Each question here reappears in Chapter 1 wearing scientific clothes. Slicing becomes selecting rows of a table in [episode 1.3](../ch01-scientific-python/03-pandas-dataframes.html); the loop over `range` becomes a NumPy operation on a whole array at once in [episode 1.2](../ch01-scientific-python/02-numpy-arrays.html); the traceback you read above is the first of many, and reading them well is a larger part of data work than anyone admits. The float comparison matters from Chapter 2 on, where you will compare model metrics that differ in the third decimal and need to know whether that difference is real.

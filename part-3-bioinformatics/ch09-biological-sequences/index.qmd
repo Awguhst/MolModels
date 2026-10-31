@@ -1,0 +1,30 @@
+---
+title: "Biological sequences and databases"
+chapter-index: true
+summary: "DNA, RNA and protein sequences as data: Biopython, FASTA and other formats, pairwise alignment, and the ideas behind BLAST."
+---
+
+{{< generated ch09-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Sequences as strings: alphabets, reverse complements, translation
+- Biopython: SeqIO, SeqRecord and reading FASTA/GenBank
+- Pairwise alignment: scoring matrices, gaps, dynamic programming
+- Database search concepts: BLAST, E-values, sequence identity
+- Fetching records from public databases responsibly
+- Lab 9: build a small protein family dataset and cluster it by identity
+:::
+
+## Planned learning outcomes
+
+1. Read, write and manipulate sequence files with Biopython.
+2. Explain how pairwise alignment works and interpret an alignment score and an E-value.
+3. Assemble a sequence dataset with identity-based clustering ready for machine learning.
+
+## In the meantime
+
+Everything here builds on Part I, in particular the evaluation habits of [Chapter 2](../../part-1-foundations/ch02-ml-fundamentals/index.html). Episode [2.6](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) already introduces the group splits that become sequence-identity splits here.

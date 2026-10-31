@@ -1,0 +1,39 @@
+---
+title: "Start here"
+chapter-index: true
+summary: "How the course is organised, how to read a page, and how to get a working Python environment in the browser or on your own machine. A short self-check tells you whether to begin at Chapter 1 or take a Python refresher first."
+---
+
+{{< generated ch00-hero >}}
+
+## What you will be able to do
+
+::: {.mm-outcomes-wrap}
+- Navigate the course: find any episode by its number, use the Overview and Key points cards, and track your own progress.
+- Recognise every kind of box (note, pitfall, predict, bridge, deep dive, exercise, checkpoint) and know what each one asks of you.
+- Run Python code either in Google Colab with nothing installed, or in a local environment built from `environment.yml` or `requirements.txt`, and confirm it works with `scripts/check_env.py`.
+- Judge honestly whether your Python is ready for Chapter 1, and know where to brush up if it is not.
+:::
+
+## Schedule
+
+{{< generated ch00-schedule >}}
+
+## Before you start
+
+::: {.prereq}
+Nothing, except one introductory programming course in any language and a willingness to type things in. If you have never written a loop or a function, do the [self-check](03-self-check.html) first; its closing section lists three free refreshers that will get you there in a week or two.
+:::
+
+## Suggested paths by background
+
+The course is written for four kinds of graduate. Everyone reads the same episodes, but you will find different parts easy, and the *bridge* boxes (Chemist's corner, Biologist's corner, Maths corner, For programmers) are there to catch you where your background does not. The [maths refresher](../../appendices/maths-refresher.html) covers vectors and matrices, dot products, derivatives and gradients, mean, variance and distributions, and logarithms; the right column says which of those to skim before Chapter 2.
+
+| Background | What will feel easy | Where to slow down | Skim first in the maths refresher |
+|---|---|---|---|
+| **Informatics / computer science** | Python, environments, notebooks, debugging. Chapter 1 will be quick; read it for the NumPy and pandas idioms rather than the syntax. | Chapter 2 onwards, where the *data* carry meaning. The chemistry and biology bridge boxes are not optional for you: a model is only as good as your grasp of what a solubility or an expression value actually measures. | Derivatives and gradients; mean, variance and distributions. |
+| **Chemistry** | The scientific questions. You already know why solubility, lipophilicity and molecular size matter, which is half of Chapter 2 and all of Part II. | Chapter 1. Take the full time on arrays, DataFrames and plots, and do every exercise; the code habits you build there carry the whole course. | Vectors and matrices; dot products; logarithms (logS and pKa are both base-10 logarithms, and the course leans on that). |
+| **Biology** | Experimental design: blinding, replicates and controls are exactly the ideas behind test sets, cross-validation and baselines in Chapter 2. | Chapter 1, as for chemists, and the maths in the deep-dive boxes of Chapter 2. Open them: they are short and they explain *why* the methods work, not just how. | Mean, variance and distributions; logarithms; then vectors and matrices. |
+| **Mathematics** | Everything in the deep-dive boxes, and the linear algebra of Chapter 2. You will want the formal view early; the Maths corner boxes give it. | Chapter 1 for the tooling, and the parts of every chapter that are about data rather than theorems: units, missing values, what a dataset does and does not represent. | None needed. Instead read the [reproducibility appendix](../../appendices/reproducibility.html) before Chapter 2, so that seeds and splits make sense from the start. |
+
+Whatever your background, do the three episodes of this chapter in order. [Episode 0.1](01-how-this-course-works.html) takes ten minutes, [episode 0.2](02-setup.html) gives you somewhere to run code, and [episode 0.3](03-self-check.html) tells you whether to start Chapter 1 now or after a short refresher.

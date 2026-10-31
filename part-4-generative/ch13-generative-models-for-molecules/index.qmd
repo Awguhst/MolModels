@@ -1,0 +1,30 @@
+---
+title: "Generative models for molecules"
+chapter-index: true
+summary: "Variational autoencoders, SMILES and SELFIES language models, and diffusion and flow models, with the evaluation questions that matter for generated molecules."
+---
+
+{{< generated ch13-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Why generate molecules, and how to judge generated sets (validity, uniqueness, novelty)
+- Variational autoencoders on fingerprints and SMILES
+- Character-level language models for SMILES and SELFIES
+- Diffusion and flow models in outline
+- Sampling, temperature and mode collapse
+- Lab 13: train a small SMILES language model and sample new molecules
+:::
+
+## Planned learning outcomes
+
+1. Train a generative model of molecules and sample from it.
+2. Evaluate generated molecules with validity, uniqueness, novelty and property distributions.
+3. Explain the trade-offs between representations (SMILES, SELFIES, graphs) for generation.
+
+## In the meantime
+
+Part IV assumes Parts I–III. Start with [Chapter 0](../../part-1-foundations/ch00-start-here/index.html) if you are new.

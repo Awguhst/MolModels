@@ -1,0 +1,82 @@
+---
+title: "Molecules & Models"
+toc: false
+---
+
+::: {.mm-home}
+
+<div class="mm-home-hero">
+<div>
+<p class="mm-section-kicker">An open course</p>
+<h1 class="title">Molecules &amp; Models</h1>
+<p class="mm-tagline">A practical path from data science to cheminformatics and bioinformatics, for graduates in informatics, chemistry, biology or mathematics.</p>
+<div class="mm-actions">
+<a class="mm-btn mm-btn-primary" href="part-1-foundations/ch00-start-here/index.html">Start here</a>
+<a class="mm-btn" href="#roadmap">See the roadmap</a>
+</div>
+</div>
+<svg class="mm-hero-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><polygon points="32,6 54.5,19 54.5,45 32,58 9.5,45 9.5,19"/><path d="M32 6V32M54.5 45 32 32M9.5 45 32 32" opacity=".5"/></g><g fill="currentColor"><circle cx="32" cy="6" r="3.6"/><circle cx="54.5" cy="19" r="3.6"/><circle cx="54.5" cy="45" r="3.6"/><circle cx="32" cy="58" r="3.6"/><circle cx="9.5" cy="45" r="3.6"/><circle cx="9.5" cy="19" r="3.6"/><circle cx="32" cy="32" r="4.4"/></g></svg>
+</div>
+
+<div class="mm-continue" data-mm-continue hidden>
+<div class="mm-continue-text"><strong data-mm-continue-title></strong><span data-mm-continue-sub></span></div>
+<a class="mm-btn mm-btn-primary" data-mm-continue-link href="#">Continue</a>
+</div>
+
+You know how to write a loop and a function. You have seen some calculus, some linear algebra and some statistics, possibly a while ago. You may know molecules, or cells, or proofs, or compilers, but not all four. This course takes you, step by step and with runnable code, from scientific Python through machine learning into predicting molecular properties, docking, protein and sequence models, and generative design. Every page is free, open and works without an account.
+
+## Coming from…
+
+<div class="mm-audience">
+<div class="mm-card cs">
+<h3>Informatics / CS</h3>
+<p class="mm-easy"><strong>What you'll find easy</strong> Python, the estimator API, pipelines, reading tracebacks.</p>
+<p class="mm-slow"><strong>Where to slow down</strong> Statistics and evaluation (Chapter 2), the chemistry and biology bridge boxes, and the maths refresher's statistics section.</p>
+<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Suggested path →</a>
+</div>
+<div class="mm-card chem">
+<h3>Chemistry</h3>
+<p class="mm-easy"><strong>What you'll find easy</strong> Molecules, descriptors, what solubility and docking mean, judging whether a prediction is plausible.</p>
+<p class="mm-slow"><strong>Where to slow down</strong> Chapter 1 (take the whole of it), linear algebra and gradients in Appendix A, and the programmer's corners.</p>
+<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Suggested path →</a>
+</div>
+<div class="mm-card bio">
+<h3>Biology</h3>
+<p class="mm-easy"><strong>What you'll find easy</strong> Experimental design, what a confounder is, why a blinded test set matters, sequences and expression data.</p>
+<p class="mm-slow"><strong>Where to slow down</strong> Chapter 1 and Appendix A in full, and the maths corners in Chapter 2. Lab 1 is written with you in mind.</p>
+<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Suggested path →</a>
+</div>
+<div class="mm-card math">
+<h3>Mathematics</h3>
+<p class="mm-easy"><strong>What you'll find easy</strong> Least squares, gradients, regularisation as penalised optimisation, the probabilistic view of classification.</p>
+<p class="mm-slow"><strong>Where to slow down</strong> Practical coding habits (Chapter 1), and the chemist's and biologist's corners, which carry the domain knowledge you will need from Chapter 5 on.</p>
+<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Suggested path →</a>
+</div>
+</div>
+
+## Roadmap {#roadmap}
+
+Four Parts, each a coloured line; chapters are the stations. Filled stations are written and ready; dashed ones are planned and appear dimmed in the navigation until they arrive.
+
+{{< generated metro >}}
+
+{{< generated home-parts >}}
+
+## How a lesson works
+
+<div class="mm-how">
+<div class="mm-card"><h3>Read the overview</h3><p>Every episode opens with the questions it answers, what you will be able to do afterwards, and how long it takes.</p></div>
+<div class="mm-card"><h3>Run the code</h3><p>Code cells are exactly what you would type. Copy them into a notebook, or open the lab in Colab with one click. Figures and tables are shown as you would see them.</p></div>
+<div class="mm-card"><h3>Predict, then check</h3><p>Before key cells you are asked to predict the result. Exercises are graded ★ (check understanding), ★★ (apply) and ★★★ (stretch), with solutions hidden until you want them.</p></div>
+<div class="mm-card"><h3>Keep your bearings</h3><p>Bridge boxes speak to chemists, biologists, mathematicians and programmers separately. Glossary tooltips define every term. Key points close each episode, and your progress is tracked in your browser only.</p></div>
+</div>
+
+## What you need
+
+- A browser. Every lab runs on free Google Colab, or locally with the one-file environment described in [Setup](part-1-foundations/ch00-start-here/02-setup.html).
+- No GPU, no paid services, no sign-ups. Datasets are small and openly licensed.
+- About 40 hours for Part I; the time for each episode is shown on its page.
+
+<p class="mm-small">Text is licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> and code under the MIT licence. See <a href="about.html">About</a> and <a href="cite.html">Cite this course</a>.</p>
+
+:::

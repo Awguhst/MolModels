@@ -1,0 +1,408 @@
+---
+title: "Classification"
+chapter: 2
+episode: 5
+teaching: 40
+exercises: 25
+level: beginner
+questions:
+  - "How does a model predict a category instead of a number, and where do the probabilities come from?"
+  - "Why is accuracy a poor summary of a classifier, and what should I report instead?"
+  - "What changes when the class I care about is rare, as active compounds are in a screen?"
+objectives:
+  - "Train logistic regression and k-nearest-neighbour classifiers in scikit-learn pipelines and read their decision boundaries."
+  - "Compute and interpret a confusion matrix, accuracy, precision, recall, F1, ROC/AUC and precision–recall curves."
+  - "Choose a decision threshold deliberately rather than accepting 0.5."
+  - "Recognise class imbalance and evaluate a classifier on a rare positive class honestly."
+keypoints:
+  - "Logistic regression is a linear model whose output passes through the sigmoid to give a probability; the class is a threshold on that probability."
+  - "Always compare against `DummyClassifier`; on imbalanced data a useless model can have impressive accuracy."
+  - "The confusion matrix is the ground truth. Precision, recall and F1 are read from it; report them for the class you care about."
+  - "ROC/AUC measures ranking across all thresholds; the precision–recall curve is the honest picture when positives are rare."
+  - "The threshold is a decision, not a constant: move it to trade recall against precision."
+prerequisites: [ch02-ep04]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+So far every model in this chapter has predicted a number. Many scientific questions are not numbers but categories: is this tumour malignant or benign, is this compound active in the assay, is this sequence a signal peptide? That is {{< term classification >}}, and most of what you learned about regression carries over: features, a model with parameters, a loss, a split, a baseline. What changes is the output, and with it the way you judge the model.
+
+This episode uses the breast cancer Wisconsin dataset that you explored in [Lab 1](../ch01-scientific-python/labs/lab-01-guided-eda.html): 569 tumours, 30 features computed from microscope images of a needle biopsy, and a diagnosis. We will train two classifiers, then spend most of the time on something more important than training: reading the results correctly, especially when the class you care about is rare.
+
+## Setting up: tumours and a stratified split
+
+```{python}
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+
+bc = load_breast_cancer(as_frame=True)
+X = bc.data
+y = (bc.target == 0).astype(int)  # 1 = malignant, 0 = benign
+X.shape, y.value_counts().to_dict()
+```
+
+scikit-learn encodes this dataset with 0 = malignant and 1 = benign. We flip it so that **1 means malignant**, because the conventions below (precision, recall, "positive class") are all about the class you are trying to find, and the tumours we are trying to find are the malignant ones.
+
+```{python}
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+y_train.mean().round(3), y_test.mean().round(3)
+```
+
+The new argument is `stratify=y`. It makes the split keep the same proportion of malignant cases in the training and test sets, here about 37%. Without it, a random split can land a different mix on each side, which adds noise to every metric. Stratify by default when you classify.
+
+## The baseline, again
+
+```{python}
+from sklearn.dummy import DummyClassifier
+
+baseline = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
+round(baseline.score(X_test, y_test), 3)
+```
+
+Predicting "benign" for everyone is right 63% of the time, and finds no cancer at all. For classifiers `.score` returns {{< term accuracy >}}, the fraction of correct predictions. Keep this 0.63 in mind; any classifier has to beat it, and you will see shortly why accuracy alone cannot tell you whether a model is useful.
+
+## Logistic regression: a line that outputs a probability
+
+The simplest classifier is a linear model in disguise. {{< term logistic-regression >}} computes the same weighted sum as linear regression, $z = \theta_0 + \theta_1 x_1 + \dots + \theta_p x_p$, and then squashes it through the {{< term sigmoid >}} function
+
+$$
+\sigma(z) = \frac{1}{1 + e^{-z}},
+$$
+
+which maps any real number to a value between 0 and 1 that we read as the probability of the positive class. A large positive $z$ means "confidently malignant", a large negative $z$ "confidently benign", and $z = 0$ sits exactly on the fence at a probability of 0.5.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "The sigmoid function: an S-shaped curve rising from near 0 at z = −6 through 0.5 at z = 0 to near 1 at z = 6, with a dashed horizontal line at 0.5 marking the default decision threshold."
+import matplotlib.pyplot as plt
+
+z = np.linspace(-6, 6, 200)
+fig, ax = plt.subplots(figsize=(6, 3.4))
+ax.plot(z, 1 / (1 + np.exp(-z)))
+ax.axhline(0.5, linestyle="--", color="0.4")
+ax.set(xlabel="linear score z", ylabel="σ(z) = P(malignant)", title="The sigmoid turns a score into a probability")
+plt.show()
+```
+
+Training finds the $\theta$ that makes these probabilities agree with the labels, by minimising the *log loss* rather than the squared error. You do not need the formula to use the model; the maths corner below has it.
+
+::: {.bridge audience="math"}
+Logistic regression is a generalised linear model: $\log \frac{p}{1-p} = \theta^\top x$, so the *log-odds* are linear in the features. The loss is the negative log-likelihood of a Bernoulli model, $-\sum_i \left[ y_i \log p_i + (1 - y_i)\log(1 - p_i) \right]$, which is convex, so gradient descent finds the global minimum. Its gradient has the same shape as the one you derived for MSE in [episode 2.2](02-linear-regression.html): $X^\top (p - y)$.
+:::
+
+Because the model penalises large coefficients by default (scikit-learn's `LogisticRegression` applies an L2 penalty, like ridge), the features must be on comparable scales. We put a `StandardScaler` in front, inside a {{< term pipeline >}}; [episode 2.6](06-pipelines-leakage.html) explains why this matters and why it must be inside the pipeline.
+
+```{python}
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+logreg = make_pipeline(StandardScaler(), LogisticRegression())
+logreg.fit(X_train, y_train)
+round(logreg.score(X_test, y_test), 3)
+```
+
+98.6% accuracy against a baseline of 63%. The model clearly works, and for a moment that number is all you need. But `predict` hides something: the model does not actually output classes, it outputs probabilities.
+
+```{python}
+probs = logreg.predict_proba(X_test)[:, 1]   # column 1 = P(malignant)
+pd.DataFrame({"P(malignant)": probs[:6].round(3), "predicted": logreg.predict(X_test)[:6], "actual": y_test[:6].values})
+```
+
+`predict` simply applies a {{< term threshold >}} of 0.5 to those probabilities. That 0.5 is a default, not a law, and we will move it later.
+
+## Seeing the decision boundary
+
+With 30 features the model's boundary lives in 30 dimensions. To *see* one, train on two features only, mean radius and mean texture, and shade the plane by the predicted class.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Scatter plot of mean texture against mean radius for the training tumours, malignant and benign in two colours, with the background shaded in two regions separated by a straight line: the logistic regression decision boundary."
+from sklearn.inspection import DecisionBoundaryDisplay
+
+two = ["mean radius", "mean texture"]
+logreg2 = make_pipeline(StandardScaler(), LogisticRegression()).fit(X_train[two], y_train)
+
+fig, ax = plt.subplots(figsize=(6.2, 4.4))
+DecisionBoundaryDisplay.from_estimator(logreg2, X_train[two], response_method="predict", alpha=0.25, ax=ax)
+for label, name in [(0, "benign"), (1, "malignant")]:
+    sub = X_train[y_train == label]
+    ax.scatter(sub["mean radius"], sub["mean texture"], s=14, alpha=0.7, label=name)
+ax.set(xlabel="mean radius", ylabel="mean texture", title="Logistic regression: a straight boundary")
+ax.legend()
+plt.show()
+```
+
+The boundary is a straight line, because the score $z$ is linear in the features: every point on one side is called malignant, every point on the other benign, and the probability rises smoothly as you move away from the line. The misclassified points near the line are tumours whose size and texture alone cannot settle; with all 30 features the model does much better.
+
+::: {.bridge audience="cs"}
+`predict` returns a class, `predict_proba` returns the probabilities, and `decision_function` returns the raw score $z$. The threshold is applied at prediction time, so it is a deployment knob: never bake "0.5" into downstream code; pass the probabilities along and let the application decide.
+:::
+
+## k-nearest neighbours: a boundary that follows the data
+
+A completely different idea: to classify a new tumour, find the $k$ most similar tumours in the training set and take a vote. That is {{< term knn >}}. It has no parameters to train and no equation for the boundary; the boundary is whatever the training points make it.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "The same scatter plot of mean texture against mean radius, now shaded by a 15-nearest-neighbour classifier: the two regions are separated by an irregular, wobbly boundary that follows the local mix of malignant and benign points."
+from sklearn.neighbors import KNeighborsClassifier
+
+knn2 = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=15)).fit(X_train[two], y_train)
+
+fig, ax = plt.subplots(figsize=(6.2, 4.4))
+DecisionBoundaryDisplay.from_estimator(knn2, X_train[two], response_method="predict", alpha=0.25, ax=ax)
+for label, name in [(0, "benign"), (1, "malignant")]:
+    sub = X_train[y_train == label]
+    ax.scatter(sub["mean radius"], sub["mean texture"], s=14, alpha=0.7, label=name)
+ax.set(xlabel="mean radius", ylabel="mean texture", title="15-nearest neighbours: a boundary that bends")
+ax.legend()
+plt.show()
+```
+
+The number of neighbours $k$ is a {{< term hyperparameter >}}, and it controls exactly the flexibility you studied in [episode 2.4](04-overfitting-regularisation.html).
+
+::: {.predict}
+Before running the next cell: what training accuracy will a 1-nearest-neighbour classifier have? And will its test accuracy be higher or lower than with $k = 15$?
+:::
+
+```{python}
+rows = []
+for k in [1, 5, 15, 51]:
+    model = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=k)).fit(X_train[two], y_train)
+    rows.append({"k": k, "train accuracy": model.score(X_train[two], y_train), "test accuracy": model.score(X_test[two], y_test)})
+pd.DataFrame(rows).round(3)
+```
+
+With $k = 1$ every training point is its own nearest neighbour, so the training accuracy is a perfect 1.0, and the test accuracy is the worst of the four: the textbook overfitting signature. Larger $k$ smooths the boundary. Because kNN decides by distance, it is also the model most sensitive to feature scaling, which is why the scaler is in the pipeline.
+
+## Reading a classifier properly
+
+Accuracy compresses four numbers into one. The four numbers are the {{< term confusion-matrix >}}, and they are where every other metric comes from.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "A 2 by 2 confusion matrix for the logistic regression model on the test set. Rows are the true class (benign, malignant), columns the predicted class. The diagonal cells are large (89 benign correctly called benign, 52 malignant correctly called malignant); the off-diagonal cells each contain 1."
+from sklearn.metrics import ConfusionMatrixDisplay
+
+fig, ax = plt.subplots(figsize=(4.6, 4.2))
+ConfusionMatrixDisplay.from_estimator(logreg, X_test, y_test, display_labels=["benign", "malignant"], ax=ax, colorbar=False)
+ax.set(title="Logistic regression, test set")
+plt.show()
+```
+
+Read it in medical language. Rows are the truth, columns the prediction:
+
+- **True positives** (bottom right): malignant tumours called malignant. 52.
+- **False negatives** (bottom left): malignant tumours called benign. 1. The dangerous cell: a missed cancer.
+- **False positives** (top right): benign tumours called malignant. 1. A frightened patient and an unnecessary biopsy.
+- **True negatives** (top left): benign called benign. 89.
+
+From these four cells:
+
+| Metric | Formula | Question it answers |
+|---|---|---|
+| accuracy | $(TP + TN) / n$ | how often is the model right overall? |
+| {{< term precision >}} | $TP / (TP + FP)$ | when it says malignant, how often is it right? |
+| {{< term recall >}} | $TP / (TP + FN)$ | of the malignant tumours, how many did it find? |
+| {{< term f1-score "F1" >}} | $2 \cdot \frac{\text{precision} \cdot \text{recall}}{\text{precision} + \text{recall}}$ | one number that is high only if both are |
+
+`classification_report` prints them for each class.
+
+```{python}
+from sklearn.metrics import classification_report
+
+print(classification_report(y_test, logreg.predict(X_test), target_names=["benign", "malignant"]))
+```
+
+::: {.bridge audience="bio"}
+Recall for the malignant class is what a clinician calls **sensitivity**; recall for the benign class is **specificity**. A screening test wants high sensitivity (miss nothing), and accepts a lower precision (some false alarms) because the follow-up test will sort them out. A confirmatory test wants the opposite. The same model can serve both roles: only the threshold changes.
+:::
+
+## Across all thresholds: ROC and precision–recall curves
+
+The confusion matrix is a snapshot at one threshold. Two curves show the model at every threshold at once.
+
+The {{< term roc-auc "ROC curve" >}} plots the true-positive rate (recall) against the false-positive rate as the threshold slides from 1 down to 0. A random model follows the diagonal; a perfect one goes straight up the left edge. The area under it, the **AUC**, summarises how well the model *ranks* malignant above benign: 0.5 is random, 1.0 is perfect.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Two panels. Left: the ROC curve for logistic regression on the test set, hugging the top-left corner with an AUC near 1, and a dashed diagonal for a random classifier. Right: the precision–recall curve, staying near precision 1 across almost the whole recall range, with a dashed horizontal line at the base rate of about 0.37."
+from sklearn.metrics import PrecisionRecallDisplay, RocCurveDisplay
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.5, 4.2))
+RocCurveDisplay.from_estimator(logreg, X_test, y_test, ax=ax1, name="logistic regression")
+ax1.plot([0, 1], [0, 1], linestyle="--", color="0.4", label="random")
+ax1.set(title="ROC curve")
+ax1.legend(loc="lower right")
+PrecisionRecallDisplay.from_estimator(logreg, X_test, y_test, ax=ax2, name="logistic regression")
+ax2.axhline(y_test.mean(), linestyle="--", color="0.4", label="random (base rate)")
+ax2.set(title="Precision–recall curve")
+ax2.legend(loc="lower left")
+plt.show()
+```
+
+The {{< term pr-curve >}} plots precision against recall over the same thresholds. Its baseline is not the diagonal but the base rate of the positive class, the horizontal dashed line, which is where a random model sits. The two curves answer different questions. ROC ignores how rare the positives are, so it looks flattering when they are rare; the precision–recall curve does not, which is why it is the one to show when the positive class is a small minority.
+
+::: {.pitfall title="AUC says nothing about the threshold you will use"}
+A model with AUC 0.99 can still be useless at the default threshold if its probabilities are shifted, and two models with the same AUC can behave very differently at the operating point you care about. AUC compares rankings; the confusion matrix at *your* threshold is what the user of the model experiences.
+:::
+
+## Choosing the threshold
+
+Suppose missing a malignant tumour is far worse than a false alarm. Then you lower the threshold: call a tumour malignant at a probability of, say, 0.2 instead of 0.5. Recall goes up; precision goes down. Nothing is retrained; you are just reading the same probabilities differently.
+
+```{python}
+from sklearn.metrics import precision_score, recall_score
+
+rows = []
+for t in [0.5, 0.3, 0.2, 0.1, 0.05]:
+    pred = (probs >= t).astype(int)
+    rows.append({"threshold": t, "recall (malignant)": recall_score(y_test, pred), "precision (malignant)": precision_score(y_test, pred)})
+pd.DataFrame(rows).round(3)
+```
+
+On this test set, dropping the threshold to 0.1 catches every malignant tumour at the price of a few more false alarms. Which trade-off is right is not a statistics question; it is a question about the cost of each kind of mistake, and only the people who will act on the predictions can answer it.
+
+## When the class you want is rare
+
+The breast cancer data is nearly balanced, 37% malignant. Scientific data usually is not. In a high-throughput screen a few compounds in a thousand are active; in a patient cohort most people do not have the disease. This is {{< term class-imbalance >}}, and it breaks accuracy completely.
+
+::: {.bridge audience="chem"}
+In a typical primary screen about 1% of compounds, often fewer, show activity. A model that predicts "inactive" for every compound is therefore 99% accurate and finds nothing. What a medicinal chemist wants is **recall of the actives** at a manageable number of false positives, because every predicted active will be bought or synthesised and tested. The precision–recall curve and the number of actives found in the top-ranked $N$ compounds are the metrics that match that workflow; accuracy and even ROC-AUC are not.
+:::
+
+To see it, simulate a screen: 8,000 compounds with ten descriptor-like features, of which 1% are active.
+
+```{python}
+from sklearn.datasets import make_classification
+
+X_scr, y_scr = make_classification(
+    n_samples=8000, n_features=10, n_informative=4, n_redundant=2,
+    weights=[0.99, 0.01], class_sep=0.9, random_state=42,
+)
+Xs_train, Xs_test, ys_train, ys_test = train_test_split(X_scr, y_scr, test_size=0.3, random_state=42, stratify=y_scr)
+print(f"actives in the test set: {ys_test.sum()} of {len(ys_test)}")
+```
+
+```{python}
+def screen_report(model, name):
+    pred = model.predict(Xs_test)
+    return {
+        "model": name,
+        "accuracy": model.score(Xs_test, ys_test),
+        "recall (actives)": recall_score(ys_test, pred),
+        "actives found": int(((pred == 1) & (ys_test == 1)).sum()),
+        "false alarms": int(((pred == 1) & (ys_test == 0)).sum()),
+    }
+
+
+dummy_s = DummyClassifier(strategy="most_frequent").fit(Xs_train, ys_train)
+logreg_s = make_pipeline(StandardScaler(), LogisticRegression()).fit(Xs_train, ys_train)
+balanced_s = make_pipeline(StandardScaler(), LogisticRegression(class_weight="balanced")).fit(Xs_train, ys_train)
+
+pd.DataFrame([
+    screen_report(dummy_s, "always inactive"),
+    screen_report(logreg_s, "logistic regression"),
+    screen_report(balanced_s, "logistic regression, class_weight='balanced'"),
+]).round(3)
+```
+
+Three things to notice:
+
+- The **do-nothing baseline** has 99% accuracy and finds zero actives. Accuracy is meaningless here.
+- The **ordinary model** is slightly *more* accurate and finds only a handful of actives: at the 0.5 threshold it almost never dares to call anything active, because being wrong about a rare class is cheap in the loss.
+- `class_weight="balanced"` tells the model to weight each active as heavily as the 99 inactives it is outnumbered by. Recall jumps, accuracy falls, and the false alarms multiply. For a screen that is often the right trade: those false alarms are the compounds you will test next.
+
+Reporting the precision–recall curve rather than the ROC curve, stratifying every split, and choosing the threshold from the cost of a false alarm are the three habits that make a model on rare events honest.
+
+::: {.note title="A note on calibration"}
+A probability of 0.8 should mean "about 80 of 100 such tumours are malignant". When that holds the model is well {{< term calibration "calibrated" >}}. Good ranking (high AUC) does not guarantee it: kNN with small $k$ outputs only a few distinct probabilities, and class weighting deliberately distorts them. scikit-learn's `CalibrationDisplay.from_estimator` draws the check; `CalibratedClassifierCV` repairs it. Calibration matters whenever you will act on the probability itself, for example when ranking compounds to buy under a budget.
+:::
+
+::: {.discussion}
+A paper reports "our toxicity classifier reaches 97% accuracy". The dataset has 4% toxic compounds. What is the first number you would ask for, and what would convince you the model is useful to a chemist?
+:::
+
+::: {.instructor}
+Timing: setup through logistic regression takes about 12 minutes; the decision-boundary figures are quick but learners like to play with `k`, so budget 8 minutes there. The confusion matrix discussion is the heart of the episode and benefits from being done out loud with the medical framing (ask: which cell would you least like to be in?). The screening simulation at the end is where chemists in the room usually wake up; if time is short, skip the calibration note and the ROC/PR comparison, not the imbalance section.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Metrics from a confusion matrix"}
+A classifier for signal peptides is tested on 200 proteins: 40 contain a signal peptide. It predicts "signal peptide" for 50 proteins, of which 32 are correct. Without code, fill in the confusion matrix and compute accuracy, precision, recall and F1 for the signal-peptide class.
+
+:::: {.solution}
+TP = 32 (predicted positive and correct). FP = 50 − 32 = 18. FN = 40 − 32 = 8. TN = 200 − 32 − 18 − 8 = 142.
+
+- accuracy = (32 + 142) / 200 = **0.87**
+- precision = 32 / 50 = **0.64**
+- recall = 32 / 40 = **0.80**
+- F1 = 2 · 0.64 · 0.80 / (0.64 + 0.80) = **0.711**
+
+Note how a respectable 87% accuracy hides a precision of only 0.64: more than a third of the predicted signal peptides are wrong. The majority baseline ("no signal peptide" for everyone) would score 160 / 200 = 0.80 accuracy and find none.
+::::
+:::
+
+::: {.challenge level=2 title="A threshold for a screening test"}
+Using `probs` and `y_test` from above, find the highest threshold at which the recall for malignant tumours is at least 0.98, and report the precision at that threshold. Then draw the confusion matrix at that threshold. (Hint: `np.linspace(0.01, 0.99, 99)` and a loop; or `precision_recall_curve` from `sklearn.metrics`, which returns the thresholds.)
+
+:::: {.solution}
+```{python}
+from sklearn.metrics import precision_recall_curve
+
+precision, recall, thresholds = precision_recall_curve(y_test, probs)
+# precision/recall have one more entry than thresholds; drop the last point
+ok = recall[:-1] >= 0.98
+best = thresholds[ok].max()
+i = np.where(thresholds == best)[0][0]
+print(f"threshold {best:.3f}: recall {recall[i]:.3f}, precision {precision[i]:.3f}")
+```
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Confusion matrix on the test set at the lowered threshold: all or almost all malignant tumours are in the true-positive cell, at the cost of one or two more benign tumours called malignant than at the default threshold."
+from sklearn.metrics import confusion_matrix
+
+cm = confusion_matrix(y_test, (probs >= best).astype(int))
+fig, ax = plt.subplots(figsize=(4.6, 4.2))
+ConfusionMatrixDisplay(cm, display_labels=["benign", "malignant"]).plot(ax=ax, colorbar=False)
+ax.set(title=f"Threshold {best:.2f}")
+plt.show()
+```
+
+`precision_recall_curve` evaluates every distinct probability as a threshold, so it finds the exact operating point rather than one on a grid. Choosing the *highest* threshold that satisfies the recall target keeps precision as high as possible for that recall.
+::::
+:::
+
+::: {.challenge level=3 title="kNN against logistic regression, honestly"}
+Compare `make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=k))` for $k \in \{1, 5, 15, 51\}$ against the logistic regression pipeline on all 30 features, using 10-fold stratified cross-validation (`StratifiedKFold(n_splits=10, shuffle=True, random_state=42)`) on the *training* set and the scoring `"roc_auc"`. Which model wins, how sure are you, and what does the $k = 1$ result tell you about cross-validation versus the training score you saw earlier?
+
+:::: {.solution}
+```{python}
+from sklearn.model_selection import StratifiedKFold, cross_val_score
+
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+rows = []
+for k in [1, 5, 15, 51]:
+    model = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=k))
+    scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="roc_auc")
+    rows.append({"model": f"kNN, k={k}", "mean AUC": scores.mean(), "std": scores.std()})
+scores = cross_val_score(logreg, X_train, y_train, cv=cv, scoring="roc_auc")
+rows.append({"model": "logistic regression", "mean AUC": scores.mean(), "std": scores.std()})
+pd.DataFrame(rows).round(3)
+```
+
+Logistic regression is at least as good as the best kNN and more stable across folds, which is typical for a dataset of this size with informative, roughly linear features. $k = 1$ is clearly worst even though its training accuracy was perfect: cross-validation exposes what the training score hid. The standard deviations tell you how much the ranking can move between folds; differences smaller than about one standard deviation are not worth arguing about. `StratifiedKFold` keeps the malignant fraction equal in every fold, which matters for AUC on small folds.
+::::
+:::
+
+## Where this is going
+
+Classification in this course mostly means finding rare positives: active compounds in a screen, binding poses that are correct, proteins with a given function, cells of a given type. Chapter 6 (QSAR) uses exactly the metrics of this episode, precision–recall curves and actives-found-in-top-N, on fingerprint features with scaffold splits in place of the random split used here. Chapter 10 does the same for sequences with sequence-identity splits. The threshold discussion returns in Chapter 14, where a generative model proposes compounds and a classifier decides which to make: there, the cost of a false positive is a synthesis that fails, and the threshold is chosen from a budget.

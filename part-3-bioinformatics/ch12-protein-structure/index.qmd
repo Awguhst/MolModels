@@ -1,0 +1,30 @@
+---
+title: "Protein structure"
+chapter-index: true
+summary: "Predicted structures (AlphaFold/ESMFold-style), confidence measures, and features derived from structure for downstream models."
+---
+
+{{< generated ch12-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Reading predicted structures and confidence (pLDDT, PAE)
+- Secondary structure, solvent accessibility and contacts
+- Structure-derived features for machine learning
+- Comparing structures: RMSD, TM-score
+- Structure-aware splits
+- Lab 12: from predicted structures to a structure-feature model
+:::
+
+## Planned learning outcomes
+
+1. Load predicted protein structures and interpret their confidence measures.
+2. Compute structure-derived features and use them in a model.
+3. Compare structures quantitatively and avoid leakage through structural similarity.
+
+## In the meantime
+
+Everything here builds on Part I, in particular the evaluation habits of [Chapter 2](../../part-1-foundations/ch02-ml-fundamentals/index.html). Episode [2.6](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) already introduces the group splits that become sequence-identity splits here.

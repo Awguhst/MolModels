@@ -1,0 +1,30 @@
+---
+title: "Omics data"
+chapter-index: true
+summary: "Gene expression and single-cell analysis: normalisation, dimensionality reduction, clustering and differential expression with scanpy."
+---
+
+{{< generated ch11-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Count matrices, normalisation and log transforms
+- Quality control and batch effects
+- PCA, UMAP and clustering of cells
+- Differential expression and multiple testing
+- Cell-type annotation with markers and classifiers
+- Lab 11: a single-cell workflow on a small public dataset
+:::
+
+## Planned learning outcomes
+
+1. Run a standard single-cell analysis pipeline with scanpy and interpret each step.
+2. Recognise batch effects and confounding in omics data.
+3. Train a cell-type classifier and evaluate it across batches.
+
+## In the meantime
+
+Everything here builds on Part I, in particular the evaluation habits of [Chapter 2](../../part-1-foundations/ch02-ml-fundamentals/index.html). Episode [2.6](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) already introduces the group splits that become sequence-identity splits here.

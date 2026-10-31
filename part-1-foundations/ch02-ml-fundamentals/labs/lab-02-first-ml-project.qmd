@@ -1,0 +1,61 @@
+---
+title: "First end-to-end ML project: predicting solubility"
+chapter: 2
+lab: 2
+duration: "90 min"
+minutes: 90
+level: beginner
+objectives:
+  - "Take a raw CSV to a tuned, honestly evaluated regression model in one notebook."
+  - "Compare a mean baseline, linear regression, ridge and k-nearest neighbours on the same held-out molecules."
+  - "Tune hyperparameters with `GridSearchCV` inside a scaled pipeline, using only the training set."
+  - "Read a parity plot and a worst-ten table, and turn them into a hypothesis about what the features miss."
+  - "Write a short, numbers-backed conclusion of the kind that opens a modelling report."
+prerequisites-text: ["Episodes 2.2–2.6", "Lab 1"]
+summary: "Predict the aqueous solubility of 1,128 small molecules from five descriptors, from a reproducible split and a baseline through cross-validated ridge and kNN pipelines to a parity plot, an error analysis of the worst-predicted molecules and a written conclusion. Optional extension: turn it into a soluble/insoluble classifier with a confusion matrix and ROC curve."
+dataset: "ESOL / Delaney aqueous solubility (downloaded at runtime with checksum; see data/README.md)"
+notebook: lab-02-first-ml-project
+---
+
+Chapter 2 gave you the parts: a reproducible split, a baseline, metrics, cross-validation, regularisation, kNN and pipelines. This lab assembles them into the workflow you will repeat in every later chapter, on the solubility question you have followed since [episode 1.5](../../ch01-scientific-python/05-eda-solubility.html). The dataset is ESOL (Delaney, 2004): 1,128 small organic molecules, their measured logS in log₁₀(mol/L), and five whole-molecule descriptors. By the end you will have a results table, a parity plot, a list of the molecules your best model gets most wrong, and a paragraph that explains what the numbers mean.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/part-1-foundations/ch02-ml-fundamentals/labs/lab-02-first-ml-project.ipynb">Open in Colab</a>
+<a class="mm-btn" href="lab-02-first-ml-project.ipynb" download>Download .ipynb</a>
+<a class="mm-btn" href="lab-02-first-ml-project-solutions.html">View solutions</a>
+</div>
+
+## How to work on this lab
+
+Open the student notebook (Colab, or download it and run it in the course environment from [Chapter 0](../../ch00-start-here/index.html)). Run it from the top. Every task is a markdown cell that states what to build, followed by a code cell that begins with a comment and a `# TODO`: that cell is yours. The ✅ *check* cell after it runs a few friendly assertions on the objects the task asked you to create (for example `results` or `pred_best`), so name things as the task says. If a check fails, read its message: it tells you what it expected.
+
+Work alone or in pairs. The whole notebook runs on a laptop CPU in well under a minute, so rerun it from the top whenever you change something earlier. Budget about 60 minutes for the ten tasks, 15 for the conclusion and reflection, and the rest for the extension if you want it.
+
+## The tasks
+
+1. **Features and target.** Define `X` from the five descriptors (optionally plus `Minimum Degree`) and `y` as measured logS.
+2. **Split once.** 80/20 with `random_state=42`. The test set is then untouched until task 7.
+3. **Baseline.** A `DummyRegressor` and a `report()` helper returning MAE, RMSE and R².
+4. **Linear regression**, with its 5-fold cross-validated RMSE on the training set (`KFold(shuffle=True, random_state=42)`).
+5. **Ridge in a scaled pipeline**, `alpha` tuned by `GridSearchCV` over six values.
+6. **kNN in a scaled pipeline**, `n_neighbors` tuned the same way.
+7. **One tidy results table**: CV RMSE and test MAE / RMSE / R² for all four models. This is the single test evaluation.
+8. **Parity plot** of the best model on the test set.
+9. **The ten worst-predicted molecules**, with names, SMILES, measured, predicted and residual. Read the SMILES.
+10. **Conclusion**: complete a short template with your numbers and your reading of the errors.
+
+Two habits to watch for while you work. First, every number used for a *decision* (which alpha, which k, which model) comes from cross-validation on the training set; the test set answers exactly one question, at the end. Second, every model that needs scaling gets it *inside* the pipeline, so that `GridSearchCV` refits the scaler on each training fold ([episode 2.6](../06-pipelines-leakage.html)).
+
+## Optional extension (★★★)
+
+Turn the problem into classification: call a molecule "soluble" if logS > −3 (a conventional cut, not a standard), fit a scaled `LogisticRegression` on the same split, and evaluate with a confusion matrix, accuracy against a `DummyClassifier` baseline, and a ROC curve with its AUC. Then look at the confusion matrix and decide which kind of mistake would cost more in a screening cascade.
+
+## Reflection questions
+
+1. The CV RMSE and the test RMSE agreed closely for every model. Describe one mistake in the *workflow* that would have made the test RMSE better than the CV RMSE, and explain why that would be a warning sign rather than good news.
+2. kNN beat the linear models comfortably, and kNN is also the model most helped by duplicates and near-duplicates across the split. How would you check whether the test set contains close analogues of training molecules, and what split would tell you how the model does on genuinely new chemistry?
+3. The worst-predicted molecules share chemical features the descriptors cannot represent. Propose two new features (or one new representation) and say, for each, what kind of error you expect it to fix and what it might make worse.
+
+::: {.tip title="Working in Colab"}
+The *Open in Colab* button loads the student notebook in a free hosted session; nothing to install. The setup cell detects Colab and installs only what is missing. The data cell tries the local copies first, then the course repository (which does not bundle ESOL and will fall through), then the canonical DeepChem download, so it works in a fresh session with no files. Save a copy to your Google Drive (*File → Save a copy in Drive*) before you start, or your edits vanish when the session ends.
+:::

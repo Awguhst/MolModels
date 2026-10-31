@@ -1,0 +1,30 @@
+---
+title: "Graph neural networks for molecules"
+chapter-index: true
+summary: "Molecules as graphs: message passing, learned representations, and when GNNs beat fingerprints (and when they do not)."
+---
+
+{{< generated ch07-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Molecules as graphs: atoms as nodes, bonds as edges, featurisation
+- Message passing and readout, step by step
+- A minimal GNN in PyTorch (Geometric)
+- Training on MoleculeNet tasks with proper splits
+- GNN versus fingerprint baselines: a fair comparison
+- Lab 7: train a GNN for solubility and inspect its learned embeddings
+:::
+
+## Planned learning outcomes
+
+1. Featurise a molecule as a graph and explain message passing in your own words.
+2. Train and evaluate a graph neural network on a molecular property task.
+3. Decide, with evidence, whether a GNN is worth it over a fingerprint model for a given dataset size.
+
+## In the meantime
+
+Everything here builds on Part I, in particular the evaluation habits of [Chapter 2](../../part-1-foundations/ch02-ml-fundamentals/index.html). Episode [2.6](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) already introduces the group splits that become scaffold splits here.

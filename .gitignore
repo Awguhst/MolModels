@@ -1,0 +1,30 @@
+# Quarto build outputs and caches
+/.quarto/
+/_site/
+/_freeze/
+/_generated/
+/_sidebar.yml
+/assets/js/course-data.js
+*.quarto_ipynb
+/.jupyter_cache/
+
+# Python
+/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Data downloaded at build time (not redistributed, see data/README.md)
+/data/esol.csv
+
+# Review artefacts: screenshots are kept, bulky intermediates are not
+/_review/axe/*.json
+/_review/lighthouse/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+**/*.quarto_ipynb

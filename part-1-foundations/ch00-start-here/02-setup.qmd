@@ -1,0 +1,278 @@
+---
+title: "Setting up Python"
+chapter: 0
+episode: 2
+teaching: 20
+exercises: 10
+level: beginner
+questions:
+  - "Do I have to install anything to follow the course?"
+  - "If I install locally, which of conda, mamba, uv, pip and venv should I use, and why do the versions matter?"
+  - "How do I know my setup actually works, and what do I do when it does not?"
+objectives:
+  - "Run a course notebook in Google Colab with nothing installed."
+  - "Create a local environment from `environment.yml` (conda/mamba) or `requirements.txt` (uv or pip + venv) and open it in JupyterLab or VS Code."
+  - "Run `scripts/check_env.py` and read its output."
+  - "Diagnose the eight most common installation failures from their error messages."
+keypoints:
+  - "Colab needs no install and is enough for all of Part I; a local environment is faster, private and works offline."
+  - "One project, one environment. Never install course libraries into the Python that came with your operating system."
+  - "Pinned versions are what the course was tested with; a slightly different version usually works, and `check_env.py` tells you when it does not."
+  - "The Python that runs a notebook is the kernel you selected, not the one on your command line; most 'it works in the terminal but not in the notebook' problems are a kernel mismatch."
+  - "When cells behave strangely, restart the kernel and run from the top before you look for a bug."
+prerequisites: [ch00-ep01]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+Every episode from Chapter 1 onwards asks you to run code, and every lab is a {{< term notebook >}}. You therefore need one working Python with six libraries (NumPy, pandas, matplotlib, seaborn, scikit-learn and joblib) before anything else. There are two ways to get it. Option A takes two minutes and nothing is installed. Option B takes twenty minutes and gives you a setup you will keep for years. Pick one now; you can add the other later, and the rest of the course does not care which you chose.
+
+::: {.tip title="Which option?"}
+Choose **Colab** if you are on a locked-down or shared machine, if you have never installed developer software, or if you want to start Chapter 1 in the next five minutes. Choose a **local install** if you will work offline, if your data must not leave your computer, or if you already use Python. If in doubt, start with Colab and come back here when it starts to feel limiting.
+:::
+
+## Option A: Google Colab, nothing to install
+
+{{< term colab >}} is a free service that runs Jupyter notebooks on Google's computers and shows them in your browser. You need a Google account and nothing else. Every lab page in this course has an **Open in Colab** button that loads the lab notebook directly; for the episodes, open a blank notebook at [colab.research.google.com](https://colab.research.google.com) and type or paste the cells as you read.
+
+Three things to know before you rely on it:
+
+- **Files vanish.** A Colab session is a temporary machine. Anything you create inside it, including the notebook's own edits unless you saved it, disappears when the session ends (after a period of inactivity, or when the session reaches its maximum lifetime). Use *File → Save a copy in Drive* as soon as you open a lab, and download any results you want to keep.
+- **Versions differ, and that is fine.** Colab comes with its own, usually recent, versions of the course libraries. The course pins exact versions in `requirements.txt` so that the rendered pages are reproducible, but every cell in Part I has been written to run on a current Colab as well. If a cell ever behaves differently, the check below will tell you which library is involved.
+- **It is not private.** Colab runs on Google's servers. For the public datasets of this course that is irrelevant; for your own unpublished measurements, think before uploading.
+
+To check what a Colab session has, open `scripts/check_env.py` on GitHub (*Edit this page* in any footer takes you to the repository), copy the whole file into a cell and run it. It prints one line per library, which you will learn to read in the [check section](#check-your-environment) below.
+
+::: {.pitfall title="'Runtime disconnected'"}
+When Colab idles, the runtime disconnects and all variables are gone, though the notebook text is intact. Reconnect (the button at the top right) and run the cells again from the top: *Runtime → Run all*. This is not a bug in your code.
+:::
+
+## Option B: a local environment
+
+A local install has one rule that explains everything else: **one project, one environment**. A {{< term virtual-environment >}} is a self-contained folder with its own Python and its own installed packages. The course lives in one; your next project lives in another; nothing you install for one can break the other, and the Python that came with your operating system is never touched. Both routes below create such an environment; they differ only in which tool manages it.
+
+### Route 1: conda or mamba (recommended for the whole course)
+
+{{< term conda >}} installs packages from the *conda-forge* channel, which carries compiled scientific software that pip cannot always provide. Parts II–IV add RDKit, Open Babel and PyTorch, all easiest to install this way, so if you plan to go past Part I this is the route to take. *mamba* is a faster drop-in replacement for conda's solver; the commands are identical with `mamba` in place of `conda`. If you have neither, install [Miniforge](https://github.com/conda-forge/miniforge), which gives you both and defaults to conda-forge.
+
+The repository root contains `environment.yml`. Its key lines are:
+
+```yaml
+name: molecules-models
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - numpy=2.5.4
+  - pandas=3.1.0
+  - matplotlib=3.10.9
+  - seaborn=0.13.2
+  - scikit-learn=1.9.1
+  - joblib=1.6.0
+  - jupyterlab=4.6.5
+  - ipykernel=7.4.0
+```
+
+(The real file also lists testing tools you do not need as a learner, and the Part II–IV libraries commented out.) From a terminal in the repository folder:
+
+```bash
+mamba env create -f environment.yml
+mamba activate molecules-models
+```
+
+The first command downloads about a gigabyte and takes a few minutes; the second switches your terminal into the environment, and your prompt gains a `(molecules-models)` prefix. You must run the `activate` line in every new terminal before starting Jupyter or Python for this course.
+
+### Route 2: uv or pip with a venv
+
+If you do not want conda, `requirements.txt` lists the same pinned versions for pip. The fastest tool is [uv](https://docs.astral.sh/uv/), which creates the environment and installs into it in seconds:
+
+```bash
+uv venv
+uv pip install -r requirements.txt
+```
+
+Without uv, Python's built-in `venv` module does the same job more slowly. Create the environment once, then activate it with the line for your operating system:
+
+```bash
+python -m venv .venv
+
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+# Windows (cmd.exe)
+.venv\Scripts\activate.bat
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+Either way you get a folder `.venv` inside the repository. Activate it in every new terminal, exactly as with conda.
+
+::: {.bridge audience="cs"}
+Why pin at all? `numpy==2.5.4` rather than `numpy>=2` means the course pages were rendered, and the tests run, against that exact version, and that a cell which works on the website will work for you. The trade-off is that pins go stale, so the file states the one deliberate constraint in a comment: matplotlib is held at 3.10 because seaborn 0.13.2 emits deprecation warnings on 3.11, and this course treats warnings as errors. If you prefer a lock file, `uv pip compile requirements.txt` will produce one, but it is not needed.
+:::
+
+### Opening a notebook
+
+With the environment active, start JupyterLab:
+
+```bash
+jupyter lab
+```
+
+A browser tab opens showing the files of the repository. *File → New → Notebook* creates a notebook; when asked which {{< term kernel >}} to use, pick *Python 3 (ipykernel)*. The kernel is the Python process that runs your cells and remembers your variables between them, and it is the Python of the environment you activated before typing `jupyter lab`.
+
+If you prefer VS Code: install the *Python* and *Jupyter* extensions from Microsoft, open the repository folder, create a file ending in `.ipynb`, and click *Select Kernel* at the top right of the notebook. Choose the interpreter inside `.venv` or the `molecules-models` conda environment. VS Code remembers the choice per notebook.
+
+::: {.pitfall title="The kernel is the Python, not the terminal"}
+Selecting the wrong kernel is the single most common local-install problem. You install everything into the course environment, open a notebook, and `import pandas` fails because the notebook is running the Python that came with your system, or the one from last year's project. In JupyterLab the kernel name is shown at the top right; in VS Code it is next to *Select Kernel*. If it is not the course environment, change it there. The cell below shows which Python is really running:
+:::
+
+```{python}
+import sys
+
+print(sys.version)
+```
+
+The version should start with `3.12` (anything from 3.10 up works). To see *which* interpreter that is, add `print(sys.executable)`: on your machine the path should point inside `.venv` or the conda environment folder, not into a system directory.
+
+## Check your environment
+
+The repository ships a script that answers "is everything installed, and is it the version the course expects?" in one go. In an activated environment, from the repository folder:
+
+```bash
+python scripts/check_env.py
+```
+
+In Colab, paste the file's contents into a cell instead. A healthy run looks like this (the second line, and the exact versions, will differ on your machine):
+
+```text
+✅ Python 3.12.14  (3.12 recommended; 3.10+ required)
+   /home/you/molecules-and-models/.venv/bin/python
+
+✅ numpy                    2.5.4
+✅ pandas                   3.1.0
+✅ matplotlib               3.10.9
+✅ seaborn                  0.13.2
+✅ scikit-learn             1.9.1
+✅ joblib                   1.6.0
+✅ ipython (notebooks)      9.18.0
+✅ jupyterlab               4.6.5
+➖ rdkit (Part II)          not installed   (optional for now)
+➖ biopython (Part III)     not installed   (optional for now)
+➖ pytorch (Chapter 4+)     not installed   (optional for now)
+
+✅ matplotlib can draw a figure
+✅ scikit-learn can fit a model
+
+All good. You are ready for Chapter 1.
+```
+
+How to read it:
+
+- **✅** means the library imported and its version is printed. If the version differs from the pin, the line adds *(course pins 2.5.4; a different version usually works)*: a reminder, not an error.
+- **❌** means an essential library is missing, or Python is older than 3.10. The line tells you the exact `pip install` command to fix it, and the script ends with *N problem(s)* and exit code 1.
+- **➖** marks libraries that later Parts need and that you should *not* install yet.
+- The last two checks go beyond importing: they draw a figure and fit a tiny regression, because a broken matplotlib backend or a mismatched NumPy can import fine and then fail on first use.
+
+The script's final line names this episode's [troubleshooting section](#troubleshooting) when something is wrong. You can also do the quickest possible check by hand:
+
+```{python}
+import numpy
+
+numpy.__version__
+```
+
+::: {.predict}
+Before running the next cell: `sys.version` printed a version above. Will `sys.version_info >= (3, 10)` be `True` on your machine? What type is `sys.version_info`, and why might comparing it to a tuple work?
+:::
+
+```{python}
+sys.version_info >= (3, 10)
+```
+
+`sys.version_info` is a named tuple of integers (major, minor, micro, ...), and Python compares tuples element by element, so the comparison reads "at least 3.10" without any string parsing. This is exactly the test `check_env.py` performs.
+
+::: {.instructor}
+In a taught session, budget twenty minutes and expect the room to split: about a third on Colab, a third who already have conda, and a third with a fresh laptop. Have `check_env.py` output on the projector as the target state and let the first group help the third; the kernel-selection pitfall and the Microsoft Store alias cover most of what goes wrong. Do not wait for every machine to be green before moving on; anyone stuck can use Colab for Chapter 1 and fix the install at home.
+:::
+
+## Troubleshooting
+
+Work through these in order; most problems are one of the first three.
+
+::: {.pitfall title="`python` is not recognised (Windows), or opens the Microsoft Store"}
+On a fresh Windows machine, typing `python` can open the Microsoft Store because of an *app execution alias*. Either install Python from [python.org](https://www.python.org/downloads/) and tick *Add python.exe to PATH* in the installer, or use Miniforge and the conda route, which installs its own Python. If you installed Python but the alias still wins, disable it under *Settings → Apps → Advanced app settings → App execution aliases*. The `py` launcher (`py -3.12 -m venv .venv`) is a reliable alternative on Windows.
+:::
+
+::: {.pitfall title="`ModuleNotFoundError: No module named 'pandas'` after you installed it"}
+You installed into one Python and are running another. Run `python -c "import sys; print(sys.executable)"` in the terminal and `import sys; print(sys.executable)` in a notebook cell, and compare the two paths. If they differ, the fix is either to activate the environment before launching Jupyter or VS Code, or to select the right kernel in the notebook. Installing again from inside the notebook with `%pip install pandas` also works, because `%pip` targets the kernel's Python by construction.
+:::
+
+::: {.pitfall title="`pip` installs into the wrong Python"}
+`pip` on your PATH can belong to a different interpreter than `python`. Always write `python -m pip install ...` (or `uv pip install ...`) so that the install goes wherever that `python` lives. If `pip` prints *Defaulting to user installation because normal site-packages is not writeable*, you are not inside an activated environment: activate it and try again.
+:::
+
+::: {.pitfall title="SSL or proxy errors while downloading"}
+Messages mentioning `SSLError`, `CERTIFICATE_VERIFY_FAILED` or `ProxyError` mean the download was blocked between you and the package index, usually by a corporate or university network. Try another network first (a phone hotspot is a two-minute test). If you must use the proxy, set `HTTPS_PROXY` in your terminal as your IT documentation describes; do not disable certificate checking.
+:::
+
+::: {.pitfall title="conda hangs at 'Solving environment'"}
+The classic conda solver can take tens of minutes on a large environment. Use mamba (`mamba env create -f environment.yml`), which solves the same file in seconds; Miniforge includes it. Recent conda versions use the same fast solver by default, so updating conda itself also helps.
+:::
+
+::: {.pitfall title="Apple Silicon (M-series) Macs"}
+Everything in Part I runs natively on Apple Silicon. Make sure you installed the *arm64* build of Miniforge or python.org Python rather than the Intel one running under Rosetta, which is slower and occasionally confuses compiled packages. `python -c "import platform; print(platform.machine())"` should print `arm64`.
+:::
+
+::: {.pitfall title="Cells give results that make no sense"}
+A notebook's kernel keeps every variable from every cell you have *ever* run in this session, in the order you ran them, not the order they appear on the page. If you edited a cell above and did not re-run it, or ran cells out of order, the state may not match the page. Before hunting for a bug: *Kernel → Restart Kernel and Run All Cells* (JupyterLab) or *Restart* then *Run All* (VS Code). If the problem survives a clean run from the top, it is real.
+:::
+
+::: {.pitfall title="JupyterLab opens but the kernel 'dies' or never connects"}
+Usually `ipykernel` is missing from the environment the notebook selected, or two installations are fighting. In the activated environment run `python -m pip install ipykernel` (or `mamba install ipykernel`), then `python -m ipykernel install --user --name molecules-models` to register the environment as a named kernel, and pick it from the kernel list.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Green across the board"}
+Run `scripts/check_env.py` in the setup you chose (as a script locally, or pasted into a Colab cell). Which lines are ✅, which are ➖, and does the last line say you are ready? If any line is ❌, use the troubleshooting section and run it again until none is.
+
+:::: {.solution}
+On a correct install every essential library (numpy, pandas, matplotlib, seaborn, scikit-learn, joblib, ipython) is ✅, the three Part II–IV libraries are ➖, the two functional checks are ✅, and the final line is *All good. You are ready for Chapter 1.* On Colab the versions will differ from the pins and each such line carries the *a different version usually works* note; that is expected. `jupyterlab` may be ➖ on Colab, which has its own front end and does not need it. The only lines that need action are ❌ ones.
+::::
+:::
+
+::: {.challenge level=2 title="Your first notebook"}
+Create a new notebook (JupyterLab, VS Code or Colab). In the first cell import NumPy and print its version. In the second cell, make a list of three molecule names and print how many there are. Then save the notebook as `scratch.ipynb` (on Colab: save a copy in Drive). Finally, restart the kernel and run only the second cell. What happens, and why?
+
+:::: {.solution}
+The first two cells work as expected:
+
+```{python}
+import numpy as np
+
+print(np.__version__)
+```
+
+```{python}
+molecules = ["ethanol", "caffeine", "aspirin"]
+print(len(molecules), "molecules")
+```
+
+After restarting the kernel, running only the second cell still works, because it does not depend on the first. If instead you had written `np.array(molecules)` in it, you would get `NameError: name 'np' is not defined`: a restart wipes every variable and import, so anything a cell depends on must be run again first. That is the whole reason *Restart and Run All* is the reliable way to check a notebook.
+::::
+:::
+
+::: {.challenge level=3 title="Break it on purpose"}
+(Local install only, optional.) In your activated environment, deliberately uninstall seaborn with `python -m pip uninstall seaborn` (or `mamba remove seaborn`), run `check_env.py`, then open a notebook and run `import seaborn`. Read the two error reports carefully: which line of the traceback tells you what is missing, and which tells you where the import was attempted? Then reinstall it (`python -m pip install seaborn==0.13.2` or `mamba install seaborn=0.13.2`) and confirm the check is green again.
+
+:::: {.solution}
+`check_env.py` prints `❌ seaborn  not installed  -> pip install seaborn==0.13.2`, ends with `1 problem(s)`, and exits with code 1 (in a terminal, `echo $?` on macOS/Linux or `echo $LASTEXITCODE` in PowerShell shows it). The notebook shows a traceback whose *last* line is the error itself, `ModuleNotFoundError: No module named 'seaborn'`, and whose lines above it point at the cell and line that tried the import. Reading a traceback bottom-up, error first and then the nearest line of your own code, is a habit the [self-check](03-self-check.html) practises further. After reinstalling, the check script reports all green; if the notebook still fails, you have hit the wrong-kernel pitfall, and `sys.executable` will show you which Python the notebook is actually using.
+::::
+:::
+
+## Where this is going
+
+From here on, the environment is assumed and never discussed again: every cell in [Chapter 1](../ch01-scientific-python/index.html) runs in the setup you have just built, and every lab opens in it or in Colab with one click. When Part II arrives, the only change will be one more line in `environment.yml` (RDKit from conda-forge), which is why the conda route was recommended. Before Chapter 1, though, spend fifteen minutes on the [self-check](03-self-check.html): it tells you whether the Python you already know is enough.

@@ -1,0 +1,77 @@
+# Brand (dark mode, the default). The same tokens are exposed as CSS custom properties in assets/scss/.
+meta:
+  name: Molecules & Models
+  link: https://YOUR-USER.github.io/molecules-and-models/
+color:
+  palette:
+    bg: "#0F1217"
+    surface: "#161A21"
+    surface-2: "#1D222B"
+    code-bg: "#0B0D11"
+    border: "#29303B"
+    text: "#E6E9EE"
+    text-muted: "#A0A8B4"
+    violet: "#A99BFF"
+    amber: "#F2B84B"
+    green: "#5FD39B"
+    coral: "#FF8C7A"
+  foreground: text
+  background: bg
+  primary: violet
+  secondary: text-muted
+  success: green
+  warning: amber
+  danger: coral
+  info: "#7CC4FA"
+typography:
+  fonts:
+    - family: IBM Plex Sans
+      source: file
+      files:
+        - path: ../assets/fonts/IBMPlexSans-Regular.woff2
+          weight: 400
+          style: normal
+        - path: ../assets/fonts/IBMPlexSans-Italic.woff2
+          weight: 400
+          style: italic
+        - path: ../assets/fonts/IBMPlexSans-Medium.woff2
+          weight: 500
+          style: normal
+        - path: ../assets/fonts/IBMPlexSans-SemiBold.woff2
+          weight: 600
+          style: normal
+    - family: Source Serif 4
+      source: file
+      files:
+        - path: ../assets/fonts/SourceSerif4-Semibold.woff2
+          weight: 600
+          style: normal
+        - path: ../assets/fonts/SourceSerif4-SemiboldIt.woff2
+          weight: 600
+          style: italic
+    - family: JetBrains Mono
+      source: file
+      files:
+        - path: ../assets/fonts/JetBrainsMono-Regular.woff2
+          weight: 400
+          style: normal
+        - path: ../assets/fonts/JetBrainsMono-Italic.woff2
+          weight: 400
+          style: italic
+        - path: ../assets/fonts/JetBrainsMono-Bold.woff2
+          weight: 700
+          style: normal
+  base:
+    family: IBM Plex Sans
+    size: 17px
+    line-height: 1.65
+  headings:
+    family: Source Serif 4
+    weight: 600
+    line-height: 1.2
+  monospace:
+    family: JetBrains Mono
+    size: 0.853rem
+  link:
+    color: violet
+    decoration: underline

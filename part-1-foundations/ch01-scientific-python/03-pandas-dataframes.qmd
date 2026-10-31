@@ -1,0 +1,345 @@
+---
+title: "pandas DataFrames"
+chapter: 1
+episode: 3
+teaching: 40
+exercises: 25
+level: beginner
+questions:
+  - "My data has text, numbers and gaps in the same table. How do I hold that in Python?"
+  - "How do I pick out the rows and columns I care about, and compute something per group?"
+  - "How do I combine two tables, or reshape one from wide to long?"
+  - "What should I do about missing values, and when is dropping them wrong?"
+  - "What makes a table 'tidy', and why does every later chapter insist on it?"
+objectives:
+  - "Load a CSV file into a DataFrame and inspect it with `head`, `info`, `describe`, `shape`, `columns` and `dtypes`."
+  - "Select rows and columns with `loc` and `iloc`, and filter rows with boolean masks combined by `&` and `|`."
+  - "Add derived columns, and compute grouped summaries with `groupby` and `agg` over one or two keys."
+  - "Combine tables with `merge`, and reshape them with `melt` and `pivot_table`."
+  - "Count, locate and handle missing values deliberately, and convert text columns to categoricals."
+  - "State the three rules of tidy data and recognise when a table breaks them."
+keypoints:
+  - "A DataFrame is a table of labelled columns, each a Series with one dtype; the row labels are the index."
+  - "`loc` selects by label and `iloc` by position; a boolean mask inside `df[...]` or `df.loc[...]` filters rows."
+  - "Build conditions with `&`, `|` and parentheses; `.isin()` replaces a chain of `==` tests."
+  - "`groupby(keys)[column].agg(...)` is split-apply-combine: one row of results per group."
+  - "`merge` joins tables on a shared key; check the row count before and after, because a bad key silently multiplies rows."
+  - "`melt` turns wide tables long, `pivot_table` turns long tables wide; the long form is what plotting and grouping want."
+  - "`isna().sum()` is the first thing to run on new data; drop missing rows only when you know why they are missing and how many you lose."
+  - "Tidy data: one row per observation, one column per variable, one table per kind of thing."
+prerequisites: [ch01-ep02]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+Between 2007 and 2009 a field team on the Palmer Archipelago in Antarctica measured 344 penguins of three species: bill length and depth, flipper length, body mass, sex, island and year. The obvious questions are table questions. Which species is heaviest? Are males heavier than females in every species? Does any species live on more than one island? None of them fits a NumPy array, because the table mixes text (`"Gentoo"`), numbers (`5076.0`) and gaps where a measurement could not be taken. pandas exists for exactly this kind of data: a {{< term dataframe >}} is a table whose columns have names and their own types, and whose rows have labels, with the arithmetic of [episode 1.2](02-numpy-arrays.html) underneath.
+
+The data are the Palmer penguins (Horst, Hill & Gorman 2020), released under CC0 and bundled in `data/penguins.csv`.
+
+## Loading and inspecting
+
+```{python}
+import numpy as np
+import pandas as pd
+
+penguins = pd.read_csv("data/penguins.csv")
+penguins.head()
+```
+
+`read_csv` parses the file, guesses a type for each column and turns the string `NA` into `NaN`, the marker for a {{< term missing-value >}}. Row 3 is a penguin with no measurements at all; keep an eye on it. Before analysing anything, look at the table from four angles:
+
+```{python}
+penguins.shape, list(penguins.columns)
+```
+
+```{python}
+penguins.dtypes
+```
+
+Four `float64` columns, one `int64`, and three text columns with dtype `str`. (pandas 3 introduced the `str` dtype; older versions show `object` for text, and you will still see that in tutorials.) `info()` adds how many values in each column are *not* missing, which is the fastest way to find gaps:
+
+```{python}
+penguins.info()
+```
+
+342 of 344 measurements, 333 of 344 sexes. `describe()` summarises every numeric column at once:
+
+```{python}
+penguins.describe().round(1)
+```
+
+A body mass of 2.7 to 6.3 kg, flippers of 172 to 231 mm. The `count` row repeats the missing-value story, and `year` is counted as a number because it is one, even though you will treat it as a label.
+
+::: {.bridge audience="bio"}
+This is a real study, not a teaching toy: Gorman, Williams & Fraser (2014, *PLoS ONE* 9(3): e90081) studied sexual size dimorphism and its link to foraging ecology in the three *Pygoscelis* species near Palmer Station. Read the columns as experimental design: `species` is the organism, `island` the site, `year` the season, `sex` the factor the study was about, and the four measurements are the responses. Every question you ask of this table in the next hour (mean by species, difference by sex, counts per island) is a question the authors asked too.
+:::
+
+## Columns are Series; rows have an index
+
+A single column is a {{< term series >}}: a 1-D labelled array with a name and a dtype.
+
+```{python}
+mass = penguins["body_mass_g"]
+mass.head(3)
+```
+
+The numbers on the left are the {{< term index >}}, the row labels. By default they are `0, 1, 2, …`, but they are *labels*, not positions: after filtering or sorting the index keeps its original values, so "the row labelled 169" and "the 170th row" are not the same thing. A Series behaves like a NumPy array (`mass.mean()`, `mass / 1000`, `mass > 5000`) and like a dictionary (`mass[169]` looks up the label). For text columns, `value_counts()` is the first thing to run:
+
+```{python}
+penguins["species"].value_counts()
+```
+
+## Selecting with `loc` and `iloc`
+
+Two indexers cover every selection, and the difference is the single most important thing in this episode. {{< term loc-iloc "loc" >}} selects by **label** (row label, column name); `iloc` selects by integer **position**. Both take `[rows, columns]`.
+
+```{python}
+penguins.loc[169, ["species", "body_mass_g"]]
+```
+
+```{python}
+penguins.iloc[0:3, 0:2]
+```
+
+Right now, labels and positions coincide, so `loc[169]` and `iloc[169]` return the same penguin. Filter the table and they stop agreeing, which is why it matters to say which one you mean. One more difference: `loc` slices are *inclusive* of the end label (`loc[0:2]` is three rows), because labels have no natural "one past the end", while `iloc` slices follow the Python rule.
+
+::: {.bridge audience="cs"}
+If you have met these structures before: a DataFrame is a dict of equal-length typed columns, not a list of row records, which is why column operations are cheap and row-by-row loops are the wrong tool. A `groupby` is `SELECT ... GROUP BY`; `merge` is a `JOIN`; a boolean mask is a `WHERE`. The index is a primary key that is allowed to be non-unique and survives filtering, hence `loc` (by key) versus `iloc` (by offset). Column selection `df["col"]` works like a dict lookup, so `df.col` attribute access, which you will see in the wild, is just sugar that breaks on column names with spaces.
+:::
+
+## Filtering rows with masks
+
+A comparison on a column gives a boolean Series, a {{< term boolean-mask >}} with the same index as the table, and indexing the table with it keeps the rows where it is `True`:
+
+```{python}
+gentoo = penguins[penguins["species"] == "Gentoo"]
+gentoo.shape
+```
+
+Combine conditions with `&` (and), `|` (or) and `~` (not), each in parentheses, exactly as in NumPy:
+
+```{python}
+big = penguins[(penguins["body_mass_g"] > 5500) | (penguins["flipper_length_mm"] > 225)]
+big[["species", "island", "flipper_length_mm", "body_mass_g"]].head()
+```
+
+To test membership in a set, use `.isin()` instead of chaining `==` with `|`:
+
+```{python}
+penguins[penguins["island"].isin(["Dream", "Torgersen"])]["species"].value_counts()
+```
+
+Notice that `gentoo`'s index starts at 152, not 0: the labels came along. `gentoo.iloc[0]` is the first Gentoo; `gentoo.loc[0]` is a `KeyError`, because no row is labelled 0 any more. If you want fresh positions, call `gentoo.reset_index(drop=True)`.
+
+## Adding columns
+
+Body mass in kilograms and a bill shape ratio are both one array expression away. The two idioms:
+
+```{python}
+penguins["body_mass_kg"] = penguins["body_mass_g"] / 1000
+penguins = penguins.assign(bill_ratio=penguins["bill_length_mm"] / penguins["bill_depth_mm"])
+penguins[["species", "body_mass_kg", "bill_ratio"]].head(3)
+```
+
+`df["new"] = ...` modifies the table in place; `.assign(new=...)` returns a new table and chains nicely. Missing inputs give missing outputs: the penguin in row 3 gets `NaN` in both new columns, silently and correctly.
+
+::: {.pitfall title="Chained assignment does nothing"}
+`penguins[penguins["species"] == "Gentoo"]["body_mass_kg"] = 0` looks like it sets Gentoo masses to zero. It does not. The filter produces a *copy*, the assignment lands on the copy, and the copy is thrown away. pandas 3 enforces this (copy-on-write) rather than sometimes working and sometimes warning. Write what you mean in one indexer: `penguins.loc[penguins["species"] == "Gentoo", "body_mass_kg"] = 0`.
+:::
+
+## Group and aggregate
+
+"Mean body mass by species" is a split-apply-combine operation, {{< term groupby >}}: split the rows into groups by a key, apply a function to each group, combine the results into one row per group.
+
+::: {.predict}
+Which species do you expect to be heaviest, and by how much? Gentoo penguins are the largest of the three; write down a guess for the gap before running the cell.
+:::
+
+```{python}
+penguins.groupby("species")["body_mass_g"].mean().round(0)
+```
+
+Gentoo penguins are about 1.4 kg heavier than the other two, which barely differ from each other. Several statistics at once go through `.agg`:
+
+```{python}
+penguins.groupby("species")["body_mass_g"].agg(["mean", "std", "count"]).round(1)
+```
+
+`count` counts non-missing values, so Adelie shows 151 rather than 152: the penguin with no measurements. Two keys give one row per combination, and `unstack()` moves the inner key into columns so the comparison reads across:
+
+```{python}
+by_species_sex = penguins.groupby(["species", "sex"])["body_mass_g"].mean().round(0)
+by_species_sex.unstack()
+```
+
+Males are heavier than females in all three species, by 400 to 800 g. That table, in one line, is the finding in the title of the paper this dataset comes from.
+
+::: {.pitfall title="Missing keys vanish from groupby"}
+Group by `sex` and the 11 penguins with unknown sex are dropped without a message, because `NaN` is not a group by default. Their masses are not in the table above. If you need them counted, pass `dropna=False` to `groupby`; either way, know that it happened.
+:::
+
+## Merging two tables
+
+Related information often lives in another table. Here is a two-column lookup from the common name to the scientific name of each species, typed by hand; {{< term merge >}} attaches it to every row by matching the shared `species` column:
+
+```{python}
+names = pd.DataFrame({
+    "species": ["Adelie", "Chinstrap", "Gentoo"],
+    "scientific_name": ["Pygoscelis adeliae", "Pygoscelis antarcticus", "Pygoscelis papua"],
+})
+merged = penguins.merge(names, on="species", how="left")
+print(penguins.shape, "->", merged.shape)
+merged[["species", "scientific_name", "island"]].drop_duplicates().head()
+```
+
+`how="left"` keeps every row of the left table and fills `NaN` where the right table has no match; `how="inner"` keeps only matched rows. The row count is the thing to check every time you merge: 344 in, 344 out means every penguin matched exactly one name. If the lookup table had listed a species twice, the merge would have duplicated those penguins, and nothing would have warned you. Chapter 5 merges thousands of measured compounds with computed descriptors on a molecule identifier; the habit of printing the shape before and after starts here.
+
+## Reshaping: `melt` and `pivot_table`
+
+The penguin table is *wide*: four measurements sit in four columns. For some tasks, plotting all four with the same code or grouping by "which measurement", you want them *long*, one row per penguin per measurement. That is {{< term melt-pivot "melt" >}}:
+
+```{python}
+measurements = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]
+long = penguins.melt(
+    id_vars=["species", "island", "sex", "year"],
+    value_vars=measurements,
+    var_name="measurement",
+    value_name="value",
+)
+print(long.shape)
+long.head(3)
+```
+
+344 penguins × 4 measurements = 1376 rows. The `id_vars` are repeated on every row so nothing is lost; `measurement` says which column the number came from. Going the other way, `pivot_table` summarises a long or wide table into a grid, with one key on the rows, one on the columns and an aggregation in the cells.
+
+::: {.predict}
+A table of mean body mass with species as rows and islands as columns has nine cells. How many will be empty? Think about whether every species was measured on every island.
+:::
+
+```{python}
+penguins.pivot_table(index="species", columns="island", values="body_mass_g", aggfunc="mean").round(0)
+```
+
+Four cells are empty: Chinstrap penguins were measured only on Dream, Gentoo only on Biscoe, and only Adelie on all three islands. That is a fact about the study design, not a data error, and it is the kind of thing `pivot_table` makes visible in one glance. `aggfunc="count"` gives the sample sizes behind the same grid.
+
+## Missing values
+
+Every real dataset has gaps. The first thing to run on any new table:
+
+```{python}
+penguins.isna().sum()
+```
+
+Two rows have no measurements, eleven have no sex (the two unmeasured penguins are among them). Look at the rows before deciding what to do:
+
+```{python}
+penguins.loc[penguins["sex"].isna(), ["species", "island", "year", "body_mass_g"]].head()
+```
+
+There are three responses, and the right one depends on *why* the value is missing and *what you will do next*:
+
+- **Drop the rows** when they carry no information (the two unmeasured penguins) or when the missing column is essential and the loss is small. `dropna(subset=measurements)` drops only rows missing a measurement; bare `dropna()` drops any row with any gap, which here would also discard nine fully measured penguins just because their sex is unknown.
+- **Keep them** when the gap is in a column you are not using. A model of body mass from flipper length does not care that `sex` is missing.
+- **Impute** (fill in an estimate such as the column median) when you need the column and cannot afford the rows. Imputation must be learned from training data only, which is why it waits until [episode 2.6](../ch02-ml-fundamentals/06-pipelines-leakage.html) and {{< term imputation >}} inside a pipeline.
+
+```{python}
+complete = penguins.dropna(subset=measurements)
+complete.shape
+```
+
+Never fill gaps with 0 or −999: a model cannot tell a placeholder from a measurement, and the mean of a column with a few −999s is nonsense.
+
+## Categorical columns
+
+`species`, `island` and `sex` take a handful of values each. Converting them to pandas' {{< term categorical >}} type records the allowed categories once and stores each value as a small integer:
+
+```{python}
+penguins["species"] = penguins["species"].astype("category")
+penguins["species"].dtype, list(penguins["species"].cat.categories)
+```
+
+The benefits are memory (a few hundred bytes instead of tens of kilobytes for this column), a fixed category order for plots and tables, and an explicit statement that this column is a label, not free text. The cost is one extra keyword: when grouping by a categorical, pass `observed=True` so that pandas reports only combinations that actually occur rather than every possible one.
+
+```{python}
+penguins.groupby("species", observed=True).size()
+```
+
+## Tidy data
+
+The penguin table obeys three rules that make all of the above work without special cases. This is {{< term tidy-data >}}:
+
+1. **Each row is one observation** (one penguin).
+2. **Each column is one variable** (one measurement or one design factor).
+3. **Each table is one kind of thing** (penguins here; a separate table for species names).
+
+Untidy tables are everywhere in science: a spreadsheet with one column per year, a plate layout where the position of a cell encodes the sample, a sheet with the sample name in a merged header row. They look fine to a human and are nearly unusable by code. `melt` is the usual repair for "variables in column headers"; `pivot_table` is how you produce a wide summary for a reader *after* the analysis, not before. Keep the long, tidy table as the source of truth and derive everything else from it.
+
+::: {.instructor}
+Timing: loading through `loc`/`iloc` takes about 15 minutes; the index-versus-position distinction is worth a live demonstration with `gentoo.loc[0]` failing. The chained-assignment pitfall is best shown rather than described. If short on time, compress merge and categoricals and keep melt, pivot and missing values, which the lab relies on. Biologists usually enjoy the pivot of species × island; ask them to interpret it before you do.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Heaviest penguin per species"}
+Find the heaviest penguin of each species and show its species, island, sex and body mass. Two routes work: `groupby` with `idxmax`, or sort by mass and keep the first row of each group with `.groupby(...).head(1)`.
+
+:::: {.solution}
+```{python}
+heaviest_idx = penguins.groupby("species", observed=True)["body_mass_g"].idxmax()
+penguins.loc[heaviest_idx, ["species", "island", "sex", "body_mass_g"]]
+```
+
+`idxmax` returns the *index label* of the maximum within each group, which is exactly what `loc` wants. The result shows a 6.3 kg Gentoo male on Biscoe, and that all three heaviest birds are male, consistent with the grouped means. The sort-then-`head(1)` route gives the same rows:
+
+```{python}
+(
+    penguins.sort_values("body_mass_g", ascending=False)
+    .groupby("species", observed=True)
+    .head(1)[["species", "island", "sex", "body_mass_g"]]
+)
+```
+::::
+:::
+
+::: {.challenge level=2 title="Where is sex missing?"}
+Compute the fraction of penguins with unknown sex in each species, as a percentage with one decimal. Then check whether the gaps cluster in one island or year. Is there any reason to think the missingness is related to the measurements?
+
+:::: {.solution}
+```{python}
+missing_sex = penguins["sex"].isna()
+(missing_sex.groupby(penguins["species"], observed=True).mean() * 100).round(1)
+```
+
+A boolean Series has mean equal to the fraction of `True`, so grouping the mask by species gives the fraction missing per species directly: about 4% of Adelie and Gentoo, none of the Chinstrap.
+
+```{python}
+penguins.loc[missing_sex, ["species", "island", "year"]].value_counts()
+```
+
+Five of the eleven are Adelie penguins from Torgersen in 2007, one more is an Adelie from Dream the same year, and the other five are Gentoo on Biscoe spread over all three years; the clusters are small, and the masses of the nine measured birds (3.0 to 4.9 kg) sit well inside the normal range for their species. With such numbers you cannot tell whether sex was simply not recorded or could not be determined, so the safe choice is to keep these rows for any analysis that does not use `sex` and drop them only for the ones that do.
+::::
+:::
+
+::: {.challenge level=3 title="Dimorphism table: melt, group, pivot"}
+Using the `long` table, compute the mean of every measurement for each species and sex, then pivot to a table with one row per (species, measurement) and one column per sex, and add a column `male_minus_female_pct` giving the male–female difference as a percentage of the female mean. Which measurement differs most between the sexes, and in which species?
+
+:::: {.solution}
+```{python}
+dimorphism = (
+    long.dropna(subset=["sex", "value"])
+    .groupby(["species", "measurement", "sex"])["value"]
+    .mean()
+    .unstack("sex")
+    .assign(male_minus_female_pct=lambda t: (t["male"] - t["female"]) / t["female"] * 100)
+    .round(1)
+)
+dimorphism.sort_values("male_minus_female_pct", ascending=False)
+```
+
+The melt made this a single `groupby` over three keys instead of four separate calculations, one per measurement column. `unstack("sex")` is the pivot step: it moves the innermost key into columns so male and female sit side by side. Body mass shows the largest sex difference in every species (12–20%, with Adelie at the top), the two bill measurements come next (8–10%), and flipper length differs least (2–4%). Males are larger on every measurement in every species, but the size of the gap depends on what you measure, which is why the paper's title says *dimorphism* rather than just *bigger*. The `.assign(... lambda t: ...)` form lets you refer to the table being built inside a chain. The same chain, with a different `id_vars` list, is how you will compare descriptor distributions across compound classes in Chapter 5.
+::::
+:::
+
+## Where this is going
+
+From here on, every dataset in the course arrives as a DataFrame and leaves as the `X` and `y` of [episode 1.2](02-numpy-arrays.html): `X = df[features]` selects the feature columns, `y = df["target"]` the labels, and scikit-learn accepts both directly. [Episode 1.4](04-visualisation.html) plots this same penguin table, long form and all, and [episode 1.5](05-eda-solubility.html) applies the inspect-filter-group-check-for-gaps routine to the ESOL solubility data that Chapter 2 models. In Chapter 5 the rows become molecules and the columns computed descriptors, merged on a compound identifier; in Part III the table is a gene-expression matrix with thousands of columns, and `melt`, `groupby` and `pivot_table` are still the verbs you reach for.

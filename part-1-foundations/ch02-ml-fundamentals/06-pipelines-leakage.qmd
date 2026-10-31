@@ -1,0 +1,430 @@
+---
+title: "Pipelines, preprocessing and data leakage"
+chapter: 2
+episode: 6
+teaching: 40
+exercises: 25
+level: beginner
+questions:
+  - "Why does the same model score differently when I scale the features, and which models care?"
+  - "How do I handle missing values and text categories without writing fragile glue code?"
+  - "What is data leakage, how does it sneak into real scientific datasets, and how do I keep it out?"
+  - "How do I save a fitted model and make sure a colleague gets the same numbers?"
+objectives:
+  - "Explain why distance-based and penalised models need feature scaling, and apply `StandardScaler` inside a pipeline."
+  - "Build a `ColumnTransformer` that imputes missing values and one-hot encodes categorical columns, and read its output feature names."
+  - "Fit a `Pipeline` on training data and apply it to test data as one object."
+  - "Recognise four leakage patterns (duplicates, grouped samples, preprocessing before splitting, target leakage) and demonstrate each with code."
+  - "Use `GroupKFold` to keep related samples on one side of a split."
+  - "Save and reload a fitted pipeline with joblib, and follow a reproducibility checklist."
+keypoints:
+  - "Scale features for kNN, logistic regression, ridge and lasso; fit the scaler on the training data only."
+  - "A `Pipeline` bundles preprocessing and model into one estimator: `fit` learns everything from the training set, `predict` applies it unchanged to new data."
+  - "`ColumnTransformer` sends numeric columns through imputation and scaling and categorical columns through one-hot encoding; `get_feature_names_out()` tells you what came out."
+  - "Leakage is any way information about the test set reaches the model before evaluation. The test score then measures memory, not generalisation."
+  - "Duplicates, repeated patients or batches, preprocessing fitted on all data and after-the-fact columns are the four leaks to check for in every scientific dataset."
+  - "`GroupKFold` keeps every sample of a group on one side of the split; scaffold and sequence-identity splits are the same idea for molecules and proteins."
+  - "Save the whole pipeline with `joblib.dump`, fix every seed, pin versions and never touch the test set twice."
+prerequisites: [ch02-ep05]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+Every model in this chapter so far received a clean numeric table and a single random split. Real scientific data is not like that. Columns have wildly different units, measurements are missing, some columns are words rather than numbers, and the rows are rarely independent: the same compound appears twice under different names, five biopsies come from one patient, a whole plate was measured on a bad day. Each of those facts can quietly turn an honest test score into a flattering one. This episode gives you the two tools that keep a modelling workflow honest, the {{< term pipeline >}} and the {{< term group-split >}}, and a catalogue of the ways scientific datasets leak.
+
+## Why the scale of a feature matters
+
+Load the breast cancer Wisconsin data from [episode 2.5](05-classification.html). Its 30 features are all physical measurements of cell nuclei, but they are measured on very different scales: one column rarely exceeds 0.03, another reaches 4,254.
+
+```{python}
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+bc = load_breast_cancer(as_frame=True)
+X, y = bc.data, bc.target
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+X.describe().loc[["min", "max"]].T.sort_values("max").iloc[[0, -1]]
+```
+
+A {{< term knn >}} classifier decides by Euclidean distance. In that distance a difference of 100 in `worst area` counts exactly as much as a difference of 100 in `fractal dimension error`, except that the latter can never happen: the small-valued features are simply ignored. {{< term feature-scaling >}} fixes this. `StandardScaler` subtracts each column's mean and divides by its standard deviation, so that every feature has mean 0 and standard deviation 1 on the training data. (`MinMaxScaler` instead squeezes each column into the range 0–1; it is more sensitive to outliers, so `StandardScaler` is the usual default.)
+
+::: {.predict}
+With the raw features, kNN gets about 91% of the test samples right. Will scaling change that by less than one percentage point, by a few points, or by ten or more? Commit to a guess.
+:::
+
+```{python}
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+knn_raw = KNeighborsClassifier().fit(X_train, y_train)
+knn_scaled = make_pipeline(StandardScaler(), KNeighborsClassifier()).fit(X_train, y_train)
+print(f"kNN accuracy, raw features:    {knn_raw.score(X_test, y_test):.3f}")
+print(f"kNN accuracy, scaled features: {knn_scaled.score(X_test, y_test):.3f}")
+```
+
+The number of mistakes on the 114 test samples halves, from 10 to 5, without touching the model. The scaler let the small-valued features vote.
+
+Scaling also matters for every model with a penalty. {{< term ridge "Ridge" >}}, {{< term lasso >}} and {{< term logistic-regression >}} penalise the size of the coefficients, and a coefficient's size depends on the unit of its feature: a feature measured in thousands needs a tiny coefficient and is barely penalised, while one measured in hundredths needs a huge coefficient and is crushed. Scaling makes the penalty treat every feature alike. As a bonus, the optimiser converges far faster.
+
+```{python}
+from sklearn.linear_model import LogisticRegression
+
+logreg_raw = LogisticRegression(max_iter=5000).fit(X_train, y_train)
+logreg_scaled = make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000)).fit(X_train, y_train)
+print(f"raw:    accuracy {logreg_raw.score(X_test, y_test):.3f}, "
+      f"iterations {logreg_raw.n_iter_[0]}")
+print(f"scaled: accuracy {logreg_scaled.score(X_test, y_test):.3f}, "
+      f"iterations {logreg_scaled[-1].n_iter_[0]}")
+```
+
+Without scaling the solver needs over two thousand iterations (and with the default `max_iter=100` it stops early and warns); with scaling it needs about twenty and the model is slightly better. Tree-based models, which you meet in Chapter 3, split on one feature at a time and are the main family that does not care about scale.
+
+::: {.pitfall title="Fit the scaler on the training data only"}
+`StandardScaler().fit(X)` on the *whole* table uses the test molecules' means and standard deviations. That is a small leak (you will measure it below), but it is the first step on a slippery slope. The rule is simple: anything that is *fitted*, including a scaler, an imputer or an encoder, is fitted on the training data and only *applied* to the test data. A pipeline does this for you automatically.
+:::
+
+## Missing values and categories: the penguins
+
+Now a messier table. The Palmer penguins ([episode 1.3](../ch01-scientific-python/03-pandas-dataframes.html)) have two columns of words, `island` and `sex`, and `sex` is missing for eleven birds. The task: predict body mass in grams from the bill and flipper measurements plus island and sex.
+
+```{python}
+penguins = pd.read_csv("data/penguins.csv").dropna(subset=["body_mass_g"])
+numeric = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm"]
+categorical = ["island", "sex"]
+
+Xp = penguins[numeric + categorical]
+yp = penguins["body_mass_g"]
+Xp_train, Xp_test, yp_train, yp_test = train_test_split(Xp, yp, test_size=0.2, random_state=42)
+Xp_train.isna().sum()
+```
+
+Two rows have no measurements at all, so their body mass is unknown and they are dropped: you cannot impute the target. Five birds in the training set lack a `sex`. A linear model cannot take `"male"` as input and refuses a {{< term missing-value >}}, so two preprocessing steps are needed:
+
+- {{< term imputation >}}: `SimpleImputer` replaces each missing number by the column's median (or mean), and each missing category by the most frequent one, *as computed on the training data*.
+- {{< term one-hot-encoding >}}: `OneHotEncoder` turns `island` into three 0/1 columns, one per island, and `sex` into two. `handle_unknown="ignore"` means a category never seen in training (a fourth island) becomes all zeros instead of an error.
+
+Different columns need different steps, and that is exactly what a {{< term column-transformer >}} expresses.
+
+```{python}
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder
+
+preprocess = ColumnTransformer(
+    [
+        ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), numeric),
+        ("cat", make_pipeline(SimpleImputer(strategy="most_frequent"),
+                              OneHotEncoder(handle_unknown="ignore")), categorical),
+    ]
+)
+preprocess
+```
+
+Each entry is `(name, transformer, columns)`. The numeric columns go through an imputer and a scaler; the categorical ones through an imputer and an encoder. Now chain the transformer with a model.
+
+```{python}
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import Pipeline
+
+penguin_model = Pipeline([("preprocess", preprocess), ("ridge", Ridge(alpha=1.0))])
+penguin_model.fit(Xp_train, yp_train)
+print(f"test R²: {penguin_model.score(Xp_test, yp_test):.3f}")
+```
+
+`Pipeline` takes named steps; `make_pipeline` is the same thing with names generated for you. Either way the result is a single {{< term estimator >}}. When you call `fit`, each step is fitted on the training data and its output is passed to the next; when you call `predict` or `score` on the test data, each step only *applies* what it learned. The medians, the category lists and the scaling constants all come from the 273 training penguins and are frozen before the test set is touched.
+
+What did the model actually see? Ask the preprocessing step.
+
+```{python}
+feature_names = penguin_model[:-1].get_feature_names_out()
+pd.Series(penguin_model[-1].coef_, index=feature_names).round(1)
+```
+
+`get_feature_names_out()` shows the nine columns that reached the ridge model, prefixed by the transformer that produced them. The coefficients are now interpretable: being male adds about 250 g relative to being female, for the same bill and flipper measurements, and a Biscoe penguin is about 175 g heavier than average. Without the categorical columns the test $R^2$ drops from about 0.83 to 0.78, so encoding words as numbers was worth doing.
+
+::: {.bridge audience="cs"}
+A pipeline is a composable object: it has the same `fit`/`predict` interface as any single model, so a `GridSearchCV` from [episode 2.4](04-overfitting-regularisation.html) can tune `ridge__alpha` (step name, two underscores, parameter name) *and* `preprocess__num__simpleimputer__strategy` in one search, and the whole thing serialises to one file. The design mirrors function composition: `predict(x) = model(encode(impute(x)))`, with the guarantee that every component was fitted on the same training data.
+:::
+
+::: {.pitfall title="Preprocess inside the pipeline, not before it"}
+It is tempting to clean the whole table first (`X = scaler.fit_transform(X)`) and *then* split and model. That makes the preprocessing invisible to cross-validation and fits it on test rows. Put every fitted step inside the pipeline and give the pipeline raw columns.
+:::
+
+## Leakage: when the test set peeks at the answers
+
+{{< term data-leakage >}} is any route by which information about the test samples, or about their labels, reaches the model before you evaluate it. The symptom is a test score that is too good; the disease is that the score measures memory rather than {{< term generalisation >}}. The rest of this section shows the four routes that matter most in chemistry and biology, each with a small experiment.
+
+### Duplicates across the split
+
+ESOL seems clean: no SMILES string and no compound name appears twice.
+
+```{python}
+from pathlib import Path
+
+ESOL_URL = "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/delaney-processed.csv"
+path = Path("data/esol.csv")
+esol = pd.read_csv(path if path.exists() else ESOL_URL)
+
+print("duplicated SMILES:", esol["smiles"].duplicated().sum())
+print("duplicated names: ", esol["Compound ID"].duplicated().sum())
+```
+
+Both zero. But 212 of the SMILES strings end in a trailing space, which hides exact matches. Strip the whitespace and look again.
+
+```{python}
+smiles = esol["smiles"].str.strip()
+dupes = esol.loc[smiles.duplicated(keep=False), ["Compound ID", "measured log solubility in mols per litre"]]
+dupes.assign(smiles=smiles).sort_values("smiles")
+```
+
+Five pairs of rows share a structure under two names: eucalyptol and 1,8-cineole are the same molecule, guaiacol is *o*-methoxyphenol, Metronidazole appears again with a typo, and so on. If one copy lands in training and the other in test, the model is tested on a molecule it has memorised. Five pairs in 1,128 rows is a mild case. To see what a severe case does, make every molecule a {{< term duplicate >}} by stacking the table on itself, then split randomly and evaluate kNN as if nothing had happened.
+
+```{python}
+from sklearn.metrics import root_mean_squared_error
+from sklearn.neighbors import KNeighborsRegressor
+
+features = ["Molecular Weight", "Number of H-Bond Donors", "Number of Rings",
+            "Number of Rotatable Bonds", "Polar Surface Area"]
+Xe, ye = esol[features], esol["measured log solubility in mols per litre"]
+knn_reg = make_pipeline(StandardScaler(), KNeighborsRegressor(n_neighbors=5))
+
+
+def test_rmse(X, y):
+    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42)
+    return root_mean_squared_error(yte, knn_reg.fit(Xtr, ytr).predict(Xte))
+
+
+doubled_X = pd.concat([Xe, Xe], ignore_index=True)
+doubled_y = pd.concat([ye, ye], ignore_index=True)
+print(f"honest test RMSE:        {test_rmse(Xe, ye):.3f} logS")
+print(f"with duplicates:         {test_rmse(doubled_X, doubled_y):.3f} logS")
+```
+
+The error drops by about 0.15 log units, and with `n_neighbors=1` it would halve, because most test molecules now have an identical twin in the training set and kNN simply reads off its label. Nothing about the model improved. Deduplicate before you split, and define "duplicate" chemically, not as string equality.
+
+::: {.bridge audience="chem"}
+String-identical SMILES are only the obvious duplicates. The mannitol/sorbitol pair above shows the next layer: two stereoisomers with the same connectivity, different in solubility by a log unit, identical in a SMILES written without stereo marks. Salts (the free base and its hydrochloride), tautomers and different protonation states of one parent compound are all "the same molecule" to a model built on 2D descriptors. ChEMBL-style datasets are full of such near-duplicates, and this is one reason a random split of medicinal chemistry data overstates performance: the test set is largely analogues of the training set. Chapter 5 shows how to canonicalise structures with RDKit before you deduplicate.
+:::
+
+### The same patient in train and test
+
+Suppose you measure a biomarker in six blood samples from each of 30 patients and want to predict a clinical outcome from new patients. Build a synthetic version where the truth is known: the outcome depends on one real signal, plus a patient-specific offset that a new patient would not share. The other four features are a "patient fingerprint", baseline chemistry that identifies the person but says nothing about the outcome.
+
+```{python}
+rng = np.random.default_rng(42)
+n_patients, per_patient = 30, 6
+patient = np.repeat(np.arange(n_patients), per_patient)
+
+fingerprint = rng.normal(size=(n_patients, 4))        # who the patient is
+offset = 1.5 * rng.normal(size=n_patients)            # patient-specific shift
+signal = rng.normal(size=len(patient))                # transferable biology
+
+Xg = np.column_stack([signal, fingerprint[patient] + 0.1 * rng.normal(size=(len(patient), 4))])
+yg = signal + offset[patient] + 0.3 * rng.normal(size=len(patient))
+Xg.shape, yg.shape
+```
+
+A plain `KFold` shuffles the 180 samples and puts some of every patient on both sides. `GroupKFold` takes a `groups` array and guarantees that all samples of a patient go to the same fold. Score a kNN regressor both ways.
+
+```{python}
+from sklearn.model_selection import GroupKFold, KFold, cross_val_score
+
+knn5 = KNeighborsRegressor(n_neighbors=5)
+kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+group_kfold = GroupKFold(n_splits=5)
+
+r2_kfold = cross_val_score(knn5, Xg, yg, cv=kfold)
+r2_group = cross_val_score(knn5, Xg, yg, cv=group_kfold, groups=patient)
+print(f"KFold      R² per fold: {np.round(r2_kfold, 2)}  mean {r2_kfold.mean():.2f}")
+print(f"GroupKFold R² per fold: {np.round(r2_group, 2)}  mean {r2_group.mean():.2f}")
+```
+
+With the random split, kNN finds the patient's own other samples by their fingerprint, copies their offset and reports $R^2 \approx 0.7$. With the {{< term group-split >}} it has to predict a *new* patient from the signal alone, and the honest answer is that this model cannot: $R^2$ is about zero. The first number is what the paper would have reported; the second is what the clinic would have observed.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Bar chart of R-squared per cross-validation fold for KFold and GroupKFold on the synthetic patient data. The five KFold bars are all around 0.65 to 0.7; the GroupKFold bars are scattered between minus 1.1 and 0.3, mostly near zero."
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 3.8))
+folds = np.arange(1, 6)
+ax.bar(folds - 0.2, r2_kfold, width=0.4, label="KFold (patients mixed)")
+ax.bar(folds + 0.2, r2_group, width=0.4, label="GroupKFold (patients kept together)")
+ax.axhline(0, color="0.4", linewidth=0.8)
+ax.set(xlabel="fold", ylabel="R² on the held-out fold", xticks=folds)
+ax.legend()
+plt.show()
+```
+
+::: {.bridge audience="bio"}
+"Patient" stands for any unit that makes samples non-independent: the animal in a dose study, the litter, the cell line, the 96-well plate, the sequencing batch, the day the microscope was recalibrated. If the model can tell which unit a sample came from, a random split lets it exploit that. The rule is to split at the level at which you want to generalise: new patients, new plates, new batches. Part III applies the same rule to proteins, where "same group" means "similar sequence": two proteins at 90% identity are the same patient in disguise.
+:::
+
+`GroupKFold` is also the backbone of the {{< term scaffold-split >}} you meet in Part II: the group is the molecule's core ring system, so the test set contains chemotypes the model never saw.
+
+### Preprocessing before splitting
+
+Fit a `StandardScaler` on all of ESOL, then split, then model. Compare with the honest order.
+
+```{python}
+Xtr, Xte, ytr, yte = train_test_split(Xe, ye, test_size=0.2, random_state=42)
+
+leaky_scaler = StandardScaler().fit(Xe)                       # sees the test rows
+leaky_knn = KNeighborsRegressor().fit(leaky_scaler.transform(Xtr), ytr)
+honest_scaler = StandardScaler().fit(Xtr)
+honest_knn = KNeighborsRegressor().fit(honest_scaler.transform(Xtr), ytr)
+
+print(f"scaler fitted on everything: RMSE {root_mean_squared_error(yte, leaky_knn.predict(leaky_scaler.transform(Xte))):.4f}")
+print(f"scaler fitted on train only: RMSE {root_mean_squared_error(yte, honest_knn.predict(honest_scaler.transform(Xte))):.4f}")
+```
+
+The difference is in the third decimal: the test rows nudge the means and standard deviations by a fraction of a percent. Scaling leaks little because it does not look at `y`. Preprocessing that *does* look at `y` is a different story. Here is a dataset of 200 samples with 1,000 features of pure noise and a target of pure noise. Pick the ten features most correlated with the target, using all the data, and then "evaluate" properly.
+
+```{python}
+rng = np.random.default_rng(42)
+X_noise = rng.normal(size=(200, 1000))
+y_noise = rng.normal(size=200)
+
+
+def top_correlated(X, y, k=10):
+    corr = np.array([abs(np.corrcoef(X[:, j], y)[0, 1]) for j in range(X.shape[1])])
+    return np.argsort(corr)[-k:]
+
+
+from sklearn.linear_model import LinearRegression
+
+chosen = top_correlated(X_noise, y_noise)                    # selected on ALL the data
+Xtr, Xte, ytr, yte = train_test_split(X_noise[:, chosen], y_noise, test_size=0.2, random_state=42)
+leaky_r2 = LinearRegression().fit(Xtr, ytr).score(Xte, yte)
+
+Xtr, Xte, ytr, yte = train_test_split(X_noise, y_noise, test_size=0.2, random_state=42)
+chosen = top_correlated(Xtr, ytr)                            # selected on the training rows
+honest_r2 = LinearRegression().fit(Xtr[:, chosen], ytr).score(Xte[:, chosen], yte)
+print(f"test R², features selected on all data:   {leaky_r2:.2f}")
+print(f"test R², features selected on train only: {honest_r2:.2f}")
+```
+
+The leaky version reports $R^2 \approx 0.29$ for predicting noise from noise. Among 1,000 random columns, some correlate with any target by chance; selecting them on the full table bakes the test rows' chance correlations into the "model", and the split afterwards cannot undo it. The honest version is negative, which is the correct answer. Gene-expression studies with thousands of genes and dozens of samples are exactly this shape, and this mistake has been made in print many times.
+
+::: {.bridge audience="math"}
+A test estimate is unbiased only if the test samples are independent of everything used to build the predictor. A scaler fitted on the full table makes the predictor a function of the test inputs $x_{\text{test}}$ (through the estimated mean and variance), which breaks independence mildly. Selecting features by their correlation with $y$ makes the predictor a function of the test *labels*: the selected set is chosen to maximise $|\hat{\rho}(x_j, y)|$ over all rows, so the test residuals are small by construction, not by generalisation. The size of the bias grows with the number of candidates searched, which is why high-dimensional data (many features, few samples) is where this leak bites hardest.
+:::
+
+### Target leakage
+
+The last route is a column that is recorded *after*, or *because of*, the outcome. A thought experiment: you predict whether a tumour is malignant from a hospital database, and one column is "chemotherapy started (yes/no)". It is a near-perfect predictor and completely useless, because it was filled in after the diagnosis you are trying to predict. That is {{< term target-leakage >}}. Other examples: "days until the next appointment" when predicting readmission, a cell-viability readout when predicting toxicity, or, closer to home, the `ESOL predicted log solubility` column in our file, which is the output of a model that was fitted on the measured values. Using it as a feature would launder Delaney's training labels into our features.
+
+Target leakage never shows up in a cross-validation score, which looks wonderful. The only defence is to ask, for every column, *"would this value exist, with this value, at the moment I want to make the prediction?"* If not, drop it.
+
+## Saving a pipeline
+
+A fitted pipeline is one Python object, so it can be saved as one file. scikit-learn uses {{< term joblib >}} for this. Here the file goes to a temporary directory; in a project you would write it next to the data with a versioned name.
+
+```{python}
+import tempfile
+
+import joblib
+
+with tempfile.TemporaryDirectory() as tmp:
+    model_path = Path(tmp) / "penguin_ridge.joblib"
+    joblib.dump(penguin_model, model_path)
+    reloaded = joblib.load(model_path)
+    same = np.allclose(reloaded.predict(Xp_test), penguin_model.predict(Xp_test))
+    print(f"saved {model_path.stat().st_size / 1024:.1f} kB; predictions identical: {same}")
+```
+
+Saving the *pipeline* rather than the model alone is the point: the file contains the medians, the category lists and the scaling constants, so a colleague who loads it can feed it raw penguin rows and get the same predictions. A model saved without its preprocessing is a model nobody can use. Two caveats: a joblib file is only guaranteed to load with the same scikit-learn version, and like a pickle it executes code when loaded, so load only files you trust.
+
+::: {.tip title="Reproducibility checklist"}
+1. **Seeds everywhere**: `random_state=42` in splits, models and searches; `np.random.default_rng(42)` for your own randomness.
+2. **Pinned versions**: install from `environment.yml` or `requirements.txt` and run `python scripts/check_env.py` before you start; record its output.
+3. **One pipeline, not loose steps**: every fitted preprocessing step lives inside the `Pipeline` you save.
+4. **Split once and store the indices**: write `X_test.index` to a file so that every later experiment uses the same test molecules.
+5. **Record the git commit** of the code that produced each result, and the dataset checksum (`scripts/fetch_data.py` prints it).
+6. **Never touch the test set twice**: all choices come from cross-validation on the training set; the test set is evaluated once, at the end.
+7. **Log everything**: hyperparameters, CV scores, test scores and the date, in a table you can rerun.
+:::
+
+::: {.discussion}
+A paper reports 94% accuracy for predicting antibiotic resistance from bacterial genomes, with 2,000 isolates collected from 40 hospitals and a random 80/20 split. Which of the four leaks is most likely, and what single change to the evaluation would you ask the authors to make?
+:::
+
+::: {.instructor}
+Timing: scaling and the penguin pipeline take about 15 minutes; the four leakage cases need the remaining 25 and are the heart of the episode. The duplicate hunt in ESOL is a good live moment: ask the room why `.duplicated()` returned zero before showing the trailing spaces. The `GroupKFold` bar chart usually prompts "but which number is right?", and the answer "the one that matches how the model will be used" sets up scaffold splits for Part II. Mathematicians may want the deep-dive on bias; chemists and biologists should be pointed to the bridge boxes instead. Exercise 2 works well as a 5-minute pair discussion before showing the solution.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="A pipeline for penguin species"}
+Build a `ColumnTransformer` + `LogisticRegression` pipeline that predicts `species` from the three bill/flipper measurements and `sex` (which has missing values). Use median imputation for the numbers, most-frequent imputation and one-hot encoding for `sex`, a stratified 80/20 split with `random_state=42`, and report the test accuracy and the output feature names. Which step would fail if you removed the imputer for `sex`?
+
+:::: {.solution}
+```{python}
+Xs = penguins[numeric + ["sex"]]
+ys = penguins["species"]
+Xs_train, Xs_test, ys_train, ys_test = train_test_split(
+    Xs, ys, test_size=0.2, stratify=ys, random_state=42
+)
+species_pre = ColumnTransformer(
+    [
+        ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), numeric),
+        ("sex", make_pipeline(SimpleImputer(strategy="most_frequent"),
+                              OneHotEncoder(handle_unknown="ignore")), ["sex"]),
+    ]
+)
+species_model = make_pipeline(species_pre, LogisticRegression(max_iter=1000)).fit(Xs_train, ys_train)
+print(f"test accuracy: {species_model.score(Xs_test, ys_test):.3f}")
+print(species_model[:-1].get_feature_names_out())
+```
+
+Nothing would actually *fail* without the `sex` imputer: `OneHotEncoder` treats `NaN` as a category of its own and adds a `sex_nan` column. That is a design choice, not a bug, and sometimes it is the right one (missingness can be informative). What would fail is removing the numeric imputer, because `LogisticRegression` raises an error on `NaN` inputs. Species is an easy target: the three measurements separate the species almost perfectly, so the accuracy is near 1.
+::::
+:::
+
+::: {.challenge level=2 title="Rank the leaks"}
+Five modelling set-ups, all with a random 80/20 split and a good-looking test score. Rank them from most to least severe leakage and say in one sentence why.
+
+A. Predicting toxicity from 2,000 descriptors; the 50 descriptors most correlated with toxicity were chosen on the full dataset before splitting.
+B. Predicting protein function; the dataset contains many pairs of sequences at more than 95% identity.
+C. Predicting solubility; the features were standardised with a `StandardScaler` fitted on the full dataset.
+D. Predicting hospital readmission; one feature is the number of follow-up appointments booked after discharge.
+E. Predicting binding affinity; 30% of the compounds appear twice under different IDs with the same measurement.
+
+:::: {.solution}
+A defensible ranking, most severe first: **D, A, E, B, C**.
+
+- **D (target leakage).** The feature is recorded after the outcome and partly *caused* by it. No evaluation scheme can reveal this; the model is useless in deployment.
+- **A (target-dependent preprocessing before the split).** Selecting 50 of 2,000 features by correlation with `y` on all rows bakes the test labels into the feature set; on pure noise this produces $R^2$ of 0.2–0.3, and with real signal it inflates the score by a similar margin.
+- **E (exact duplicates).** With 30% duplicated rows, roughly a third of the test set has an identical twin in training. For memorising models (kNN, trees) the score is badly inflated; for a rigid linear model less so, which is why it ranks below A.
+- **B (near-duplicate groups).** The same mechanism as E, but graded: 95% identity is "almost the same sample". Severity depends on how many such pairs exist; the fix is a group split by sequence cluster.
+- **C (scaling before the split).** Conceptually wrong, numerically negligible: the leak is a few decimals of a mean and a standard deviation. Fix it anyway, because the pipeline habit is what prevents A.
+
+Reasonable people may swap A and E depending on the model; the important boundary is that D and A involve the *labels*, while B, C and E involve only the *inputs*.
+::::
+:::
+
+::: {.challenge level=3 title="A crude scaffold split for ESOL"}
+Scaffold splits need RDKit (Part II). As a stand-in, bin the ESOL molecules into ten groups by molecular weight with `pd.qcut(esol["Molecular Weight"], 10, labels=False)` and use those bins as `groups` in a `GroupKFold`. Compare the cross-validated RMSE of the scaled kNN regressor under `KFold(5, shuffle=True, random_state=42)` and under `GroupKFold(5)`. Which is larger, and why is this a (very) rough proxy for predicting new chemistry?
+
+:::: {.solution}
+```{python}
+mw_bins = pd.qcut(esol["Molecular Weight"], 10, labels=False)
+rmse_random = -cross_val_score(knn_reg, Xe, ye, cv=kfold, scoring="neg_root_mean_squared_error")
+rmse_group = -cross_val_score(knn_reg, Xe, ye, cv=group_kfold, groups=mw_bins,
+                              scoring="neg_root_mean_squared_error")
+print(f"random folds:            RMSE {rmse_random.mean():.3f} logS")
+print(f"molecular-weight groups: RMSE {rmse_group.mean():.3f} logS")
+```
+
+The grouped RMSE is about 0.2 log units higher. Under `GroupKFold` each held-out fold contains a *range of weights* the model never saw, so kNN must extrapolate to molecules unlike its neighbours instead of interpolating between them. That is the situation a real project faces: the next series of compounds is heavier, or has a new ring system, and a random split never asks the model that question. Molecular weight is a crude proxy because two molecules of equal weight can be chemically unrelated; a scaffold split groups by the ring framework, which is closer to what a chemist means by "new chemistry". Expect the gap to be larger still there.
+::::
+:::
+
+## Where this is going
+
+Everything you evaluate from now on goes through a pipeline, and every split is chosen by asking "what will the next sample look like?" In Part II the groups become Murcko scaffolds and the pipeline's first step becomes a fingerprint computed with RDKit; in Part III the groups become sequence-identity clusters and the first step an embedding of the protein sequence. The leakage catalogue stays the same, and so does the fix. [Lab 2](labs/lab-02-first-ml-project.html) puts the whole chapter together on the solubility problem, from baseline to saved pipeline; the [chapter checkpoint](checkpoint.html) lets you test yourself first.

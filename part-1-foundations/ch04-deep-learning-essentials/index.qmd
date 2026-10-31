@@ -1,0 +1,30 @@
+---
+title: "Deep learning essentials with PyTorch"
+chapter-index: true
+summary: "Tensors, automatic differentiation and the training loop, built up from the gradient descent you wrote in Chapter 2, then multilayer perceptrons on tabular scientific data."
+---
+
+{{< generated ch04-hero >}}
+
+<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+
+## What it will cover
+
+::: {.mm-stub-outline}
+- Tensors, devices and broadcasting in PyTorch
+- Autograd: what loss.backward() computes
+- Writing a training loop by hand: forward, loss, backward, step
+- Multilayer perceptrons, activation functions and initialisation
+- Regularisation for neural networks: early stopping, dropout, weight decay
+- Lab 4: an MLP for solubility, compared honestly with ridge regression
+:::
+
+## Planned learning outcomes
+
+1. Implement and train a small neural network in PyTorch with an explicit training loop.
+2. Diagnose training problems from loss curves (divergence, plateaus, overfitting).
+3. Compare a neural network against a strong classical baseline using the evaluation habits of Chapter 2.
+
+## In the meantime
+
+Chapters [0](../ch00-start-here/index.html), [1](../ch01-scientific-python/index.html) and [2](../ch02-ml-fundamentals/index.html) are complete and are the prerequisites for this chapter.

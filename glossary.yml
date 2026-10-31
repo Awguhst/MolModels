@@ -1,0 +1,676 @@
+# Single source for the glossary page (appendices/glossary.qmd via {{< glossary >}})
+# and for inline tooltips ({{< term id >}}).
+#   id:         slug used in {{< term id >}}
+#   term:       display form
+#   plural:     optional, used by {{< term id plural >}}
+#   short:      one-sentence tooltip (plain text)
+#   definition: fuller definition shown on the glossary page (inline markdown allowed)
+#   chapter:    where the term is introduced
+#   see:        related ids
+terms:
+  - id: baseline
+    term: baseline
+    plural: baselines
+    short: A deliberately simple model (such as predicting the mean) that any real model must beat.
+    definition: A deliberately simple reference model, such as always predicting the mean of the training targets or the most common class. If your model cannot beat the baseline on held-out data, it has learned nothing useful. In scikit-learn, `DummyRegressor` and `DummyClassifier` build baselines.
+    chapter: "2.3"
+    see: [generalisation, test-set]
+  - id: train-test-split
+    term: train/test split
+    short: Dividing the data into a part the model learns from and a part kept back to measure it honestly.
+    definition: Dividing a dataset into a *training set*, which the model learns from, and a *test set*, which is kept back and used only once to estimate how the model performs on new data. The split should be random and reproducible (`random_state`), and the test set must never influence any modelling decision.
+    chapter: "2.3"
+    see: [test-set, training-set, data-leakage]
+  - id: training-set
+    term: training set
+    short: The part of the data the model is fitted on.
+    definition: The subset of the data used to fit (train) a model. Performance measured on the training set is optimistic, because the model has already seen these examples.
+    chapter: "2.3"
+    see: [train-test-split, test-set]
+  - id: test-set
+    term: test set
+    short: Held-back data used once, at the end, to estimate performance on unseen examples.
+    definition: Data held back from training and used only at the end to estimate how the model will perform on new, unseen examples. Looking at the test set while choosing models or settings turns it into a validation set and makes the final estimate optimistic.
+    chapter: "2.3"
+    see: [train-test-split, validation-set]
+  - id: validation-set
+    term: validation set
+    short: Data held back from training that you use to choose between models or settings.
+    definition: Data held back from training and used to compare models or tune hyperparameters. Unlike the test set it may be consulted many times, which is why a separate, untouched test set is still needed for the final estimate.
+    chapter: "2.4"
+    see: [test-set, cross-validation]
+  - id: generalisation
+    term: generalisation
+    short: How well a model performs on data it was not trained on.
+    definition: The ability of a model to perform well on data it has not seen during training. Generalisation, not training performance, is the real goal of machine learning.
+    chapter: "2.1"
+    see: [overfitting, test-set]
+  - id: overfitting
+    term: overfitting
+    short: When a model learns the noise in its training data and so performs worse on new data.
+    definition: When a model fits its training data so closely, noise included, that it performs worse on new data. Symptoms are a large gap between training and test performance. Remedies include more data, simpler models, regularisation and cross-validated model selection.
+    chapter: "2.4"
+    see: [underfitting, regularisation, generalisation]
+  - id: underfitting
+    term: underfitting
+    short: When a model is too simple to capture the real pattern, so it does badly even on training data.
+    definition: When a model is too simple or too constrained to capture the structure in the data, so it performs poorly on both the training and the test set.
+    chapter: "2.4"
+    see: [overfitting]
+  - id: mae
+    term: mean absolute error (MAE)
+    short: The average size of the prediction errors, in the units of the target.
+    definition: The average of the absolute differences between predictions and true values, $\mathrm{MAE} = \frac{1}{n}\sum_i |y_i - \hat{y}_i|$. It is in the same units as the target and treats all errors proportionally.
+    chapter: "2.3"
+    see: [rmse, r2]
+  - id: rmse
+    term: root mean squared error (RMSE)
+    short: The square root of the average squared error; it punishes large errors more than MAE does.
+    definition: The square root of the mean of the squared errors, $\mathrm{RMSE} = \sqrt{\frac{1}{n}\sum_i (y_i - \hat{y}_i)^2}$. Also in target units, but because errors are squared first, a few large mistakes raise RMSE much more than they raise MAE.
+    chapter: "2.3"
+    see: [mae, r2]
+  - id: r2
+    term: coefficient of determination (R²)
+    short: The fraction of the variance in the target that the model explains; 1 is perfect, 0 matches the mean baseline.
+    definition: $R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2}$. A value of 1 means perfect predictions, 0 means no better than predicting the mean, and negative values are possible on test data when the model is worse than the mean baseline.
+    chapter: "2.3"
+    see: [mae, rmse, baseline]
+  - id: parity-plot
+    term: parity plot
+    plural: parity plots
+    short: A scatter plot of predicted against true values; perfect predictions lie on the diagonal.
+    definition: A scatter plot with the true value on one axis and the predicted value on the other. Perfect predictions fall on the diagonal line $y = x$. It shows at a glance where a model is biased, where it saturates and which points are outliers.
+    chapter: "2.3"
+    see: [residual]
+  - id: residual
+    term: residual
+    plural: residuals
+    short: The difference between a true value and the model's prediction for it.
+    definition: The difference between an observed value and the model's prediction, $r_i = y_i - \hat{y}_i$. Plotting residuals against predictions or against features reveals systematic errors that a single summary metric hides.
+    chapter: "2.3"
+    see: [parity-plot]
+  - id: data-leakage
+    term: data leakage
+    short: When information from outside the training set sneaks into the model, making evaluation misleadingly good.
+    definition: Any way in which information that would not be available at prediction time, or information from the test set, influences training. Typical causes are preprocessing before splitting, duplicated samples across the split, and features derived from the target. Leakage makes test scores unrealistically good.
+    chapter: "2.3"
+    see: [train-test-split, test-set]
+  - id: random-state
+    term: random state
+    short: A fixed seed that makes random operations such as splits reproducible.
+    definition: A number (the *seed*) that initialises a pseudo-random number generator so that a random operation, such as a train/test split or a shuffled cross-validation, produces exactly the same result every time it is run. In scikit-learn the argument is `random_state`; in NumPy you create a generator with `np.random.default_rng(seed)`.
+    chapter: "1.2"
+    see: [train-test-split]
+  - id: feature
+    term: feature
+    plural: features
+    short: An input variable describing a sample; one column of the X matrix.
+    definition: A measurable property of a sample used as input to a model, such as molecular weight or the number of hydrogen-bond donors. The features of all samples form the matrix $X$ with one row per sample and one column per feature.
+    chapter: "1.2"
+    see: [label, descriptor]
+  - id: label
+    term: label
+    plural: labels
+    short: The quantity you want to predict for each sample; the vector y.
+    definition: The target value associated with each sample, which a supervised model learns to predict. Continuous labels give a regression problem; categorical labels give a classification problem. The labels of all samples form the vector $y$.
+    chapter: "2.1"
+    see: [feature, regression, classification]
+  - id: regression
+    term: regression
+    short: Predicting a continuous number, such as a solubility.
+    definition: A supervised learning task where the target is a continuous number, such as a solubility, a binding affinity or a body mass.
+    chapter: "2.1"
+    see: [classification, label]
+  - id: classification
+    term: classification
+    short: Predicting a category, such as active versus inactive.
+    definition: A supervised learning task where the target is a category, such as toxic/non-toxic or one of several cell types.
+    chapter: "2.1"
+    see: [regression, label]
+  - id: descriptor
+    term: molecular descriptor
+    plural: molecular descriptors
+    short: A number computed from a molecule's structure, such as molecular weight or polar surface area.
+    definition: A numerical property computed from a molecular structure, for example molecular weight, number of rings or topological polar surface area. Descriptors are the simplest way to turn molecules into feature vectors; Chapter 5 computes them with RDKit.
+    chapter: "1.5"
+    see: [feature, smiles]
+  - id: smiles
+    term: SMILES
+    short: A text notation that writes a molecule's structure as a string of characters.
+    definition: Simplified Molecular-Input Line-Entry System, a compact text notation for molecular structures, for example `CCO` for ethanol or `c1ccccc1` for benzene. In this course SMILES strings appear as plain text columns until Chapter 5, where RDKit parses them into molecules.
+    chapter: "1.5"
+    see: [descriptor]
+  - id: estimator
+    term: estimator
+    plural: estimators
+    short: Any scikit-learn object with fit and predict (or transform) methods.
+    definition: scikit-learn's name for any object that learns from data through a `fit` method. Models add `predict` and `score`; preprocessors add `transform`. Because all estimators share this interface, they can be swapped and combined in pipelines.
+    chapter: "2.2"
+    see: [pipeline]
+  - id: pipeline
+    term: pipeline
+    plural: pipelines
+    short: A chain of preprocessing steps and a model that is fitted and applied as one unit.
+    definition: A scikit-learn object that chains preprocessing steps (scaling, imputation, encoding) with a final model so that they are fitted together on the training data and applied together to new data. Pipelines prevent data leakage and make cross-validation honest.
+    chapter: "2.6"
+    see: [estimator, data-leakage]
+  - id: cross-validation
+    term: cross-validation
+    short: Repeatedly splitting the data into folds so that every sample is tested on exactly once.
+    definition: A resampling method that splits the data into $k$ folds, trains on $k-1$ of them and evaluates on the remaining fold, rotating until each fold has served as the evaluation set. The $k$ scores are averaged. It gives a more stable estimate than a single split and is the standard way to choose hyperparameters.
+    chapter: "2.4"
+    see: [validation-set, hyperparameter]
+  - id: hyperparameter
+    term: hyperparameter
+    plural: hyperparameters
+    short: A setting chosen before training, such as the number of neighbours in kNN or the strength of regularisation.
+    definition: A setting of a learning algorithm that is not learned from the data but chosen beforehand, such as the regularisation strength of ridge regression or the number of neighbours in kNN. Hyperparameters are tuned with validation data or cross-validation, never with the test set.
+    chapter: "2.4"
+    see: [cross-validation, regularisation]
+  - id: regularisation
+    term: regularisation
+    short: Adding a penalty on large coefficients so that a model stays simpler and generalises better.
+    definition: Adding a penalty term to the loss function that discourages large or many coefficients, trading a little training accuracy for better generalisation. Ridge regression penalises squared coefficients; Lasso penalises absolute values and drives some coefficients to exactly zero.
+    chapter: "2.4"
+    see: [overfitting, hyperparameter]
+  - id: loss-function
+    term: loss function
+    short: A number that measures how wrong a model's predictions are; training means making it small.
+    definition: A function that measures the disagreement between predictions and true values, such as the mean squared error. Training a model means adjusting its parameters to make the loss on the training data small.
+    chapter: "2.1"
+    see: [mse, gradient-descent]
+  - id: mse
+    term: mean squared error (MSE)
+    short: The average of the squared prediction errors; the usual loss for regression.
+    definition: $\mathrm{MSE} = \frac{1}{n}\sum_i (y_i - \hat{y}_i)^2$, the average squared difference between predictions and truth. It is the loss minimised by ordinary least-squares regression; its square root is the RMSE.
+    chapter: "2.2"
+    see: [rmse, loss-function]
+  - id: gradient-descent
+    term: gradient descent
+    short: Improving parameters step by step by moving against the gradient of the loss.
+    definition: An iterative optimisation method that repeatedly moves the parameters a small step in the direction that decreases the loss fastest, the negative gradient. The step size is the *learning rate*.
+    chapter: "2.2"
+    see: [loss-function, gradient]
+  - id: gradient
+    term: gradient
+    short: The vector of partial derivatives; it points in the direction of steepest increase.
+    definition: For a function of several variables, the vector of its partial derivatives. It points in the direction in which the function increases fastest, which is why optimisation steps go the opposite way.
+    chapter: "A"
+    see: [gradient-descent]
+  - id: supervised-learning
+    term: supervised learning
+    short: Learning from examples that come with the correct answers (labels).
+    definition: Learning a function from input features to known labels, using examples where both are given. Regression and classification are the two main kinds.
+    chapter: "2.1"
+    see: [unsupervised-learning, label]
+  - id: unsupervised-learning
+    term: unsupervised learning
+    short: Finding structure in data that has no labels, such as clusters or low-dimensional summaries.
+    definition: Learning patterns from inputs alone, without labels, for example clustering samples into groups or compressing many features into a few components (PCA).
+    chapter: "2.1"
+    see: [supervised-learning]
+  - id: distribution-shift
+    term: distribution shift
+    short: When the data a model meets in use differs systematically from the data it was trained on.
+    definition: A systematic difference between the data a model was trained on and the data it is applied to, for example new chemical scaffolds, a different hospital or a different sequencing batch. Models typically degrade under shift, and random splits do not reveal it.
+    chapter: "2.1"
+    see: [generalisation, scaffold-split]
+  - id: scaffold-split
+    term: scaffold split
+    short: Splitting molecules so that chemically similar scaffolds do not appear in both train and test.
+    definition: A way of splitting a molecular dataset by core structure (scaffold) rather than at random, so that the test set contains scaffolds the model has never seen. It gives a more realistic estimate of performance on new chemistry. Introduced properly in Part II.
+    chapter: "2.6"
+    see: [distribution-shift, group-split]
+  - id: group-split
+    term: group split
+    short: A split that keeps all samples from the same group (patient, molecule series) on one side.
+    definition: Any train/test or cross-validation split that assigns whole groups of related samples, such as all measurements from one patient or all molecules with one scaffold, entirely to one side. scikit-learn's `GroupKFold` implements it.
+    chapter: "2.6"
+    see: [scaffold-split, data-leakage]
+  - id: logistic-regression
+    term: logistic regression
+    short: A linear model for classification that outputs probabilities through the sigmoid function.
+    definition: "A linear model for binary classification: it computes a weighted sum of the features and passes it through the sigmoid function to give a probability between 0 and 1. Despite the name it is a classifier."
+    chapter: "2.5"
+    see: [classification, sigmoid]
+  - id: sigmoid
+    term: sigmoid function
+    short: The S-shaped function σ(z) = 1/(1+e^(−z)) that squashes any number into (0, 1).
+    definition: $\sigma(z) = \frac{1}{1 + e^{-z}}$, an S-shaped function mapping any real number to the interval $(0, 1)$. Logistic regression uses it to turn a linear score into a probability.
+    chapter: "2.5"
+    see: [logistic-regression]
+  - id: knn
+    term: k-nearest neighbours (kNN)
+    short: Predicting a sample from the k most similar training samples.
+    definition: A model that predicts a sample by looking up the $k$ training samples closest to it in feature space and averaging their labels (regression) or taking a vote (classification). It has no training phase and is sensitive to feature scaling.
+    chapter: "2.5"
+    see: [feature-scaling]
+  - id: feature-scaling
+    term: feature scaling
+    short: Transforming features to comparable ranges, such as zero mean and unit variance.
+    definition: Transforming each feature so that they have comparable ranges, most often by standardising to zero mean and unit standard deviation (`StandardScaler`). Distance-based models such as kNN and regularised models depend on it.
+    chapter: "2.6"
+    see: [knn, pipeline]
+  - id: confusion-matrix
+    term: confusion matrix
+    short: A table counting true/false positives and negatives.
+    definition: "A table that cross-tabulates true classes against predicted classes. For a binary problem it has four cells: true positives, false positives, false negatives and true negatives. Precision, recall and accuracy are all read off it."
+    chapter: "2.5"
+    see: [precision, recall]
+  - id: precision
+    term: precision
+    short: Of the samples predicted positive, the fraction that really are positive.
+    definition: $\mathrm{precision} = \frac{TP}{TP + FP}$, the fraction of predicted positives that are truly positive. High precision means few false alarms.
+    chapter: "2.5"
+    see: [recall, confusion-matrix]
+  - id: recall
+    term: recall
+    short: Of the truly positive samples, the fraction the model finds.
+    definition: $\mathrm{recall} = \frac{TP}{TP + FN}$, the fraction of true positives that the model identifies. Also called sensitivity. High recall means few misses.
+    chapter: "2.5"
+    see: [precision, confusion-matrix]
+  - id: roc-auc
+    term: ROC curve and AUC
+    short: A curve of true-positive rate against false-positive rate across thresholds; AUC is the area under it.
+    definition: "The receiver operating characteristic curve plots the true-positive rate against the false-positive rate as the decision threshold varies. The area under it (AUC) summarises ranking quality: 1 is perfect, 0.5 is random."
+    chapter: "2.5"
+    see: [precision, recall]
+  - id: class-imbalance
+    term: class imbalance
+    short: When one class is much rarer than the other, so accuracy becomes misleading.
+    definition: A situation where one class is far more common than another, for example 1% active compounds in a screen. Accuracy then rewards predicting the majority class; precision, recall, PR curves and class weights are the tools that cope with it.
+    chapter: "2.5"
+    see: [precision, recall]
+  - id: vectorisation
+    term: vectorisation
+    short: Replacing Python loops with whole-array operations that NumPy runs in compiled code.
+    definition: Expressing a computation as operations on whole arrays rather than element-by-element Python loops. NumPy executes vectorised operations in compiled code, typically tens to hundreds of times faster.
+    chapter: "1.2"
+    see: [broadcasting]
+  - id: broadcasting
+    term: broadcasting
+    short: NumPy's rules for combining arrays of different shapes, such as subtracting a row vector from every row.
+    definition: The set of rules NumPy uses to combine arrays of different but compatible shapes, for example subtracting a vector of column means from every row of a matrix without writing a loop.
+    chapter: "1.2"
+    see: [vectorisation]
+  - id: dataframe
+    term: DataFrame
+    plural: DataFrames
+    short: "pandas' table type: labelled rows and columns, each column with its own data type."
+    definition: The central pandas data structure, a two-dimensional table with labelled rows (the index) and labelled columns, where each column has its own data type.
+    chapter: "1.3"
+    see: [tidy-data]
+  - id: tidy-data
+    term: tidy data
+    short: One row per observation, one column per variable, one table per kind of thing.
+    definition: "A layout convention for tables: each variable is a column, each observation is a row, and each type of observational unit is a table. Tidy tables are what plotting libraries and scikit-learn expect."
+    chapter: "1.3"
+    see: [dataframe]
+  - id: eda
+    term: exploratory data analysis (EDA)
+    short: Looking at distributions, relationships and oddities in the data before modelling.
+    definition: "The first stage of any data project: summarising and plotting the data to understand distributions, relationships, missing values, outliers and duplicates before any model is fitted."
+    chapter: "1.5"
+    see: [tidy-data]
+  - id: logs
+    term: logS
+    short: The base-10 logarithm of aqueous solubility in mol/L; the ESOL target.
+    definition: The base-10 logarithm of a compound's aqueous solubility expressed in moles per litre. A logS of −3 means a solubility of 0.001 mol/L. Taking the logarithm makes a quantity that spans many orders of magnitude easier to model.
+    chapter: "1.5"
+    see: [descriptor]
+  - id: bias-variance
+    term: bias–variance trade-off
+    short: Simple models err by being too rigid (bias); flexible models err by following noise (variance).
+    definition: The tension between two sources of error. Bias is the error from a model that is too simple to capture the true pattern; variance is the error from a model so flexible that it follows the noise in a particular training set. Increasing model complexity lowers bias but raises variance.
+    chapter: "2.4"
+    see: [overfitting, underfitting]
+  - id: one-hot-encoding
+    term: one-hot encoding
+    short: Turning a categorical column into one 0/1 column per category.
+    definition: Representing a categorical feature with one binary column per category, so that a model that only understands numbers can use it. scikit-learn's `OneHotEncoder` does this inside a pipeline.
+    chapter: "2.6"
+    see: [pipeline]
+  - id: calibration
+    term: calibration
+    short: "Whether predicted probabilities match observed frequencies: of samples given 0.8, about 80% should be positive."
+    definition: A classifier is well calibrated when its predicted probabilities match observed frequencies, so that among samples predicted with probability 0.8, about 80% are actually positive. Good ranking (AUC) does not guarantee good calibration.
+    chapter: "2.5"
+    see: [logistic-regression]
+  # ---------------------------------------------------------------- Chapter 0 / 1 terms
+  - id: notebook
+    term: Jupyter notebook
+    plural: notebooks
+    short: "A document mixing code cells, their outputs and text; the format of the labs."
+    definition: "A document made of cells that can hold code, its output (text, tables, figures) or formatted text. Notebooks run in JupyterLab, VS Code or Google Colab. The course labs are notebooks; the episodes are rendered from the same kind of cells."
+    chapter: "0.2"
+    see: [kernel, colab]
+  - id: kernel
+    term: kernel
+    short: "The Python process that runs notebook cells and remembers your variables between them."
+    definition: "The background Python process that executes notebook cells. It keeps all variables in memory between cells, which is why running cells out of order can confuse you: restart the kernel and run from the top when in doubt."
+    chapter: "0.2"
+    see: [notebook]
+  - id: colab
+    term: Google Colab
+    short: "A free, browser-based Jupyter environment from Google; nothing to install."
+    definition: "Google Colaboratory, a free hosted Jupyter notebook service that runs in the browser. Every lab has an *Open in Colab* button. Files you create there disappear when the session ends unless you save them to Drive."
+    chapter: "0.2"
+    see: [notebook]
+  - id: conda
+    term: conda / mamba
+    short: "Package managers that create isolated environments and install scientific libraries."
+    definition: "conda is a package and environment manager; mamba is a faster drop-in replacement. Both read `environment.yml`, create an isolated environment and install libraries (including compiled ones such as RDKit later in the course) from the conda-forge channel."
+    chapter: "0.2"
+    see: [virtual-environment]
+  - id: virtual-environment
+    term: virtual environment
+    short: "An isolated set of installed packages for one project, so versions don't clash between projects."
+    definition: "A self-contained directory holding a Python interpreter and its own installed packages. Each project gets its own, so upgrading a library for one project cannot break another. Created with `python -m venv`, `uv venv` or `conda create`."
+    chapter: "0.2"
+    see: [conda]
+  - id: traceback
+    term: traceback
+    plural: tracebacks
+    short: "Python's error report: read it from the bottom (the error) up (where it happened)."
+    definition: "The report Python prints when an exception is not handled. The last line names the error and its message; the lines above trace the chain of function calls that led there, innermost last. Read the last line first, then find the line of *your* code nearest the bottom."
+    chapter: "1.1"
+  - id: comprehension
+    term: list comprehension
+    plural: list comprehensions
+    short: "A one-line way to build a list from another sequence: [f(x) for x in items if cond]."
+    definition: "A compact expression that builds a list (or dict, set) by transforming and filtering another sequence, for example `[m.upper() for m in names if m]`. It replaces a three-line for-loop with an append."
+    chapter: "1.1"
+  - id: f-string
+    term: f-string
+    plural: f-strings
+    short: "A string literal prefixed with f that embeds expressions in braces, with optional formatting such as {x:.2f}."
+    definition: "A formatted string literal, written `f\"...\"`, in which expressions inside braces are evaluated and inserted. Format specifiers control the output, for example `f\"{rmse:.3f}\"` prints three decimals."
+    chapter: "1.1"
+  - id: pathlib
+    term: pathlib
+    short: "Python's object-oriented way to handle file paths that works on every operating system."
+    definition: "The standard-library module whose `Path` class represents file-system paths. It joins paths with `/`, checks existence with `.exists()` and reads files with `.read_text()`, and it handles Windows and Unix separators for you."
+    chapter: "1.1"
+  - id: ndarray
+    term: NumPy array
+    plural: NumPy arrays
+    short: "A fixed-type, n-dimensional grid of numbers that supports fast whole-array arithmetic."
+    definition: "NumPy's core data structure, `ndarray`: a grid of elements that all share one data type, with a shape such as `(1128, 5)`. Arithmetic on arrays is applied element-wise in compiled code, which is what makes scientific Python fast."
+    chapter: "1.2"
+    see: [dtype, shape, vectorisation]
+  - id: dtype
+    term: dtype
+    short: "The data type shared by every element of an array, such as float64 or int64."
+    definition: "The data type of the elements of a NumPy array or pandas column, for example `float64`, `int64`, `bool` or `str`. Mixing types in one array forces a common type (often `object`), which is slow and a sign that something is wrong."
+    chapter: "1.2"
+    see: [ndarray]
+  - id: shape
+    term: shape
+    short: "The size of an array along each axis, e.g. (n_samples, n_features)."
+    definition: "A tuple giving the length of an array along each of its axes. A feature matrix has shape `(n_samples, n_features)`; a label vector has shape `(n_samples,)`. Checking `.shape` is the first thing to do when code misbehaves."
+    chapter: "1.2"
+    see: [ndarray, axis]
+  - id: axis
+    term: axis
+    plural: axes
+    short: "A dimension of an array; axis 0 runs down the rows, axis 1 across the columns."
+    definition: "One dimension of an array. For a 2-D array axis 0 indexes rows and axis 1 indexes columns, so `X.mean(axis=0)` gives the mean of every column (one value per feature) and `X.mean(axis=1)` the mean of every row."
+    chapter: "1.2"
+    see: [shape]
+  - id: boolean-mask
+    term: boolean mask
+    plural: boolean masks
+    short: "An array of True/False values used to select the elements where it is True."
+    definition: "An array of booleans with the same shape as the data, usually produced by a comparison such as `x > 0`, and used inside square brackets to select just the elements where it is True. Masks are how you filter data without loops in NumPy and pandas."
+    chapter: "1.2"
+    see: [vectorisation]
+  - id: rng
+    term: random number generator
+    short: "An object that produces reproducible pseudo-random numbers; create it once with np.random.default_rng(seed)."
+    definition: "NumPy's `Generator` object, created with `np.random.default_rng(seed)`, which produces pseudo-random numbers. Fixing the seed makes every run identical. Create one generator at the top of a script and pass it around rather than calling the legacy `np.random.*` functions."
+    chapter: "1.2"
+    see: [random-state]
+  - id: xy-convention
+    term: X / y convention
+    short: "Features in a 2-D array X of shape (n_samples, n_features); targets in a 1-D array y."
+    definition: "The layout scikit-learn and this course use everywhere: features live in a two-dimensional array `X` with one row per sample and one column per feature, and the target lives in a one-dimensional array `y` with one entry per sample. Capital X because it is a matrix, lower-case y because it is a vector."
+    chapter: "1.2"
+    see: [feature, label, shape]
+  - id: series
+    term: Series
+    short: "A single labelled column of data in pandas; one column of a DataFrame."
+    definition: "pandas' one-dimensional labelled array. Selecting one column of a DataFrame gives a Series; it has an index, a name and a single dtype."
+    chapter: "1.3"
+    see: [dataframe, index]
+  - id: index
+    term: index (pandas)
+    short: "The row labels of a DataFrame or Series; by default the integers 0, 1, 2, …"
+    definition: "The labels attached to the rows of a DataFrame or Series. By default they are integers starting at 0, but they can be anything (compound names, dates). `loc` selects by these labels, `iloc` by position."
+    chapter: "1.3"
+    see: [loc-iloc]
+  - id: loc-iloc
+    term: loc and iloc
+    short: "loc selects rows/columns by label; iloc selects by integer position."
+    definition: "The two indexers of a DataFrame. `df.loc[rows, cols]` uses labels (index values and column names, including boolean masks); `df.iloc[rows, cols]` uses integer positions. Using plain square brackets for anything beyond a column name is a common source of confusion."
+    chapter: "1.3"
+    see: [index, boolean-mask]
+  - id: groupby
+    term: groupby
+    short: "Split a table into groups by one or more columns, apply a function to each, and combine the results."
+    definition: "The pandas operation that splits a DataFrame into groups sharing a key (for example species), applies an aggregation such as `mean` or `count` to each group, and combines the results into a new table. The pattern is often called split-apply-combine."
+    chapter: "1.3"
+    see: [dataframe]
+  - id: merge
+    term: merge (join)
+    short: "Combine two tables side by side by matching values in a shared key column."
+    definition: "Combining two DataFrames by matching rows on one or more key columns, as in a database join. `how=\"inner\"` keeps only matching rows; `how=\"left\"` keeps every row of the left table."
+    chapter: "1.3"
+    see: [dataframe]
+  - id: melt-pivot
+    term: melt and pivot
+    short: "melt turns wide tables long (one row per measurement); pivot turns long tables wide."
+    definition: "Two reshaping operations. `melt` converts a wide table with one column per measurement into a long one with a *variable* and a *value* column, which is what seaborn expects. `pivot` and `pivot_table` go the other way, spreading one column's categories into separate columns."
+    chapter: "1.3"
+    see: [tidy-data]
+  - id: categorical
+    term: categorical data
+    short: "A column whose values come from a fixed set of categories, such as species or island."
+    definition: "Data whose values are labels from a fixed set (species, island, sex) rather than measurements. pandas has a dedicated `category` dtype for them; models need them encoded as numbers, for example with one-hot encoding."
+    chapter: "1.3"
+    see: [one-hot-encoding]
+  - id: missing-value
+    term: missing value (NaN)
+    plural: missing values
+    short: "An absent measurement, shown as NaN; most models cannot handle it without imputation or dropping."
+    definition: "A cell with no recorded value, represented as `NaN` (not a number) or `<NA>` in pandas. Count them with `df.isna().sum()`. Options are to drop the rows, drop the column or impute a replacement; scikit-learn models refuse to fit with NaNs present."
+    chapter: "1.3"
+    see: [imputation]
+  - id: kde
+    term: kernel density estimate (KDE)
+    short: "A smoothed version of a histogram that estimates the probability density."
+    definition: "A smooth curve estimating the distribution of a variable, obtained by placing a small bump (kernel) at every data point and summing them. It is a smoothed histogram; the bandwidth controls how smooth."
+    chapter: "1.4"
+    see: [histogram]
+  - id: histogram
+    term: histogram
+    plural: histograms
+    short: "Bars counting how many values fall into each interval (bin) of a variable."
+    definition: "A chart that divides the range of a variable into bins and draws a bar whose height is the number of values in each bin. The first plot to make for any numeric column."
+    chapter: "1.4"
+    see: [kde]
+  - id: box-plot
+    term: box plot
+    plural: box plots
+    short: "A summary of a distribution: median, quartiles and outliers, good for comparing groups."
+    definition: "A chart showing the median (line), the middle 50% of values (box, from the 25th to the 75th percentile), whiskers to the most extreme non-outlying points and individual outliers beyond them. Violin plots show the same plus the full shape of the distribution."
+    chapter: "1.4"
+    see: [outlier]
+  - id: scatter-plot
+    term: scatter plot
+    plural: scatter plots
+    short: "One point per sample, placed by two numeric variables; the plot for relationships."
+    definition: "A chart with one point per sample positioned by two numeric variables, optionally coloured by a third (`hue`). It shows relationships, clusters and outliers that summary statistics hide."
+    chapter: "1.4"
+    see: [correlation]
+  - id: correlation
+    term: correlation coefficient
+    short: "A number between −1 and 1 measuring how linearly two variables move together."
+    definition: "Pearson's $r$, a number between $-1$ and $1$ measuring the strength of the *linear* relationship between two variables. Zero means no linear relationship, not no relationship. A heatmap of all pairwise correlations is a standard EDA figure."
+    chapter: "1.4"
+    see: [scatter-plot]
+  - id: colour-blind-safe
+    term: colour-blind-safe palette
+    short: "A set of colours that stay distinguishable for readers with colour-vision deficiency."
+    definition: "A palette whose colours differ in lightness and hue in ways that remain distinguishable for readers with colour-vision deficiency (about 8% of men and 0.5% of women). The Okabe–Ito palette and viridis are standard choices; red–green pairs are the classic mistake."
+    chapter: "1.4"
+  - id: outlier
+    term: outlier
+    plural: outliers
+    short: "A sample far from the rest; could be an error, a rare case, or the most interesting point."
+    definition: "A value that lies far from the bulk of the data. Outliers can be measurement errors, data-entry mistakes, or genuine rare cases, and only domain knowledge can tell which. Look at them before deciding whether to remove them."
+    chapter: "1.5"
+    see: [eda]
+  - id: duplicate
+    term: duplicate
+    plural: duplicates
+    short: "The same sample appearing more than once; dangerous when copies land on both sides of a split."
+    definition: "A row that repeats another one, exactly or in all the ways that matter (the same molecule under two names, the same patient measured twice). Duplicates inflate apparent dataset size, and when copies fall on both sides of a train/test split they leak information."
+    chapter: "1.5"
+    see: [data-leakage]
+  - id: log-transform
+    term: log transform
+    short: "Taking the logarithm of a quantity that spans orders of magnitude, so that ratios become differences."
+    definition: "Replacing a positive variable $x$ by $\\log_{10} x$ (or $\\ln x$). It compresses quantities that span several orders of magnitude, such as solubilities or concentrations, into a range where additive models and symmetric error measures make sense."
+    chapter: "1.5"
+    see: [logs]
+  # ---------------------------------------------------------------- Chapter 2 extra terms
+  - id: model
+    term: model
+    plural: models
+    short: "A function f(x; θ) with adjustable parameters θ that maps features to a prediction."
+    definition: "A function $f(x;\\theta)$ that turns a feature vector $x$ into a prediction, with parameters $\\theta$ that are adjusted (trained) to make its predictions match known labels. Linear regression, logistic regression, kNN and neural networks are all models in this sense."
+    chapter: "2.1"
+    see: [parameter, loss-function]
+  - id: parameter
+    term: parameter
+    plural: parameters
+    short: "A number inside a model that training adjusts, such as a regression coefficient."
+    definition: "A value inside a model that is learned from the data, such as the slope and intercept of a line. Distinguish from hyperparameters, which are chosen before training."
+    chapter: "2.1"
+    see: [hyperparameter]
+  - id: normal-equation
+    term: normal equation
+    short: "The closed-form solution of least squares: θ = (XᵀX)⁻¹Xᵀy."
+    definition: "The closed-form solution of ordinary least squares, $\\hat\\theta = (X^\\top X)^{-1} X^\\top y$, obtained by setting the gradient of the MSE to zero. In code, solve the linear system rather than inverting the matrix: `np.linalg.solve(X.T @ X, X.T @ y)`."
+    chapter: "2.2"
+    see: [gradient-descent, mse]
+  - id: learning-rate
+    term: learning rate
+    short: "The step size of gradient descent; too large diverges, too small crawls."
+    definition: "The factor that scales each gradient-descent step. Too large and the loss oscillates or explodes; too small and training takes forever. It is the first hyperparameter of any iterative optimiser."
+    chapter: "2.2"
+    see: [gradient-descent]
+  - id: coefficient
+    term: coefficient
+    plural: coefficients
+    short: "The weight a linear model gives to one feature; its sign and size are only interpretable with care."
+    definition: "The weight multiplying one feature in a linear model. Its size depends on the feature's units and scale, and when features are correlated the coefficients can swap importance between them, so interpret them cautiously."
+    chapter: "2.2"
+    see: [parameter]
+  - id: polynomial-features
+    term: polynomial features
+    short: "New features made from powers and products of the originals, letting a linear model fit curves."
+    definition: "Features created by raising the originals to powers and multiplying them together ($x^2$, $x_1 x_2$, …). A linear model on polynomial features fits curved relationships; raising the degree too far is the classic way to overfit."
+    chapter: "2.4"
+    see: [overfitting]
+  - id: ridge
+    term: ridge regression
+    short: "Linear regression with an L2 penalty that shrinks coefficients towards zero."
+    definition: "Linear regression whose loss adds $\\alpha \\sum_j \\theta_j^2$, the squared size of the coefficients. The penalty shrinks all coefficients towards zero, stabilising the fit when features are correlated or numerous. $\\alpha$ is a hyperparameter."
+    chapter: "2.4"
+    see: [regularisation, lasso]
+  - id: lasso
+    term: lasso regression
+    short: "Linear regression with an L1 penalty that sets some coefficients exactly to zero (feature selection)."
+    definition: "Linear regression whose loss adds $\\alpha \\sum_j |\\theta_j|$. Unlike ridge, the absolute-value penalty drives some coefficients to exactly zero, so lasso performs feature selection as a side effect."
+    chapter: "2.4"
+    see: [regularisation, ridge]
+  - id: learning-curve
+    term: learning curve
+    plural: learning curves
+    short: "Training and validation scores plotted against the amount of training data."
+    definition: "A plot of training and validation score against the number of training samples. A large persistent gap signals overfitting (more data would help); two low curves close together signal underfitting (a richer model would help)."
+    chapter: "2.4"
+    see: [validation-curve, bias-variance]
+  - id: validation-curve
+    term: validation curve
+    plural: validation curves
+    short: "Training and validation scores plotted against one hyperparameter."
+    definition: "A plot of training and validation score against the value of one hyperparameter, such as polynomial degree or ridge $\\alpha$. The best setting is where the validation score peaks, not where the training score does."
+    chapter: "2.4"
+    see: [learning-curve, hyperparameter]
+  - id: grid-search
+    term: grid search
+    short: "Trying every combination of candidate hyperparameter values and keeping the best by cross-validation."
+    definition: "Systematically evaluating every combination of candidate hyperparameter values with cross-validation and keeping the best. scikit-learn's `GridSearchCV` does this and then refits the best model on all the training data."
+    chapter: "2.4"
+    see: [cross-validation, hyperparameter]
+  - id: nested-cv
+    term: nested cross-validation
+    short: "Cross-validation inside cross-validation, so that hyperparameter tuning does not bias the final estimate."
+    definition: "An outer cross-validation loop for estimating performance with an inner loop, run on each outer training fold, for choosing hyperparameters. It is the honest way to report the performance of a tuned model when you cannot afford a separate test set."
+    chapter: "2.4"
+    see: [cross-validation]
+  - id: decision-boundary
+    term: decision boundary
+    short: "The surface in feature space where a classifier switches from one predicted class to another."
+    definition: "The set of points in feature space where a classifier's prediction changes from one class to another. For logistic regression it is a straight line (hyperplane); for kNN it is irregular and follows the training points."
+    chapter: "2.5"
+    see: [classification]
+  - id: accuracy
+    term: accuracy
+    short: "The fraction of predictions that are correct; misleading when classes are imbalanced."
+    definition: "The fraction of samples whose predicted class equals the true class. Easy to understand, but on imbalanced data a useless classifier can score very high, so always report it with a baseline and with precision and recall."
+    chapter: "2.5"
+    see: [class-imbalance, precision, recall]
+  - id: f1-score
+    term: F1 score
+    short: "The harmonic mean of precision and recall; high only when both are high."
+    definition: "$F_1 = 2 \\cdot \\frac{\\mathrm{precision} \\cdot \\mathrm{recall}}{\\mathrm{precision} + \\mathrm{recall}}$, a single number summarising the trade-off between precision and recall. It is high only when both are high."
+    chapter: "2.5"
+    see: [precision, recall]
+  - id: threshold
+    term: decision threshold
+    short: "The probability above which a classifier predicts the positive class; 0.5 is only a default."
+    definition: "The cut-off applied to a predicted probability to decide the class, 0.5 by default. Moving it trades precision against recall, which is what ROC and precision–recall curves display across all thresholds."
+    chapter: "2.5"
+    see: [roc-auc, pr-curve]
+  - id: pr-curve
+    term: precision–recall curve
+    short: "Precision against recall across thresholds; more informative than ROC when positives are rare."
+    definition: "A plot of precision against recall as the decision threshold varies. Unlike the ROC curve it ignores true negatives, so it is the better picture when the positive class is rare, as in a screening campaign."
+    chapter: "2.5"
+    see: [roc-auc, class-imbalance]
+  - id: imputation
+    term: imputation
+    short: "Filling missing values with a plausible substitute such as the column mean or median."
+    definition: "Replacing missing values with estimates, for example the column median (`SimpleImputer`). It must be fitted on the training data only and applied inside a pipeline, otherwise test information leaks into training."
+    chapter: "2.6"
+    see: [missing-value, pipeline]
+  - id: column-transformer
+    term: ColumnTransformer
+    short: "A scikit-learn object that applies different preprocessing to different columns."
+    definition: "A scikit-learn transformer that routes columns to different preprocessing steps, for example scaling the numeric columns and one-hot encoding the categorical ones, then concatenates the results. It is the standard first step of a pipeline on mixed data."
+    chapter: "2.6"
+    see: [pipeline, one-hot-encoding]
+  - id: target-leakage
+    term: target leakage
+    short: "A feature that secretly encodes the answer, such as a measurement taken after the outcome."
+    definition: "A form of data leakage where a feature carries information about the target that would not be available at prediction time, for instance a lab value recorded only for patients already diagnosed. Models with target leakage look superb in testing and fail in use."
+    chapter: "2.6"
+    see: [data-leakage]
+  - id: joblib
+    term: joblib
+    short: "The library scikit-learn uses to save fitted models to disk (joblib.dump / joblib.load)."
+    definition: "A utility library for saving Python objects efficiently. `joblib.dump(model, \"model.joblib\")` persists a fitted scikit-learn pipeline and `joblib.load` restores it. Record the library versions alongside the file: a model saved with one scikit-learn version may not load with another."
+    chapter: "2.6"

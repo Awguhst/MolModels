@@ -1,0 +1,104 @@
+name: Render, test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # full history so "last updated" dates come from git
+
+      - name: Set up the course environment (conda-forge via micromamba)
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.10.20
+
+      - name: Fetch datasets that are not redistributed
+        run: python scripts/fetch_data.py
+
+      - name: Check environment and design tokens
+        run: |
+          python scripts/check_env.py
+          python scripts/check_contrast.py
+
+      - name: Render the site (full execution, no freeze)
+        env:
+          QUARTO_PYTHON: ${{ env.CONDA_PREFIX }}/bin/python
+        run: |
+          rm -rf _freeze
+          quarto render --execute-daemon-restart 2>&1 | tee render.log
+          # fail on any Python warning or error that leaked into the log
+          ! grep -E "Warning:|Traceback|^ERROR" render.log
+
+      - name: Tests (schema, content rules, data, notebooks, rendered site)
+        run: pytest -q
+
+      - name: Accessibility and responsive review (axe-core via Playwright)
+        run: |
+          playwright install --with-deps chromium
+          python scripts/review_site.py
+
+      - name: Check links (internal fatal, external warn-only)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --root-dir ${{ github.workspace }}/_site
+            --base _site
+            --accept 200,206,429
+            --exclude-path _site/site_libs
+            --exclude 'YOUR-USER'
+            --exclude 'colab.research.google.com'
+            --no-progress
+            '_site/**/*.html'
+          fail: false
+
+      - name: Upload review artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review
+          path: |
+            _review/screenshots
+            _review/axe
+            render.log
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
