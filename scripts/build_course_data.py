@@ -360,7 +360,13 @@ def write_chapter_includes(course: dict) -> None:
 
 
 def write_metro(course: dict) -> None:
-    """Roadmap as a metro map: one coloured line per Part, chapters as stations."""
+    """Roadmap as a metro map: one coloured line per Part, chapters as stations.
+
+    The stretch of each line that reaches written chapters is "lit" (full colour, a soft glow, and a
+    pulse of light that travels along it); planned stretches are unlit. All motion is CSS or SVG
+    animation, so the map works without JavaScript, and assets/scss/_mm-rules.scss switches it off
+    for readers who ask for reduced motion.
+    """
     x0, spacing, row_h, top = 70, 170, 118, 56
     width = x0 + 4 * spacing + 90
     height = top + row_h * (len(course["parts"]) - 1) + 80
@@ -369,31 +375,42 @@ def write_metro(course: dict) -> None:
         '<div class="mm-metro">',
         f'<svg viewBox="0 0 {width} {height}" aria-labelledby="mm-metro-title mm-metro-desc" xmlns="http://www.w3.org/2000/svg">',
         '<title id="mm-metro-title">Course roadmap</title>',
-        '<desc id="mm-metro-desc">Four coloured lines, one per Part, with chapters as stations. Filled stations are available; dashed stations are coming soon.</desc>',
+        '<desc id="mm-metro-desc">Four coloured lines, one per Part, with chapters as stations. Lit, filled stations are available; dashed stations are coming soon.</desc>',
+        '<defs><filter id="mm-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter></defs>',
     ]
     for i, part in enumerate(course["parts"]):
         y = top + i * row_h
         colour = f"var({ACCENT_VAR[part['accent']]})"
-        n = len(part["chapters"])
-        x_end = x0 + (n - 1) * spacing
-        out.append(f'<g style="color:{colour}">')
-        out.append(f'<text class="mm-line-label" x="{x0 - 14}" y="{y - 26}" fill="currentColor">Part {part["roman"]}: {escape(part["title"])}</text>')
-        out.append(f'<path class="mm-metro-line" stroke="currentColor" d="M{x0 - 14} {y} H{x_end + 14}"/>')
+        chapters = [course["chapters"][c] for c in part["chapters"]]
+        n = len(chapters)
+        x_start, x_end = x0 - 14, x0 + (n - 1) * spacing
+        built = [j for j, ch in enumerate(chapters) if not ch["stub"]]
+        # the lit stretch runs from the start of the line to the last written chapter
+        last_built = max(built) if built else None
+        lit_end = None if last_built is None else (x_end + 14 if last_built == n - 1 else x0 + last_built * spacing)
+        out.append(f'<g class="mm-part" style="color:{colour};--i:{i}">')
+        out.append(f'<text class="mm-line-label" x="{x0 + 4}" y="{y - 26}" fill="currentColor">Part {part["roman"]}: {escape(part["title"])}</text>')
+        if lit_end is not None:
+            lit_d = f"M{x_start} {y} H{lit_end}"
+            out.append(f'<path class="mm-metro-halo" pathLength="1" stroke="currentColor" filter="url(#mm-glow)" d="{lit_d}"/>')
+            out.append(f'<path class="mm-metro-line lit" pathLength="1" stroke="currentColor" d="{lit_d}"/>')
+            if lit_end < x_end + 14:
+                out.append(f'<path class="mm-metro-line unlit" pathLength="1" stroke="currentColor" d="M{lit_end} {y} H{x_end + 14}"/>')
+        else:
+            out.append(f'<path class="mm-metro-line unlit" pathLength="1" stroke="currentColor" d="M{x_start} {y} H{x_end + 14}"/>')
         if i + 1 < len(course["parts"]):
-            # transfer connector: around the right end, below the labels, back to the next line's start
+            # transfer connector: out past the last station label, down, back left between the two rows,
+            # and down into the start of the next line (clear of both rows' labels)
             ny = y + row_h
             out.append(
-                f'<path class="mm-metro-link" stroke="currentColor" d="M{x_end + 14} {y} h14 q16 0 16 16 v{row_h - 64} q0 16 -16 16 H{x0 + 2} q-16 0 -16 16 V{ny}"/>'
+                f'<path class="mm-metro-link" pathLength="1" stroke="currentColor" '
+                f'd="M{x_end + 14} {y} h24 q16 0 16 16 v34 q0 16 -16 16 H{x0 + 2} q-16 0 -16 16 V{ny}"/>'
             )
-        for j, cid in enumerate(part["chapters"]):
-            ch = course["chapters"][cid]
+        for j, ch in enumerate(chapters):
             x = x0 + j * spacing
             cls = "mm-station " + ("soon" if ch["stub"] else "built")
-            label = ch["short"]
             desc = f'<desc>Chapter {ch["number"]}: {escape(ch["title"])}' + (", coming soon" if ch["stub"] else "") + "</desc>"
-            words = label.split()
-            lines = []
-            cur = ""
+            words, lines, cur = ch["short"].split(), [], ""
             for w in words:
                 if len(cur) + len(w) + 1 > 18 and cur:
                     lines.append(cur)
@@ -403,18 +420,27 @@ def write_metro(course: dict) -> None:
             if cur:
                 lines.append(cur)
             tspans = "".join(f'<tspan x="{x}" dy="{0 if k == 0 else 14}">{escape(l)}</tspan>' for k, l in enumerate(lines))
+            halo = f'<circle class="mm-station-halo" filter="url(#mm-glow)" cx="{x}" cy="{y}" r="17" fill="currentColor"/>' if not ch["stub"] else ""
             out.append(
-                f'<a class="{cls}" href="{ch["href"]}">{desc}'
-                f'<circle cx="{x}" cy="{y}" r="12" stroke="currentColor"/>'
+                f'<a class="{cls}" href="{ch["href"]}" style="--j:{j}">{desc}{halo}'
+                f'<circle class="mm-station-dot" cx="{x}" cy="{y}" r="12" stroke="currentColor"/>'
                 f'<text class="mm-station-num" x="{x}" y="{y + 4}" text-anchor="middle">{ch["number"]}</text>'
-                f'<text x="{x}" y="{y + 32}" text-anchor="middle">{tspans}</text>'
+                f'<text class="mm-station-label" x="{x}" y="{y + 32}" text-anchor="middle">{tspans}</text>'
                 "</a>"
             )
+        if lit_end is not None:
+            # a pulse of light travelling along the lit stretch, then resting, every six seconds
+            motion = (f'<animateMotion path="M{x_start} {y} H{lit_end}" begin="2s" dur="6s" repeatCount="indefinite" '
+                      'calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.5;1"/>')
+            fade = ('<animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.44;0.52;1" '
+                    'begin="2s" dur="6s" repeatCount="indefinite"/>')
+            out.append(f'<circle class="mm-metro-spark-glow" filter="url(#mm-glow)" r="11" fill="currentColor" opacity="0">{motion}{fade}</circle>')
+            out.append(f'<circle class="mm-metro-spark" r="4" opacity="0">{motion}{fade}</circle>')
         out.append("</g>")
     out.append("</svg></div>")
     legend = (
         '<p class="mm-metro-legend"><span><i class="built"></i> available now</span><span><i class="soon"></i> coming soon</span>'
-        '<span>Click a station to open the chapter.</span></p>'
+        '<span>Click a station to open the chapter.</span><span class="mm-metro-hint">Swipe sideways to see the whole map.</span></p>'
     )
     out.append(legend)
     (GEN / "metro.md").write_text("\n".join(out) + "\n", encoding="utf8")

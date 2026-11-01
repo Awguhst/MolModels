@@ -80,7 +80,9 @@ def main() -> int:
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         for theme in THEMES:
-            ctx = browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
+            # reduced motion: screenshots show every page in its final state (the roadmap's intro animation
+            # would otherwise be caught half-drawn); the static glow and colours are unaffected
+            ctx = browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1, reduced_motion="reduce")
             ctx.add_init_script(f"try {{ localStorage.setItem('mm-theme', '{theme}'); }} catch (e) {{}}")
             page = ctx.new_page()
             for name in pages:
