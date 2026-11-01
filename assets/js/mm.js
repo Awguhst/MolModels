@@ -1,6 +1,7 @@
 /* Molecules & Models — progressive enhancements.
  * Everything here is optional: the site is fully readable without it.
- * The only state kept is the theme preference (localStorage key mm-theme, wrapped in try/catch).
+ * The only state kept is the theme preference (localStorage key mm-theme) and, for this browser tab only,
+ * whether the roadmap intro has played (sessionStorage key mm-intro-seen); both wrapped in try/catch.
  * Nothing about what you have read is recorded, here or anywhere else.
  */
 (function () {
@@ -32,7 +33,10 @@
     var dark = wantsDark(pref);
     root.setAttribute("data-mm-theme", dark ? "dark" : "light");
     if (typeof window.quartoToggleColorScheme === "function" && isDark() !== dark) {
+      // switch without transitions so the whole page changes colour at once
+      root.classList.add("mm-theme-switching");
       window.quartoToggleColorScheme();
+      requestAnimationFrame(function () { requestAnimationFrame(function () { root.classList.remove("mm-theme-switching"); }); });
     }
     document.querySelectorAll("[data-mm-theme-btn]").forEach(function (b) {
       b.setAttribute("aria-checked", String(b.getAttribute("data-mm-theme-btn") === pref));
@@ -129,7 +133,13 @@
     });
   }
 
+  function rememberIntro() {
+    // the roadmap's draw-in plays on the first visit to the home page in a session only
+    if (document.querySelector(".mm-metro")) { try { sessionStorage.setItem("mm-intro-seen", "1"); } catch (e) {} }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
+    rememberIntro();
     mountHeaderControls();
     solutionsToggle();
     quizzes();

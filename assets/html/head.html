@@ -8,6 +8,7 @@
     var dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     root.setAttribute('data-mm-theme', dark ? 'dark' : 'light');
     root.setAttribute('data-mm-theme-pref', t);
+    if (sessionStorage.getItem('mm-intro-seen')) root.classList.add('mm-no-intro');
   } catch (e) {
     root.setAttribute('data-mm-theme', 'dark');
   }

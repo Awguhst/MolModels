@@ -51,8 +51,18 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3 {
 }
 p { margin-bottom: 1.05rem; }
 li { margin-bottom: .25rem; }
-a { color: var(--mm-link); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--mm-accent) 70%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: .16em; transition: text-decoration-color var(--mm-transition); }
-a:hover { color: var(--mm-link); text-decoration-color: var(--mm-accent); }
+// Links are never underlined. In running text a link is the Part's accent colour at medium weight
+// (colour plus weight, so it never relies on colour alone); headings, navigation, breadcrumbs,
+// buttons and glossary terms style their own links.
+a, a:hover, a:focus, a:focus-visible, abbr[title], .quarto-notebook-link:hover, code a:hover { text-decoration: none; }
+a { color: var(--mm-link); transition: color var(--mm-transition); }
+a:hover { color: var(--mm-link); }
+#quarto-document-content a:not([class]) { color: var(--mm-accent); font-weight: 500; }
+#quarto-document-content a:not([class]):hover { color: var(--mm-text); }
+#quarto-document-content :is(h1, h2, h3, h4, h5, h6) a:not([class]) { color: inherit; font-weight: inherit; }
+#quarto-document-content :is(h1, h2, h3, h4, h5, h6) a:not([class]):hover { color: var(--mm-accent); }
+#quarto-document-content .mm-crumb a, #quarto-document-content .mm-meta a { color: var(--mm-text-muted); font-weight: 400; }
+#quarto-document-content .mm-crumb a:hover, #quarto-document-content .mm-meta a:hover { color: var(--mm-text); }
 code, kbd, pre, samp, .sourceCode { font-family: var(--mm-font-mono); font-feature-settings: "liga" 0, "calt" 0; font-variant-ligatures: none; }
 p code:not(.sourceCode), li code:not(.sourceCode), td code:not(.sourceCode), h2 code, h3 code, dd code, .mm-callout-body code:not(.sourceCode) {
   background: var(--mm-surface-2);
@@ -157,20 +167,14 @@ table.dataframe tbody th { color: var(--mm-text-muted); font-weight: 400; text-a
     font-size: .93rem; font-weight: 500; text-decoration: none;
   }
   .navbar .navbar-nav .nav-link:hover { color: var(--mm-text); }
-  .navbar .navbar-nav .nav-link::after { content: ""; position: absolute; left: .7rem; right: .7rem; bottom: -1px; height: 2px; background: transparent; }
-  .navbar .navbar-nav .nav-link.active { color: var(--mm-accent-1); }
-  .navbar .navbar-nav .nav-link.active::after { background: var(--mm-accent-1); }
+  .navbar .navbar-nav .nav-link.active { color: var(--mm-accent-1); font-weight: 600; }
   .navbar .navbar-nav .nav-link[href*="part-2-"].active { color: var(--mm-accent-2); }
-  .navbar .navbar-nav .nav-link[href*="part-2-"].active::after { background: var(--mm-accent-2); }
   .navbar .navbar-nav .nav-link[href*="part-3-"].active { color: var(--mm-accent-3); }
-  .navbar .navbar-nav .nav-link[href*="part-3-"].active::after { background: var(--mm-accent-3); }
   .navbar .navbar-nav .nav-link[href*="part-4-"].active { color: var(--mm-accent-4); }
-  .navbar .navbar-nav .nav-link[href*="part-4-"].active::after { background: var(--mm-accent-4); }
 }
 @media (min-width: 992px) and (max-width: 1199.98px) {
   .navbar .navbar-collapse::before { margin: 0 .6rem 0 1rem; }
   .navbar .navbar-nav .nav-link { padding: 0 .5rem; font-size: .88rem; }
-  .navbar .navbar-nav .nav-link::after { left: .5rem; right: .5rem; }
 }
 // part tabs: collapsed menu on narrow screens; brand, theme switch and icons stay on one line
 @media (max-width: 991.98px) {
@@ -254,7 +258,7 @@ table.dataframe tbody th { color: var(--mm-text-muted); font-weight: 400; text-a
 .mm-title { margin: .5rem 0 2rem; }
 .mm-crumb { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-size: .88rem; color: var(--mm-text-muted); margin-bottom: .8rem; }
 .mm-crumb a { color: var(--mm-text-muted); text-decoration: none; }
-.mm-crumb a:hover { color: var(--mm-text); text-decoration: underline; }
+.mm-crumb a:hover { color: var(--mm-text); }
 .mm-crumb .mm-part-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mm-accent); display: inline-block; }
 .mm-title h1 { font-size: 2.3rem; margin: 0 0 .8rem; line-height: 1.12; }
 .mm-title .mm-ep-label { font-family: var(--mm-font-heading); font-weight: 400; color: var(--mm-accent); margin-right: .5rem; }
@@ -432,7 +436,7 @@ details.mm-callout > .mm-callout-body { padding-top: .5rem; }
 .mm-term-wrap { position: relative; display: inline; }
 // glossary terms read as plain text; the definition appears on hover or keyboard focus
 a.mm-term { color: inherit; text-decoration: none; }
-a.mm-term:hover, a.mm-term:focus-visible { text-decoration: underline; text-decoration-color: var(--mm-text-muted); text-decoration-thickness: 1px; text-underline-offset: .18em; }
+a.mm-term:hover, a.mm-term:focus-visible { color: var(--mm-accent); }
 .mm-term-tip {
   display: block; visibility: hidden; opacity: 0; transform: translateY(4px);
   transition: opacity .16s ease, transform .16s ease, visibility 0s linear .16s;
@@ -473,7 +477,7 @@ a.mm-term:hover + .mm-term-tip, a.mm-term:focus-visible + .mm-term-tip, .mm-term
 .mm-pager .mm-pager-empty { border-top: 1px dashed var(--mm-border); }
 @media (max-width: 575.98px) { .mm-pager { grid-template-columns: 1fr; } .mm-pager .mm-pager-next { text-align: left; } .mm-pager .mm-pager-next .mm-pager-dir { justify-content: flex-start; } }
 .mm-meta { display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; font-size: .84rem; color: var(--mm-text-muted); }
-.mm-meta a { color: var(--mm-text-muted); display: inline-flex; align-items: center; gap: .3rem; text-decoration-color: var(--mm-border); }
+.mm-meta a { color: var(--mm-text-muted); display: inline-flex; align-items: center; gap: .3rem; }
 .mm-meta a:hover { color: var(--mm-text); }
 .mm-meta svg { width: 13px; height: 13px; }
 
@@ -494,8 +498,8 @@ table.mm-schedule { width: 100%; font-size: .93rem; border-collapse: collapse; m
 table.mm-schedule th { text-align: left; color: var(--mm-text-muted); font-weight: 500; border-bottom: 1px solid var(--mm-text-muted); padding: .45rem .6rem; }
 table.mm-schedule td { padding: .65rem .6rem; border-bottom: 1px solid var(--mm-border); vertical-align: top; }
 table.mm-schedule td.mm-sched-time { color: var(--mm-text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-table.mm-schedule td.mm-sched-ep a { font-family: var(--mm-font-heading); font-weight: 600; font-size: 1.02rem; text-decoration: none; }
-table.mm-schedule td.mm-sched-ep a:hover { text-decoration: underline; }
+#quarto-document-content table.mm-schedule td.mm-sched-ep a { font-family: var(--mm-font-heading); font-weight: 600; font-size: 1.02rem; color: var(--mm-text); }
+#quarto-document-content table.mm-schedule td.mm-sched-ep a:hover { color: var(--mm-accent); }
 table.mm-schedule td.mm-sched-ep .mm-ep-num { margin-right: .35rem; }
 table.mm-schedule td.mm-sched-q { color: var(--mm-text-muted); font-size: .9rem; }
 table.mm-schedule ul { margin: 0; padding-left: 1rem; }
@@ -561,12 +565,9 @@ table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-a
 .mm-metro .mm-station.soon .mm-station-num, .mm-metro .mm-station.soon .mm-station-label { fill: var(--mm-text-muted); }
 .mm-metro .mm-station:hover .mm-station-dot, .mm-metro .mm-station:focus-visible .mm-station-dot { transform: scale(1.2); stroke-opacity: 1; }
 .mm-metro .mm-station:hover .mm-station-halo, .mm-metro .mm-station:focus-visible .mm-station-halo { opacity: .65; transform: scale(1.35); }
-.mm-metro .mm-station:hover .mm-station-label, .mm-metro .mm-station:focus-visible .mm-station-label { fill: var(--mm-text); text-decoration: underline; }
+.mm-metro .mm-station:hover .mm-station-label, .mm-metro .mm-station:focus-visible .mm-station-label { fill: var(--mm-text); }
 .mm-metro .mm-line-label { font-family: var(--mm-font-heading); font-size: 13.5px; font-weight: 600; }
 .mm-metro .mm-metro-spark { fill: #FFFFFF; }
-// point at one Part and the other lines step back
-.mm-metro .mm-part { transition: opacity .3s ease; }
-.mm-metro svg:has(.mm-part:hover) .mm-part:not(:hover) { opacity: .32; }
 
 @keyframes mm-draw { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
 @keyframes mm-fade { from { opacity: 0; } }
@@ -579,6 +580,7 @@ table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-a
 .mm-metro .mm-station.built .mm-station-dot, .mm-metro .mm-station.built .mm-station-halo {
   animation: mm-switch-on .55s cubic-bezier(.3, .7, .3, 1) backwards; animation-delay: calc(.2s + var(--i) * .28s + var(--j) * .12s);
 }
+html.mm-no-intro .mm-metro *, html.mm-no-intro .mm-home-hero > * { animation: none !important; }
 .mm-metro-hint { display: none !important; }
 @media (max-width: 700px) { .mm-metro-hint { display: inline-flex !important; } }
 .mm-metro-legend { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-size: .84rem; color: var(--mm-text-muted); margin-bottom: 1.5rem; }
@@ -599,8 +601,8 @@ table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-a
 // Misc Quarto overrides
 // ---------------------------------------------------------------------------
 .nav-footer { background: var(--mm-bg); border-top: 1px solid var(--mm-border); color: var(--mm-text-muted); font-size: .85rem; }
-.nav-footer a { color: var(--mm-text-muted); text-decoration-color: var(--mm-border); }
-.nav-footer a:hover { color: var(--mm-text); }
+.nav-footer a { color: var(--mm-text); font-weight: 500; }
+.nav-footer a:hover { color: var(--mm-accent); }
 .quarto-title-block .quarto-title-meta { display: none; }
 .anchorjs-link { color: var(--mm-text-muted) !important; text-decoration: none; }
 #quarto-search-results, .aa-DetachedOverlay, .aa-Panel { --bs-body-bg: var(--mm-surface); }
@@ -652,7 +654,7 @@ table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-a
 
 // solutions, proofs, deep dives and quiz options slide open and shut
 @supports selector(::details-content) {
-  :root { interpolate-size: allow-keywords; }
+  details.mm-callout, details.mm-quiz-option { interpolate-size: allow-keywords; }
   details.mm-callout::details-content, details.mm-quiz-option::details-content {
     block-size: 0; overflow-y: clip;
     transition: block-size .3s cubic-bezier(.2, .7, .2, 1), content-visibility .3s allow-discrete;
@@ -668,8 +670,9 @@ table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-a
   transition: transform .35s cubic-bezier(.2, .7, .2, 1), box-shadow .35s ease;
 }
 .mm-audience .mm-card::before { top: -2px; }
-.mm-card:hover::before, .mm-card:focus-within::before {
-  transform: scaleX(1); box-shadow: 0 0 12px 0 color-mix(in srgb, var(--mm-c, var(--mm-accent)) 65%, transparent);
+.mm-card:focus-within::before { transform: scaleX(1); }
+@media (hover: hover) {
+  .mm-card:hover::before { transform: scaleX(1); box-shadow: 0 0 12px 0 color-mix(in srgb, var(--mm-c, var(--mm-accent)) 65%, transparent); }
 }
 
 // quiz: a short pulse of colour when an answer opens
@@ -683,19 +686,8 @@ table.mm-schedule tr.mm-sched-lab td { background: color-mix(in srgb, var(--mm-a
 .mm-btn-primary { transition: background var(--mm-transition), box-shadow .25s ease; }
 .mm-btn-primary:hover, .mm-btn-primary:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, var(--mm-accent-1) 28%, transparent); }
 
-// navbar: an underline grows under the tab you point at
-@media (min-width: 992px) {
-  .navbar .navbar-nav .nav-link::after { transform: scaleX(0); transition: transform .25s cubic-bezier(.2, .7, .2, 1); }
-  .navbar .navbar-nav .nav-link:not(.active):hover::after { transform: scaleX(1); background: var(--mm-border); }
-  .navbar .navbar-nav .nav-link.active::after { transform: scaleX(1); }
-}
 
-// long pages: a thin line under the header shows how far down the page you are
-@supports (animation-timeline: scroll()) {
-  @keyframes mm-read { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-  body:has(#TOC) #quarto-header::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; pointer-events: none;
-    background: var(--mm-accent); transform-origin: 0 50%; transform: scaleX(0);
-    animation: mm-read linear both; animation-timeline: scroll(root block);
-  }
-}
+
+// While the theme switches (mm.js adds the class for two frames) nothing transitions, so the whole
+// page changes colour at once instead of element by element.
+html.mm-theme-switching *, html.mm-theme-switching *::before, html.mm-theme-switching *::after { transition: none !important; }
