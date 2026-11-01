@@ -1,0 +1,22 @@
+// Non-colour Sass defaults shared by both theme layers. Quarto compiles the light and the dark
+// theme separately and, in dark mode, applies the dark sheet on top of the light one; anything
+// Bootstrap derives from these variables must therefore be identical in both, or dark mode would
+// silently fall back to Bootstrap's defaults (header padding, type scale, radii, bold weight).
+$font-size-base: 1.0625rem;          // 17px
+$line-height-base: 1.6;
+$headings-font-weight: 600;
+$headings-line-height: 1.2;
+$h1-font-size: 2.15rem;
+$h2-font-size: 1.5rem;
+$h3-font-size: 1.2rem;
+$h4-font-size: 1.05rem;
+$border-radius: .375rem;
+$border-radius-sm: .25rem;
+$border-radius-lg: .5rem;
+$navbar-padding-y: 0;
+$code-block-padding-left: 1rem;
+$code-font-size: .853rem;
+$focus-ring-width: 3px;
+$enable-shadows: false;
+$enable-gradients: false;
+$font-weight-bolder: 600;

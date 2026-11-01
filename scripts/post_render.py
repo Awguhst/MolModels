@@ -63,11 +63,14 @@ def decorate(html: str, page_rel: PurePosixPath) -> str:
     if m:
         html = html.replace("<html ", f'<html data-mm-part="{m.group(1)}" ', 1)
     # 2. skip link
-    html = re.sub(r"(<body[^>]*>)", r"\1" + SKIP, html, count=1)
+    # insert right after the real body tag (search past </head>, so text in head comments can never match)
+    head_end = html.find("</head>")
+    html = html[:head_end] + re.sub(r"(<body\b[^>]*>)", r"\1" + SKIP, html[head_end:], count=1)
 
     # 3. sidebar links
     def repl(mo: re.Match) -> str:
         href, active, text = mo.group(1), mo.group(2) or "", mo.group(3)
+        text = re.sub(r"<[^>]+>", "", text).strip()  # Quarto wraps the label in <span class="menu-text">
         target = resolve(page_rel, href)
         pg = by_href.get(target)
         ch = chapter_by_href.get(target)

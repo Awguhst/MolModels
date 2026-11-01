@@ -1,7 +1,8 @@
 /*-- scss:defaults --*/
 // Dark theme (default). Quarto layers this on top of the light theme, so only
-// the differences live here. Tokens come from _tokens.scss.
+// the colour differences live here; tokens come from _tokens.scss, sizes from _shared-defaults.scss.
 @import "tokens";
+@import "shared-defaults";
 
 $body-bg: #15181C;
 $body-color: #E8E4DC;
@@ -39,6 +40,8 @@ $text-muted: #A6A197;
 $btn-close-color: #E8E4DC;
 
 /*-- scss:rules --*/
+// dark tokens first, then the shared rules (whose print block switches back to light tokens)
 :root {
   @include mm-tokens-dark;
 }
+@import "mm-rules";

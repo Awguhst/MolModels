@@ -123,3 +123,17 @@ def test_collapsible_bodies_are_intact():
             if m.group(2).strip().startswith("nil"):
                 bad.append(f"{page.relative_to(SITE)}: {m.group(1)} body starts with 'nil'")
     assert not bad, chr(10).join(bad)
+
+
+def test_skip_link_is_first_in_body():
+    """The skip link must be the first element of the real <body>, never inside the <head>."""
+    bad = []
+    for page in pages():
+        html = page.read_text(encoding="utf8")
+        head, _, body = html.partition("</head>")
+        if "mm-skip" in head.replace(".mm-skip", ""):
+            bad.append(f"{page.relative_to(SITE)}: skip link inside <head>")
+        m = re.search(r"<body\b[^>]*>\s*(<[^>]+>)", body)
+        if not m or 'class="mm-skip"' not in m.group(1):
+            bad.append(f"{page.relative_to(SITE)}: first element of <body> is {m.group(1)[:60] if m else None}")
+    assert not bad, chr(10).join(bad[:10])
