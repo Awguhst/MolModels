@@ -470,8 +470,9 @@ details.mm-callout > .mm-callout-body { padding-top: .5rem; }
 
 // Glossary term tooltip (CSS only, hover + focus)
 .mm-term-wrap { position: relative; display: inline; }
-a.mm-term { color: inherit; text-decoration: underline dotted var(--mm-text-muted); text-decoration-thickness: 1.5px; text-underline-offset: .18em; }
-a.mm-term:hover, a.mm-term:focus-visible { text-decoration-style: solid; text-decoration-color: var(--mm-text); }
+// glossary terms read as plain text; the definition appears on hover or keyboard focus
+a.mm-term { color: inherit; text-decoration: none; }
+a.mm-term:hover, a.mm-term:focus-visible { text-decoration: underline; text-decoration-color: var(--mm-text-muted); text-decoration-thickness: 1px; text-underline-offset: .18em; }
 .mm-term-tip {
   display: none; position: absolute; left: 0; top: calc(100% + .4rem); z-index: 1040; width: min(34ch, 80vw);
   background: var(--mm-surface); color: var(--mm-text); border: 1px solid var(--mm-border); border-radius: var(--mm-radius); padding: .6rem .8rem;

@@ -114,7 +114,7 @@ Every option tells you something, including the wrong ones, and a small running 
 
 **Dark / Light / Auto.** The theme switch in the top bar; *Auto* follows your operating system. Figures are rendered in both themes and swap with the page.
 
-**Glossary tooltips.** Technical terms carry a dotted underline the first time they appear in each episode, like {{< term kernel >}} here. Hover or focus for a one-sentence definition; click for the full entry in the [glossary](../../appendices/glossary.html).
+**Glossary tooltips.** Technical terms are linked to the glossary the first time they appear in each episode, like {{< term kernel >}} here. They look like ordinary text; hover over one, or reach it with the Tab key, to see a one-sentence definition, and click it for the full entry in the [glossary](../../appendices/glossary.html).
 
 **Search.** Press `/` anywhere on the site (or click the magnifier) to search every page. Results show the chapter and section they come from.
 
