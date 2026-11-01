@@ -266,7 +266,7 @@ terms:
   - id: recall
     term: recall
     short: Of the truly positive samples, the fraction the model finds.
-    definition: $\mathrm{recall} = \frac{TP}{TP + FN}$, the fraction of true positives that the model identifies. Also called sensitivity. High recall means few misses.
+    definition: $\mathrm{recall} = \frac{TP}{TP + FN}$, the fraction of actual positives that the model identifies. Also called sensitivity. High recall means few misses.
     chapter: "2.5"
     see: [precision, confusion-matrix]
   - id: roc-auc
@@ -560,8 +560,8 @@ terms:
     see: [hyperparameter]
   - id: normal-equation
     term: normal equation
-    short: "The closed-form solution of least squares: θ = (XᵀX)⁻¹Xᵀy."
-    definition: "The closed-form solution of ordinary least squares, $\\hat\\theta = (X^\\top X)^{-1} X^\\top y$, obtained by setting the gradient of the MSE to zero. In code, solve the linear system rather than inverting the matrix: `np.linalg.solve(X.T @ X, X.T @ y)`."
+    short: "The linear system XᵀXθ = Xᵀy whose solutions minimise the squared error of a linear model."
+    definition: "The linear system $X^\\top X \\theta = X^\\top y$, obtained by setting the gradient of the mean squared error to zero; its solutions are exactly the least-squares fits. When the columns of $X$ are linearly independent, $X^\\top X$ is invertible and the unique solution is $\\hat\\theta = (X^\\top X)^{-1} X^\\top y$. In code, solve the system rather than inverting the matrix: `np.linalg.solve(X.T @ X, X.T @ y)`."
     chapter: "2.2"
     see: [gradient-descent, mse]
   - id: learning-rate
@@ -674,3 +674,9 @@ terms:
     short: "The library scikit-learn uses to save fitted models to disk (joblib.dump / joblib.load)."
     definition: "A utility library for saving Python objects efficiently. `joblib.dump(model, \"model.joblib\")` persists a fitted scikit-learn pipeline and `joblib.load` restores it. Record the library versions alongside the file: a model saved with one scikit-learn version may not load with another."
     chapter: "2.6"
+  - id: iid
+    term: i.i.d.
+    short: "Independent and identically distributed: each sample drawn independently from the same distribution."
+    definition: "Random variables $X_1, \\ldots, X_n$ are *independent and identically distributed* if they all have the same distribution and are mutually independent. Most results about averages (the law of large numbers, the central limit theorem) assume it, and a random train/test split assumes that training and test samples are i.i.d. draws from the same population. Duplicates, closely related molecules and batch effects break the assumption, which is why later chapters use scaffold and group splits."
+    chapter: "A"
+    see: [train-test-split, data-leakage]
