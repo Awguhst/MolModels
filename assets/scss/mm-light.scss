@@ -440,7 +440,7 @@ pre:not(.sourceCode) { background: var(--mm-surface); border: 1px solid var(--mm
 // Collapsible callouts (solution, deep-dive): <details>
 details.mm-callout > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: .5rem .7rem; flex-wrap: wrap; padding: .1rem 0; }
 details.mm-callout > summary::-webkit-details-marker { display: none; }
-details.mm-callout > summary .mm-summary-cta { margin-left: auto; font-size: .84rem; color: var(--mm-text-muted); display: inline-flex; align-items: center; gap: .3rem; text-decoration: underline; text-decoration-color: var(--mm-border); text-underline-offset: .16em; }
+details.mm-callout > summary .mm-summary-cta { margin-left: auto; font-size: .84rem; color: var(--mm-text-muted); display: inline-flex; align-items: center; gap: .3rem; text-decoration: none; }
 details.mm-callout > summary:hover .mm-summary-cta { color: var(--mm-text); }
 details.mm-callout > summary .mm-summary-cta svg { width: 12px; height: 12px; transition: transform var(--mm-transition); }
 details.mm-callout[open] > summary .mm-summary-cta svg { transform: rotate(180deg); }
