@@ -41,7 +41,7 @@ course-version: "0.1.0"
 website:
   title: "Molecules & Models"
   description: "An open, step-by-step course taking graduates in informatics, chemistry, biology or mathematics from scientific Python through machine learning into cheminformatics and bioinformatics."
-  site-url: "https://YOUR-USER.github.io/molecules-and-models/"
+  site-url: "https://molmodels.bio/"
   repo-url: "https://github.com/Awguhst/MolModels"
   repo-branch: main
   favicon: brand/favicon.svg

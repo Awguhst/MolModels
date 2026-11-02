@@ -7,7 +7,7 @@ scientific Python → machine learning → molecular property prediction, dockin
 models, generative design. Built with [Quarto](https://quarto.org) and Python; every code cell is
 executed when the site is built. Text CC BY 4.0, code MIT.
 
-**Site:** hosted on [Railway](https://railway.com) from this repository (see [Deploying](#deploying-railway--docker)).
+**Site:** https://molmodels.bio/ (hosted on [Railway](https://railway.com) from this repository; see [Deploying](#deploying-railway--docker)).
 
 ## Status (iteration 1)
 
@@ -65,10 +65,13 @@ to build it and to health-check `/healthz`.
 
 1. In Railway: **New project → Deploy from GitHub repo →** `Awguhst/MolModels`. Railway picks up `railway.json`;
    no variables are required.
-2. **Settings → Networking → Generate domain** (or add a custom domain), then redeploy once. The build reads
-   `RAILWAY_PUBLIC_DOMAIN` and writes it into the sitemap, the Open Graph tags and the citation text. To use a
-   different address, set the service variable `SITE_URL` (for example `https://molmodels.org/`).
-3. Every push to `main` rebuilds and redeploys. A build takes about 5–10 minutes because every episode and
+2. **Settings → Networking → Custom domain**: add the domain, then create the DNS records Railway shows at
+   the registrar (the `_railway-verify` TXT record and the CNAME/ALIAS for the domain). Add `www.` as a second
+   custom domain with its own CNAME if you want it to work too.
+3. The public address lives in `website.site-url` (`_quarto.yml`), `cite.qmd`, `CITATION.cff` and
+   `brand/*.yml`; it feeds the sitemap, the Open Graph tags and the citation text. Change it there if the domain
+   changes.
+4. Every push to `main` rebuilds and redeploys. A build takes about 5–10 minutes because every episode and
    lab executes; if it fails, the previous deployment stays live.
 
 The image is built without the git history (`.git` is excluded from the build context), so the "last updated"
@@ -106,8 +109,8 @@ _review/screenshots/        responsive screenshots from scripts/review_site.py
 
 ## After forking
 
-Search and replace `Awguhst/MolModels` and `YOUR NAME` in `_quarto.yml`, `CITATION.cff`, `cite.qmd`,
-`about.qmd`, `README.md`, the lab notebooks and `LICENSE`, then deploy on Railway as above. To publish on
+Search and replace `Awguhst/MolModels`, `https://molmodels.bio/` and `YOUR NAME` in `_quarto.yml`, `brand/*.yml`,
+`CITATION.cff`, `cite.qmd`, `about.qmd`, `README.md`, the lab notebooks and `LICENSE`, then deploy on Railway as above. To publish on
 GitHub Pages instead (or as well), enable Pages with "GitHub Actions" as the source and set the repository
 variable `DEPLOY_TO_GITHUB_PAGES` to `true`; the workflow then deploys on every push to `main`.
 

@@ -1,7 +1,7 @@
 # Brand (dark mode, the default). The same tokens are exposed as CSS custom properties in assets/scss/.
 meta:
   name: Molecules & Models
-  link: https://YOUR-USER.github.io/molecules-and-models/
+  link: https://molmodels.bio/
 color:
   palette:
     bg: "#0D1117"

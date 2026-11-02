@@ -5,7 +5,6 @@
 #
 #   docker build -t molmodels .
 #   docker run --rm -p 8080:8080 molmodels                  # http://localhost:8080/
-#   docker build --build-arg SITE_URL=https://example.org/ -t molmodels .
 #
 # The render executes every episode and lab from scratch (no _freeze), as CI does: allow 5-10 minutes.
 
@@ -44,21 +43,6 @@ COPY . .
 
 # ESOL is not redistributed in the repository: download it with its SHA-256 check.
 RUN python scripts/fetch_data.py
-
-# Public address of the site, for the sitemap, Open Graph tags and the citation text.
-# Defaults to the domain Railway assigns the service; SITE_URL overrides it (e.g. a custom domain).
-# With neither set, the placeholder in _quarto.yml is left as it is.
-ARG SITE_URL=""
-ARG RAILWAY_PUBLIC_DOMAIN=""
-RUN set -eu; \
-    url="$SITE_URL"; \
-    if [ -z "$url" ] && [ -n "$RAILWAY_PUBLIC_DOMAIN" ]; then url="https://$RAILWAY_PUBLIC_DOMAIN/"; fi; \
-    if [ -n "$url" ]; then \
-      url="${url%/}/"; \
-      echo "site URL: $url"; \
-      grep -rlF "https://YOUR-USER.github.io/molecules-and-models/" _quarto.yml cite.qmd CITATION.cff brand \
-        | xargs -r sed -i "s#https://YOUR-USER.github.io/molecules-and-models/#${url}#g"; \
-    fi
 
 RUN rm -rf _freeze && quarto render
 
