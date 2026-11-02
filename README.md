@@ -7,7 +7,7 @@ scientific Python → machine learning → molecular property prediction, dockin
 models, generative design. Built with [Quarto](https://quarto.org) and Python; every code cell is
 executed when the site is built. Text CC BY 4.0, code MIT.
 
-**Site:** https://YOUR-USER.github.io/molecules-and-models/ (replace `YOUR-USER` everywhere after forking; see below.)
+**Site:** hosted on [Railway](https://railway.com) from this repository (see [Deploying](#deploying-railway--docker)).
 
 ## Status (iteration 1)
 
@@ -27,8 +27,8 @@ You do not need to install anything to follow the course: read the site and open
 To run things locally:
 
 ```bash
-git clone https://github.com/YOUR-USER/molecules-and-models.git
-cd molecules-and-models
+git clone https://github.com/Awguhst/MolModels.git
+cd MolModels
 mamba env create -f environment.yml      # or: python -m venv .venv && .venv/bin/pip install -r requirements.txt
 mamba activate molecules-models
 python scripts/check_env.py              # ✅ / ❌ for every library
@@ -57,6 +57,28 @@ python scripts/serve_site.py             # browse _site/ locally with gzip, as G
 Quarto must use the course environment: activate it before running Quarto, or set `QUARTO_PYTHON` to its interpreter.
 On a first full render the labs and episodes execute (about 3–5 minutes); later renders reuse `_freeze/`.
 
+## Deploying (Railway / Docker)
+
+The `Dockerfile` renders the whole site in a Python 3.12 + Quarto 1.10.20 image (data download, full execution,
+no `_freeze/`) and copies `_site/` into a small nginx image that listens on `$PORT`. `railway.json` tells Railway
+to build it and to health-check `/healthz`.
+
+1. In Railway: **New project → Deploy from GitHub repo →** `Awguhst/MolModels`. Railway picks up `railway.json`;
+   no variables are required.
+2. **Settings → Networking → Generate domain** (or add a custom domain), then redeploy once. The build reads
+   `RAILWAY_PUBLIC_DOMAIN` and writes it into the sitemap, the Open Graph tags and the citation text. To use a
+   different address, set the service variable `SITE_URL` (for example `https://molmodels.org/`).
+3. Every push to `main` rebuilds and redeploys. A build takes about 5–10 minutes because every episode and
+   lab executes; if it fails, the previous deployment stays live.
+
+The image is built without the git history (`.git` is excluded from the build context), so the "last updated"
+dates on episodes fall back to the file dates of the build checkout. Run the same image locally with:
+
+```bash
+docker build -t molmodels .
+docker run --rm -p 8080:8080 molmodels            # http://localhost:8080/
+```
+
 ## Repository layout
 
 ```
@@ -76,15 +98,18 @@ scripts/                    build_course_data.py, post_render.py, fetch_data.py,
                             make_student_notebooks.py, new_episode.py, new_chapter.py, review_site.py,
                             check_contrast.py, lighthouse.sh, serve_site.py, subset_fonts.sh
 tests/                      pytest suite (see above)
-.github/workflows/          publish.yml: render → test → link check → deploy to GitHub Pages
+.github/workflows/          publish.yml: render → test → link check (→ GitHub Pages, if enabled; see below)
+Dockerfile, docker/         production image: Quarto render stage + nginx serve stage (nginx.conf.template)
+railway.json                Railway build and health-check settings
 _review/screenshots/        responsive screenshots from scripts/review_site.py
 ```
 
 ## After forking
 
-Search and replace `YOUR-USER/molecules-and-models` and `YOUR NAME` in `_quarto.yml`, `CITATION.cff`, `cite.qmd`,
-`about.qmd`, `README.md`, the lab notebooks and `LICENSE`. In the repository settings enable GitHub Pages with
-"GitHub Actions" as the source; the workflow deploys on every push to `main`.
+Search and replace `Awguhst/MolModels` and `YOUR NAME` in `_quarto.yml`, `CITATION.cff`, `cite.qmd`,
+`about.qmd`, `README.md`, the lab notebooks and `LICENSE`, then deploy on Railway as above. To publish on
+GitHub Pages instead (or as well), enable Pages with "GitHub Actions" as the source and set the repository
+variable `DEPLOY_TO_GITHUB_PAGES` to `true`; the workflow then deploys on every push to `main`.
 
 ## Licences
 

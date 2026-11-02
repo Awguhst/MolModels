@@ -1,5 +1,9 @@
 name: Render, test and deploy
 
+# The site is hosted on Railway, which builds the Dockerfile on every push to main.
+# This workflow renders and tests every push and pull request. The GitHub Pages deploy is
+# optional: set the repository variable DEPLOY_TO_GITHUB_PAGES to "true" to turn it on.
+
 on:
   push:
     branches: [main]
@@ -88,12 +92,13 @@ jobs:
             render.log
 
       - name: Upload site
+        if: vars.DEPLOY_TO_GITHUB_PAGES == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: vars.DEPLOY_TO_GITHUB_PAGES == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:

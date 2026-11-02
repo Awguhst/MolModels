@@ -1,0 +1,4 @@
+# Files read inside Linux containers keep LF line endings, whatever core.autocrlf says.
+Dockerfile        text eol=lf
+.dockerignore     text eol=lf
+docker/**         text eol=lf
