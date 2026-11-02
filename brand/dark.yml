@@ -4,14 +4,14 @@ meta:
   link: https://YOUR-USER.github.io/molecules-and-models/
 color:
   palette:
-    bg: "#15181C"
-    surface: "#1C2025"
-    surface-2: "#242930"
-    code-bg: "#101317"
-    border: "#2F353D"
-    text: "#E8E4DC"
-    text-muted: "#A6A197"
-    blue: "#86AEE0"
+    bg: "#0D1117"
+    surface: "#141A23"
+    surface-2: "#1C2531"
+    code-bg: "#0A0E14"
+    border: "#2B3543"
+    text: "#EDF2F8"
+    text-muted: "#A0ADBE"
+    blue: "#93BBF5"
     amber: "#E3AA5C"
     sage: "#93C487"
     rose: "#E39AA9"
@@ -22,7 +22,7 @@ color:
   success: sage
   warning: amber
   danger: rose
-  info: "#86AEE0"
+  info: "#93BBF5"
 typography:
   fonts:
     - family: IBM Plex Sans
@@ -66,7 +66,7 @@ typography:
     size: 17px
     line-height: 1.6
   headings:
-    family: Source Serif 4
+    family: IBM Plex Sans
     weight: 600
     line-height: 1.2
   monospace:

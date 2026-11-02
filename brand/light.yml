@@ -66,7 +66,7 @@ typography:
     size: 17px
     line-height: 1.6
   headings:
-    family: Source Serif 4
+    family: IBM Plex Sans
     weight: 600
     line-height: 1.2
   monospace:

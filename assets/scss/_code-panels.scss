@@ -1,0 +1,160 @@
+// Notebook panels: a single frame around source and its rendered results.
+// Quarto wraps source in .code-copy-outer-scaffold; account for it with and without JS.
+:root { --mm-output-preview-height: 260px; }
+.cell {
+  min-width: 0;
+  margin: 1.65rem 0 1.9rem;
+  border: 1px solid var(--mm-border);
+  border-radius: .85rem;
+  background: var(--mm-code-bg);
+  box-shadow: 0 3px 6px #0000000a, 0 12px 30px -22px #00000060;
+  overflow: hidden;
+  transition: border-color var(--mm-transition), box-shadow var(--mm-transition);
+}
+.cell:focus-within { border-color: color-mix(in srgb, var(--mm-accent) 60%, var(--mm-border)); }
+.code-copy-outer-scaffold { min-width: 0; margin: 1.4rem 0 1.7rem; }
+.cell > .code-copy-outer-scaffold,
+.cell > .mm-code-scaffold { margin: 0; padding: 0; border: 0; border-radius: 0; }
+div.sourceCode {
+  min-width: 0; margin: 0; overflow: hidden;
+  border: 1px solid var(--mm-border); border-radius: .85rem;
+  background: var(--mm-code-bg);
+}
+.cell > div.sourceCode,
+.cell > .code-copy-outer-scaffold > div.sourceCode,
+.cell > .mm-code-scaffold > div.sourceCode {
+  margin: 0; border: 0; border-radius: 0; box-shadow: none;
+}
+.cell > .code-copy-outer-scaffold + .code-copy-outer-scaffold { border-top: 1px solid var(--mm-border); }
+div.sourceCode.mm-code-window::before { display: none; }
+
+.mm-code-toolbar, .mm-output-toolbar {
+  display: flex; align-items: center; gap: .75rem;
+  min-width: 0; min-height: 48px; padding: .45rem 1rem;
+  font-family: var(--mm-font-body); font-size: .73rem; line-height: 1.3;
+  border-bottom: 1px solid color-mix(in srgb, var(--mm-border) 75%, transparent);
+  background: color-mix(in srgb, var(--mm-surface) 75%, var(--mm-code-bg));
+}
+.mm-code-language, .mm-output-label { display: inline-flex; align-items: center; gap: .6rem; font-weight: 500; color: var(--mm-text); white-space: nowrap; }
+.mm-code-language svg, .mm-output-label svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--mm-accent); }
+.mm-code-meta, .mm-output-kind { color: var(--mm-text-muted); font-family: var(--mm-font-mono); font-size: .61rem; font-weight: 400; white-space: nowrap; }
+.mm-code-meta { margin-left: .2rem; }
+.mm-output-kind { margin-left: auto; }
+.mm-copy-button {
+  position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  margin-left: auto; min-width: 104px; min-height: 32px; padding: .35rem .7rem; white-space: nowrap;
+  border: 1px solid var(--mm-border); border-radius: .4rem;
+  background: color-mix(in srgb, var(--mm-surface-2) 65%, transparent);
+  color: var(--mm-text-muted); font-family: var(--mm-font-body); font-size: .7rem; font-weight: 500; line-height: 1.2;
+  cursor: pointer; user-select: none;
+  transition: color var(--mm-transition), background var(--mm-transition), border-color var(--mm-transition), transform var(--mm-transition);
+}
+.mm-copy-button svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.mm-copy-button .mm-copy-check { display: none; }
+.mm-copy-button[data-state="copied"] .mm-copy-icon { display: none; }
+.mm-copy-button[data-state="copied"] .mm-copy-check { display: block; }
+.mm-copy-button:hover { color: var(--mm-text); background: var(--mm-surface-2); border-color: color-mix(in srgb, var(--mm-accent) 50%, var(--mm-border)); }
+.mm-copy-button:active { transform: translateY(1px); }
+.mm-copy-button:focus-visible { outline: 2px solid var(--mm-focus); outline-offset: 3px; }
+.mm-copy-button[data-state="copied"] { color: var(--mm-done); border-color: color-mix(in srgb, var(--mm-done) 40%, var(--mm-border)); background: color-mix(in srgb, var(--mm-done) 8%, var(--mm-code-bg)); }
+.mm-copy-button[data-state="error"] { color: var(--mm-pitfall); border-color: color-mix(in srgb, var(--mm-pitfall) 45%, var(--mm-border)); }
+.mm-copy-button[data-state="copying"] { cursor: progress; }
+.mm-copy-button[data-state="copied"] svg { animation: mm-copy-confirm .22s ease-out; }
+@keyframes mm-copy-confirm { from { transform: scale(.7); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+
+div.sourceCode pre.sourceCode {
+  position: relative; margin: 0; padding: 2.2rem 1.25rem 1.2rem;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  overflow-x: auto; overflow-y: hidden; max-height: none;
+  font-size: .8rem; line-height: 1.8; tab-size: 4;
+}
+div.sourceCode.mm-code-window pre.sourceCode { padding-top: 1.1rem; }
+pre.sourceCode > code { display: block; padding: 0; border: 0; background: transparent; white-space: pre; word-break: normal; overflow-wrap: normal; }
+pre.sourceCode > code.sourceCode > span { line-height: 1.8; }
+pre.sourceCode > code > span:target { background: color-mix(in srgb, var(--mm-accent) 10%, transparent); }
+// Copy controls remain above the text, never over a code line or horizontal scrollbar.
+.code-copy-outer-scaffold > .code-copy-button { top: .35rem; right: .55rem; opacity: 1; }
+.cell pre, .code-copy-outer-scaffold pre, .mm-output-content, .cell-output-display > div {
+  scrollbar-width: thin; scrollbar-color: var(--mm-border) transparent;
+}
+.cell pre::-webkit-scrollbar, .code-copy-outer-scaffold pre::-webkit-scrollbar, .mm-output-content::-webkit-scrollbar { width: 7px; height: 7px; }
+.cell pre::-webkit-scrollbar-thumb, .code-copy-outer-scaffold pre::-webkit-scrollbar-thumb, .mm-output-content::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--mm-border); }
+
+.cell > .cell-output {
+  min-width: 0; margin: 0; border-top: 1px solid var(--mm-border);
+  background: var(--mm-surface); box-shadow: none;
+}
+.cell > .cell-output + .cell-output { border-top: 1px solid var(--mm-border); }
+.cell > .cell-output.mm-output-window::before { display: none; }
+.cell > .mm-output-window > .mm-output-toolbar {
+  margin: 0; padding: .65rem 1rem; min-height: 42px;
+  border-bottom: 1px solid color-mix(in srgb, var(--mm-border) 55%, transparent);
+  background: color-mix(in srgb, var(--mm-surface-2) 30%, var(--mm-surface));
+}
+.mm-output-label { color: var(--mm-text-muted); font-size: .7rem; }
+.mm-output-label svg { color: var(--mm-tip); width: 14px; height: 14px; }
+.cell-output-stderr .mm-output-label, .cell-output-stderr .mm-output-label svg { color: var(--mm-pitfall); }
+.cell-output-error .mm-output-label, .cell-output-error .mm-output-label svg { color: var(--mm-accent-4); }
+.cell > .cell-output pre {
+  margin: 0; padding: 1rem 1.25rem 1.15rem; max-height: none;
+  border: 0; border-radius: 0; background: transparent;
+  color: var(--mm-text); font-size: .77rem; line-height: 1.75;
+  white-space: pre; overflow-x: auto; overflow-y: hidden;
+}
+.cell > .cell-output > .mm-output-content { position: relative; margin: 0; padding: 0; min-width: 0; max-height: none; overflow: auto; }
+.cell > .cell-output.mm-output-collapsed > .mm-output-content { max-height: var(--mm-output-preview-height); }
+.cell > .cell-output > .mm-output-footer { margin: 0; padding: 0; }
+.mm-output-toggle {
+  position: static; display: flex; align-items: center; justify-content: center; gap: .5rem;
+  width: 100%; min-height: 42px; margin: 0; padding: .65rem 1rem;
+  border: 0; border-top: 1px solid var(--mm-border); border-radius: 0;
+  background: color-mix(in srgb, var(--mm-surface-2) 45%, var(--mm-surface));
+  color: var(--mm-accent); font-family: var(--mm-font-body); font-size: .72rem; font-weight: 500; line-height: 1.35;
+  cursor: pointer; transition: background var(--mm-transition), color var(--mm-transition);
+}
+.mm-output-toggle svg { width: 14px; height: 14px; transition: transform var(--mm-transition); }
+.mm-output-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.mm-output-toggle:hover { background: var(--mm-surface-2); color: var(--mm-text); }
+.mm-output-toggle:focus-visible { outline: 2px solid var(--mm-focus); outline-offset: -4px; }
+
+// Scroll wide data tables inside their output body, keeping its header in place.
+.cell-output-display:has(table.dataframe) { overflow: hidden; }
+.cell > .cell-output-display { padding-bottom: 0; }
+.cell > .cell-output-display > div:not(.mm-output-toolbar):not(.mm-output-content):not(.mm-output-footer),
+.cell > .cell-output-display > p { margin: 0; padding: 1rem 1.25rem; overflow-x: auto; }
+.cell > .cell-output-display table.dataframe { margin: 0; min-width: 100%; font-size: .7rem; }
+.cell-output-display table.dataframe th, .cell-output-display table.dataframe td { padding: .65rem .8rem; border-bottom: 1px solid color-mix(in srgb, var(--mm-border) 70%, transparent); }
+.cell-output-display table.dataframe thead th { background: color-mix(in srgb, var(--mm-surface-2) 50%, var(--mm-surface)); border-bottom: 1px solid var(--mm-border); }
+.cell-output-display table.dataframe tbody tr:last-child > * { border-bottom: 0; }
+.cell-output-display table.dataframe tbody tr:hover { background: color-mix(in srgb, var(--mm-accent) 5%, transparent); }
+.cell > .cell-output-display:has(> .quarto-figure, > figure, > p > img, > img) { padding: 0; }
+.cell > .cell-output-display > .quarto-figure { padding: 1.1rem; margin: 0; }
+.cell > .cell-output-display > figure, .cell > .cell-output-display > img { margin: 1.1rem auto; max-width: calc(100% - 2.2rem); }
+.cell-output-display.dark-content img { background: var(--mm-surface) !important; }
+.cell-output-display figcaption, .cell-output-display .figure-caption { font-size: .76rem; line-height: 1.65; margin: .65rem 0 0; }
+.mm-callout-body .cell { margin: 1rem 0; }
+.mm-callout-body .code-copy-outer-scaffold { margin: .8rem 0; }
+.mm-callout-body .cell > .code-copy-outer-scaffold { margin: 0; }
+
+@media (max-width: 767.98px) {
+  .cell, div.sourceCode { border-radius: .65rem; }
+  .mm-code-toolbar { padding-inline: .8rem; gap: .5rem; }
+  .cell > .mm-output-window > .mm-output-toolbar { padding-inline: .8rem; }
+  div.sourceCode pre.sourceCode { padding-inline: .9rem; font-size: .75rem; line-height: 1.75; }
+  .cell > .cell-output pre { padding: .9rem; font-size: .72rem; }
+  .cell > .cell-output-display > div:not(.mm-output-toolbar):not(.mm-output-content):not(.mm-output-footer), .cell > .cell-output-display > p { padding: .85rem; }
+  .mm-copy-button { min-height: 34px; }
+}
+@media (max-width: 360px) { .mm-code-meta { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mm-copy-button, .mm-output-toggle, .mm-output-toggle svg, .cell { transition: none; }
+  .mm-copy-button:active { transform: none; }
+  .mm-copy-button[data-state="copied"] svg { animation: none; }
+}
+@media print {
+  .mm-copy-button, .mm-output-toggle, .mm-code-meta { display: none !important; }
+  .cell, div.sourceCode { box-shadow: none; break-inside: auto; }
+  .cell > .cell-output > .mm-output-content { max-height: none !important; height: auto !important; overflow: visible !important; }
+  .cell > .cell-output pre, div.sourceCode pre.sourceCode, pre.sourceCode > code { white-space: pre-wrap; overflow: visible; overflow-wrap: anywhere; }
+  .mm-code-toolbar, .cell > .mm-output-window > .mm-output-toolbar { min-height: 0; padding: .4rem .7rem; }
+}

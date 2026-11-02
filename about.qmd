@@ -3,6 +3,18 @@ title: "About this course"
 subtitle: "Who it is for, how it is built, and how to get involved."
 ---
 
+## Why I’m making this
+
+Chemistry, biology, and machine learning meet in fascinating ways. I’m building *Molecules & Models* to make those connections easier to explore, through clear explanations, practical examples, and a path into subjects that can feel intimidating at first.
+
+This is an open, growing learning project. I want to share what I learn and give other curious people a place to start. You’re welcome to browse the ideas; the hands-on lessons do assume some programming and mathematics, as explained below.
+
+## About the creator
+
+I’m **Rostislav Rusev**, a chemical engineering graduate and a master’s student in Bioinformatics at Sofia University St. Kliment Ohridski. My experience spans roles as an AI engineer, data scientist, and computational chemist.
+
+My interests include molecular modelling, QSAR/QSPR, and using machine learning to explore chemistry and living systems. This project reflects the direction I’m growing in: cheminformatics and bioinformatics, with an emphasis on making the ideas understandable and useful.
+
 ## Who it is for
 
 *Molecules & Models* is written for fresh graduates in informatics, chemistry, biology or mathematics who have taken one or two introductory programming or maths courses and want to work with machine learning on molecules, proteins, sequences and omics data. It assumes you can write a loop and a function, and that you have seen first-year calculus, some linear algebra and some statistics. It does not assume pandas, NumPy, git, the command line, any machine learning, or any chemistry or biology.

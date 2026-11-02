@@ -6,12 +6,14 @@
 * sidebar decoration                  episode numbers, time estimates, completion circles, "soon" chips,
 * lab cards                           substitute the GitHub repo/branch into Colab links
 * a11y fixes                          role="button" on collapse toggles, labelled navbar, non-empty table headers
+* navbar current section              match the page's Part directory instead of Quarto's shared sidebar
 * no CDN                              remove the RequireJS/jQuery CDN tags Quarto adds for HTML outputs
 * quarto-nav.js                       guard the <a>.href rewrite against SVG anchors (roadmap stations)
 * lazy figures                        loading="lazy" on figure images; idempotent via a marker comment
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -49,9 +51,57 @@ def resolve(page_rel: PurePosixPath, href: str) -> str:
 
 
 MARKER = "<!-- mm-post-render -->"
+MM_SCRIPT_VERSION = hashlib.sha256((ROOT / "assets" / "js" / "mm.js").read_bytes()).hexdigest()[:12]
+MM_SCRIPT_RE = re.compile(
+    r'''(<script\b[^>]*\bsrc=["'])(/?(?:\.\.?/)*site_libs/quarto-contrib/mm-[^/"'?]+/mm\.js)(?:\?[^"']*)?(["'])'''
+)
+ASSET_VERSIONS = []
+for asset, tag, attribute in (
+    ("assets/css/chemistry.css", "link", "href"),
+    ("brand/favicon.svg", "link", "href"),
+):
+    source = ROOT / asset
+    if source.is_file():
+        pattern = re.compile(
+            rf'''(<{tag}\b[^>]*\s{attribute}=["'])(/?(?:\.\.?/)*{re.escape(asset)})(?:\?[^"']*)?(["'])'''
+        )
+        version = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
+        ASSET_VERSIONS.append((pattern, version))
+
+
+def normalize_navbar_active(html: str, page_rel: PurePosixPath) -> str:
+    """Quarto associates the shared sidebar with Part I; select the actual page's Part instead."""
+    current_part = page_rel.parts[0] if page_rel.parts and re.match(r"part-\d+-", page_rel.parts[0]) else None
+
+    def navbar(match: re.Match) -> str:
+        def link(anchor_match: re.Match) -> str:
+            anchor = anchor_match[0]
+            classes = re.search(r'\bclass="([^"]*)"', anchor)
+            href = re.search(r'\bhref="([^"]*)"', anchor)
+            if not classes or "nav-link" not in classes[1].split() or not href:
+                return anchor
+            target = PurePosixPath(resolve(page_rel, href[1]).lstrip("/"))
+            if not target.parts or not re.match(r"part-\d+-", target.parts[0]):
+                return anchor
+            active = target.parts[0] == current_part
+            names = [name for name in classes[1].split() if name != "active"]
+            if active:
+                names.append("active")
+            anchor = anchor[:classes.start(1)] + " ".join(names) + anchor[classes.end(1):]
+            anchor = re.sub(r'\s+aria-current="[^"]*"', "", anchor)
+            return anchor[:-1] + ' aria-current="page">' if active else anchor
+
+        return match[1] + re.sub(r"<a\b[^>]*>", link, match[2]) + match[3]
+
+    return re.sub(r'(<nav\b[^>]*\bclass="[^\"]*\bnavbar\b[^\"]*"[^>]*>)(.*?)(</nav>)', navbar, html, flags=re.S)
 
 
 def decorate(html: str, page_rel: PurePosixPath) -> str:
+    # Refresh even already-decorated pages: partial renders can update the shared script.
+    html = MM_SCRIPT_RE.sub(lambda m: f"{m[1]}{m[2]}?v={MM_SCRIPT_VERSION}{m[3]}", html)
+    for pattern, version in ASSET_VERSIONS:
+        html = pattern.sub(lambda m, v=version: f"{m[1]}{m[2]}?v={v}{m[3]}", html)
+    html = normalize_navbar_active(html, page_rel)
     if MARKER in html:
         return html  # already processed (quarto preview re-runs post-render after every partial render)
     html = html.replace("</head>", MARKER + "</head>", 1)

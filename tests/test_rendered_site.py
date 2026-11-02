@@ -4,6 +4,7 @@ no Python warnings leaked into outputs, pages stay under the size budget."""
 from __future__ import annotations
 
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -17,6 +18,56 @@ pytestmark = pytest.mark.skipif(not SITE.exists(), reason="site not rendered (qu
 
 def pages() -> list[Path]:
     return sorted(p for p in SITE.rglob("*.html") if "site_libs" not in p.parts)
+
+
+def test_homepage_heading_stays_in_hero():
+    """Quarto must not relocate the custom hero heading into its hidden title block."""
+    html = (SITE / "index.html").read_text(encoding="utf8")
+    hero = re.search(r'<header\b[^>]*class="[^"]*\bmm-front-hero\b[^"]*"[^>]*>(.*?)</header>', html, re.S)
+    assert hero, "homepage is missing its hero header"
+    headings = re.findall(r"<h1\b[^>]*>(.*?)</h1>", hero[1], re.S)
+    assert len(headings) == 1, "homepage hero must retain its own h1"
+    assert re.sub(r"<[^>]+>", "", headings[0]).strip(), "homepage hero heading must contain text"
+
+
+def test_navbar_marks_the_pages_actual_course_section():
+    """A shared Quarto sidebar must not mark Foundations current throughout the entire course."""
+    class NavbarLinks(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.in_navbar = False
+            self.links = []
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == "nav":
+                self.in_navbar = "navbar" in attrs.get("class", "").split()
+            if self.in_navbar and tag == "a" and "nav-link" in attrs.get("class", "").split():
+                self.links.append(attrs)
+
+        def handle_endtag(self, tag):
+            if tag == "nav":
+                self.in_navbar = False
+
+    checked_parts = set()
+    for page in pages():
+        relative = page.relative_to(SITE)
+        part = relative.parts[0] if re.match(r"part-\d+-", relative.parts[0]) else None
+        parser = NavbarLinks()
+        parser.feed(page.read_text(encoding="utf8"))
+        assert len(parser.links) == 4, f"{relative}: missing course navigation"
+        current = []
+        for link in parser.links:
+            target = (page.parent / urlsplit(link["href"]).path).resolve().relative_to(SITE)
+            should_be_active = part is not None and target.parts[0] == part
+            assert ("active" in link.get("class", "").split()) == should_be_active, f"{relative}: {link}"
+            assert link.get("aria-current") == ("page" if should_be_active else None), f"{relative}: {link}"
+            if should_be_active:
+                current.append(target.parts[0])
+        assert len(current) == (1 if part else 0), f"{relative}: {current}"
+        if part:
+            checked_parts.add(part)
+    assert len(checked_parts) == 4
 
 
 def test_internal_links_resolve():

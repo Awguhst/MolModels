@@ -225,7 +225,7 @@ A thousand replicate measurements of a 100 µM standard, with 5% instrument nois
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Histogram of 1000 simulated concentration measurements drawn from a normal distribution with mean 100 micromolar and standard deviation 5. The bars form a bell shape centred on 100, extending from about 85 to 115."
+#| fig-alt: "Histogram of 1000 simulated concentration measurements drawn from a normal distribution with mean 100 micromolar and standard deviation 5. The bars form a bell shape centred on 100, extending from about 82 to 116."
 import matplotlib.pyplot as plt
 
 measurements = rng.normal(loc=100, scale=5, size=1000)

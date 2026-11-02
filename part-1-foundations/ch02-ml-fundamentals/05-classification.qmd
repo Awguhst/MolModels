@@ -107,7 +107,7 @@ logreg.fit(X_train, y_train)
 round(logreg.score(X_test, y_test), 3)
 ```
 
-98.6% accuracy against a baseline of 63%. The model clearly works, and for a moment that number is all you need. But `predict` hides something: the model does not actually output classes, it outputs probabilities.
+About 96.5% accuracy against a baseline of 63%. The model clearly improves on the baseline, but `predict` hides something: the model first estimates probabilities, then turns them into classes.
 
 ```{python}
 probs = logreg.predict_proba(X_test)[:, 1]   # column 1 = P(malignant)
@@ -124,15 +124,21 @@ With 30 features the model's boundary lives in 30 dimensions. To *see* one, trai
 #| renderings: [light, dark]
 #| fig-alt: "Scatter plot of mean texture against mean radius for the training tumours, malignant and benign in two colours, with the background shaded in two regions separated by a straight line: the logistic regression decision boundary."
 from sklearn.inspection import DecisionBoundaryDisplay
+from matplotlib.colors import ListedColormap
 
 two = ["mean radius", "mean texture"]
 logreg2 = make_pipeline(StandardScaler(), LogisticRegression()).fit(X_train[two], y_train)
+class_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"][:2]
+class_cmap = ListedColormap(class_colors)
 
 fig, ax = plt.subplots(figsize=(6.2, 4.4))
-DecisionBoundaryDisplay.from_estimator(logreg2, X_train[two], response_method="predict", alpha=0.25, ax=ax)
+DecisionBoundaryDisplay.from_estimator(
+    logreg2, X_train[two], response_method="predict_proba", plot_method="contourf",
+    levels=[0, 0.5, 1], grid_resolution=400, cmap=class_cmap, alpha=0.18, ax=ax,
+)
 for label, name in [(0, "benign"), (1, "malignant")]:
     sub = X_train[y_train == label]
-    ax.scatter(sub["mean radius"], sub["mean texture"], s=14, alpha=0.7, label=name)
+    ax.scatter(sub["mean radius"], sub["mean texture"], s=14, alpha=0.8, color=class_colors[label], label=name)
 ax.set(xlabel="mean radius", ylabel="mean texture", title="Logistic regression: a straight boundary")
 ax.legend()
 plt.show()
@@ -156,10 +162,13 @@ from sklearn.neighbors import KNeighborsClassifier
 knn2 = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=15)).fit(X_train[two], y_train)
 
 fig, ax = plt.subplots(figsize=(6.2, 4.4))
-DecisionBoundaryDisplay.from_estimator(knn2, X_train[two], response_method="predict", alpha=0.25, ax=ax)
+DecisionBoundaryDisplay.from_estimator(
+    knn2, X_train[two], response_method="predict", plot_method="contourf",
+    levels=[-0.5, 0.5, 1.5], grid_resolution=400, cmap=class_cmap, alpha=0.18, ax=ax,
+)
 for label, name in [(0, "benign"), (1, "malignant")]:
     sub = X_train[y_train == label]
-    ax.scatter(sub["mean radius"], sub["mean texture"], s=14, alpha=0.7, label=name)
+    ax.scatter(sub["mean radius"], sub["mean texture"], s=14, alpha=0.8, color=class_colors[label], label=name)
 ax.set(xlabel="mean radius", ylabel="mean texture", title="15-nearest neighbours: a boundary that bends")
 ax.legend()
 plt.show()
@@ -187,19 +196,20 @@ Accuracy compresses four numbers into one. The four numbers are the {{< term con
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "A 2 by 2 confusion matrix for the logistic regression model on the test set. Rows are the true class (benign, malignant), columns the predicted class. The diagonal cells are large (89 benign correctly called benign, 52 malignant correctly called malignant); the off-diagonal cells each contain 1."
+#| fig-alt: "A 2 by 2 confusion matrix for logistic regression on the test set. Rows are the true class (benign, malignant), columns the predicted class. There are 89 true negatives, 49 true positives, one false positive and four false negatives."
 from sklearn.metrics import ConfusionMatrixDisplay
 
 fig, ax = plt.subplots(figsize=(4.6, 4.2))
 ConfusionMatrixDisplay.from_estimator(logreg, X_test, y_test, display_labels=["benign", "malignant"], ax=ax, colorbar=False)
+ax.grid(False)
 ax.set(title="Logistic regression, test set")
 plt.show()
 ```
 
 Read it in medical language. Rows are the truth, columns the prediction:
 
-- **True positives** (bottom right): malignant tumours called malignant. 52.
-- **False negatives** (bottom left): malignant tumours called benign. 1. The dangerous cell: a missed cancer.
+- **True positives** (bottom right): malignant tumours called malignant. 49.
+- **False negatives** (bottom left): malignant tumours called benign. 4. The dangerous cell: missed cancers.
 - **False positives** (top right): benign tumours called malignant. 1. A frightened patient and an unnecessary biopsy.
 - **True negatives** (top left): benign called benign. 89.
 
@@ -255,7 +265,7 @@ A model with AUC 0.99 can still be useless at the default threshold if its proba
 
 ## Choosing the threshold
 
-Suppose missing a malignant tumour is far worse than a false alarm. Then you lower the threshold: call a tumour malignant at a probability of, say, 0.2 instead of 0.5. Recall goes up; precision goes down. Nothing is retrained; you are just reading the same probabilities differently.
+Suppose missing a malignant tumour is far worse than a false alarm. Then you lower the threshold: call a tumour malignant at a probability of, say, 0.2 instead of 0.5. Recall cannot decrease, and there may be more false alarms; precision often falls, though it need not change monotonically. Nothing is retrained; you are just reading the same probabilities differently.
 
 ```{python}
 from sklearn.metrics import precision_score, recall_score
@@ -267,7 +277,7 @@ for t in [0.5, 0.3, 0.2, 0.1, 0.05]:
 pd.DataFrame(rows).round(3)
 ```
 
-On this test set, dropping the threshold to 0.1 catches every malignant tumour at the price of a few more false alarms. Which trade-off is right is not a statistics question; it is a question about the cost of each kind of mistake, and only the people who will act on the predictions can answer it.
+On this test set, a threshold of 0.1 still misses one malignant tumour; 0.05 catches all 53, with 11 false alarms. This table illustrates the trade-off, but choosing a threshold from it would use the test set for tuning. Choose the threshold using training or validation data, as in the exercise below, then evaluate that fixed choice on a held-out test set. The right trade-off depends on the cost of each kind of mistake and the people who will act on the predictions.
 
 ## When the class you want is rare
 
@@ -284,7 +294,7 @@ from sklearn.datasets import make_classification
 
 X_scr, y_scr = make_classification(
     n_samples=8000, n_features=10, n_informative=4, n_redundant=2,
-    weights=[0.99, 0.01], class_sep=0.9, random_state=42,
+    weights=[0.99, 0.01], class_sep=0.9, flip_y=0, random_state=42,
 )
 Xs_train, Xs_test, ys_train, ys_test = train_test_split(X_scr, y_scr, test_size=0.3, random_state=42, stratify=y_scr)
 print(f"actives in the test set: {ys_test.sum()} of {len(ys_test)}")
@@ -348,33 +358,39 @@ Note how a respectable 87% accuracy hides a precision of only 0.64: more than a 
 :::
 
 ::: {.challenge level=2 title="A threshold for a screening test"}
-Using `probs` and `y_test` from above, find the highest threshold at which the recall for malignant tumours is at least 0.98, and report the precision at that threshold. Then draw the confusion matrix at that threshold. (Hint: `np.linspace(0.01, 0.99, 99)` and a loop; or `precision_recall_curve` from `sklearn.metrics`, which returns the thresholds.)
+Generate out-of-fold probabilities on `X_train` with `cross_val_predict`, so each training tumour is predicted by a pipeline fitted without that tumour. Find the highest threshold at which the out-of-fold recall for malignant tumours is at least 0.98, and report the precision there. Then apply that fixed threshold to `probs` from the test set and draw its confusion matrix. (Hint: `precision_recall_curve` from `sklearn.metrics` returns the thresholds.)
 
 :::: {.solution}
 ```{python}
 from sklearn.metrics import precision_recall_curve
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
-precision, recall, thresholds = precision_recall_curve(y_test, probs)
+threshold_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+train_probs = cross_val_predict(
+    logreg, X_train, y_train, cv=threshold_cv, method="predict_proba"
+)[:, 1]
+precision, recall, thresholds = precision_recall_curve(y_train, train_probs)
 # precision/recall have one more entry than thresholds; drop the last point
 ok = recall[:-1] >= 0.98
 best = thresholds[ok].max()
 i = np.where(thresholds == best)[0][0]
-print(f"threshold {best:.3f}: recall {recall[i]:.3f}, precision {precision[i]:.3f}")
+print(f"threshold {best:.3f}: out-of-fold recall {recall[i]:.3f}, precision {precision[i]:.3f}")
 ```
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Confusion matrix on the test set at the lowered threshold: all or almost all malignant tumours are in the true-positive cell, at the cost of one or two more benign tumours called malignant than at the default threshold."
+#| fig-alt: "Test-set confusion matrix at the threshold chosen from training out-of-fold predictions: 83 true negatives, 52 true positives, seven false positives and one false negative. Compared with the default threshold, three fewer malignancies are missed and six more benign tumours are called malignant."
 from sklearn.metrics import confusion_matrix
 
 cm = confusion_matrix(y_test, (probs >= best).astype(int))
 fig, ax = plt.subplots(figsize=(4.6, 4.2))
 ConfusionMatrixDisplay(cm, display_labels=["benign", "malignant"]).plot(ax=ax, colorbar=False)
-ax.set(title=f"Threshold {best:.2f}")
+ax.grid(False)
+ax.set(title=f"Test set, threshold {best:.3f}")
 plt.show()
 ```
 
-`precision_recall_curve` evaluates every distinct probability as a threshold, so it finds the exact operating point rather than one on a grid. Choosing the *highest* threshold that satisfies the recall target keeps precision as high as possible for that recall.
+`precision_recall_curve` evaluates every distinct probability as a threshold, so it finds the exact operating point on these predictions rather than one on a coarse grid. The highest threshold satisfying the recall target calls the fewest tumours positive among the eligible choices; it does not guarantee the highest precision. Here the training out-of-fold threshold is about 0.098. Applied unchanged to the test set, it finds 52 of 53 malignancies with seven false alarms: recall about 0.981 and precision about 0.881. The target recall is a training-data choice, not a guarantee for future samples.
 ::::
 :::
 

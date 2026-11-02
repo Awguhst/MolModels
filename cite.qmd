@@ -7,13 +7,13 @@ If this course helped your work or your teaching, please cite it. The repository
 
 ## Plain text
 
-> YOUR NAME (2026). *Molecules & Models: a practical path from data science to cheminformatics and bioinformatics* (version 0.1.0). https://YOUR-USER.github.io/molecules-and-models/
+> Rostislav Rusev (2026). *Molecules & Models: a practical path from data science to cheminformatics and bioinformatics* (version 0.1.0). https://YOUR-USER.github.io/molecules-and-models/
 
 ## BibTeX
 
 ```bibtex
 @misc{molecules_and_models_2026,
-  author       = {YOUR NAME},
+  author       = {Rusev, Rostislav},
   title        = {Molecules \& Models: a practical path from data science to cheminformatics and bioinformatics},
   year         = {2026},
   version      = {0.1.0},
@@ -26,7 +26,7 @@ If this course helped your work or your teaching, please cite it. The repository
 
 Give the episode number and title and the date you accessed it, for example:
 
-> YOUR NAME (2026). "2.3 Evaluating models honestly", in *Molecules & Models*. https://YOUR-USER.github.io/molecules-and-models/part-1-foundations/ch02-ml-fundamentals/03-evaluating-models.html (accessed 31 October 2026).
+> Rostislav Rusev (2026). "2.3 Evaluating models honestly", in *Molecules & Models*. https://YOUR-USER.github.io/molecules-and-models/part-1-foundations/ch02-ml-fundamentals/03-evaluating-models.html (accessed 31 October 2026).
 
 The last-updated date at the bottom of every page comes from the git history of that page.
 

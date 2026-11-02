@@ -165,8 +165,9 @@ plt.show()
 ```
 
 How it works: the hidden setup cell applies `assets/mpl/mm-light.mplstyle` and registers an IPython hook. At the end of
-every cell the hook displays each open figure twice, once as is and once with its *chrome* (backgrounds, text, spines,
-grid, legend frame) recoloured for the dark theme; `plt.show()` is a no-op during rendering so figures survive until the hook
+every cell the hook displays each open figure twice, once as is and once restyled by `_includes/plot_theme.py` for the
+dark theme. Backgrounds, text, spines, grids and legends adapt, while dark category hues and neutral outlines brighten
+for readability. Numeric colour scales and plotted data stay unchanged. `plt.show()` is a no-op during rendering so figures survive until the hook
 runs. Quarto's `renderings` option tags the two outputs `light-content` / `dark-content` and the theme switch shows the
 right one. Learners who copy the visible code get the ordinary light figure. Consequences:
 

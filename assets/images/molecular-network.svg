@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="450" viewBox="0 0 520 450" fill="none">
+  <defs>
+    <radialGradient id="atmosphere">
+      <stop stop-color="#569EED" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#569EED" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ice" cx=".3" cy=".24" r=".8">
+      <stop stop-color="#E4F6FF"/>
+      <stop offset=".36" stop-color="#9CD8FA"/>
+      <stop offset=".75" stop-color="#487CA8"/>
+      <stop offset="1" stop-color="#213B59"/>
+    </radialGradient>
+    <radialGradient id="blue" cx=".3" cy=".24" r=".8">
+      <stop stop-color="#C4ECFF"/>
+      <stop offset=".3" stop-color="#7BBFF4"/>
+      <stop offset=".7" stop-color="#3E77BB"/>
+      <stop offset="1" stop-color="#183754"/>
+    </radialGradient>
+    <radialGradient id="teal" cx=".3" cy=".24" r=".8">
+      <stop stop-color="#D3FFF6"/>
+      <stop offset=".32" stop-color="#84DFD2"/>
+      <stop offset=".73" stop-color="#378E94"/>
+      <stop offset="1" stop-color="#194D60"/>
+    </radialGradient>
+    <linearGradient id="bond" x1="128" y1="124" x2="377" y2="324" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#91D9F6" stop-opacity=".38"/>
+      <stop offset=".45" stop-color="#98D8FF" stop-opacity=".75"/>
+      <stop offset="1" stop-color="#5792C1" stop-opacity=".3"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="49" y1="133" x2="463" y2="308" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#75BCD9" stop-opacity=".05"/>
+      <stop offset=".38" stop-color="#75BCD9" stop-opacity=".3"/>
+      <stop offset=".7" stop-color="#9DCDE7" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#75BCD9" stop-opacity=".03"/>
+    </linearGradient>
+    <filter id="glow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <ellipse cx="260" cy="221" rx="224" ry="195" fill="url(#atmosphere)"/>
+
+  <!-- Quiet construction geometry, kept behind the molecular graph. -->
+  <g stroke="#89B9D5" stroke-width=".75" opacity=".15">
+    <path d="M260 47V397M65 221H455" stroke-dasharray="2 9"/>
+    <circle cx="260" cy="221" r="172" stroke-dasharray="2 9"/>
+    <path d="M254 48H266M254 394H266M65 215V227M455 215V227"/>
+    <path d="M107 95H119M113 89V101M401 338H413M407 332V344M414 100H426M420 94V106"/>
+  </g>
+  <ellipse cx="260" cy="221" rx="218" ry="98" transform="rotate(-29 260 221)" stroke="url(#orbit)" stroke-width="1.2"/>
+  <ellipse cx="260" cy="221" rx="197" ry="130" transform="rotate(45 260 221)" stroke="#81B6D6" stroke-opacity=".1" stroke-width=".8" stroke-dasharray="3 8"/>
+
+  <!-- Receding bonds and smaller atoms establish depth. -->
+  <g stroke="#71A6CD" stroke-width="1.15" stroke-linecap="round" opacity=".36">
+    <path d="M170 154L133 98L249 106M249 106L291 62L329 151M329 151L405 119L401 216M333 244L392 301L310 359M254 297L310 359L193 344M175 251L193 344L116 302M105 202L116 302"/>
+    <path d="M133 98L252 204L405 119M252 204L193 344" stroke-dasharray="3 5" opacity=".5"/>
+  </g>
+  <g opacity=".72">
+    <circle cx="133" cy="98" r="6" fill="url(#blue)"/>
+    <circle cx="291" cy="62" r="4" fill="url(#ice)"/>
+    <circle cx="405" cy="119" r="7" fill="url(#blue)"/>
+    <circle cx="392" cy="301" r="6" fill="url(#ice)"/>
+    <circle cx="310" cy="359" r="5" fill="url(#blue)"/>
+    <circle cx="193" cy="344" r="7" fill="url(#blue)"/>
+    <circle cx="116" cy="302" r="4.5" fill="url(#ice)"/>
+  </g>
+
+  <!-- The primary ring and its central graph node. -->
+  <g stroke="url(#bond)" stroke-width="2" stroke-linecap="round">
+    <path d="M105 202L170 154L249 106L329 151L333 244L254 297L175 251L170 154M175 251L105 202M329 151L401 216L333 244"/>
+    <path d="M170 154L252 204L329 151M249 106L252 204L254 297M175 251L252 204L333 244" stroke-width="1.4"/>
+    <path d="M182 158L249 119M321 159L324 236M251 284L184 245" stroke-width=".8" opacity=".6"/>
+  </g>
+
+  <g filter="url(#glow)" opacity=".25">
+    <circle cx="170" cy="154" r="17" fill="#78C7F5"/>
+    <circle cx="333" cy="244" r="23" fill="#6ACEC6"/>
+    <circle cx="252" cy="204" r="21" fill="#68AFFF"/>
+  </g>
+
+  <g stroke="#BEEBFF" stroke-opacity=".28" stroke-width=".7">
+    <circle cx="105" cy="202" r="9" fill="url(#ice)"/>
+    <circle cx="170" cy="154" r="17" fill="url(#blue)"/>
+    <circle cx="249" cy="106" r="11" fill="url(#ice)"/>
+    <circle cx="329" cy="151" r="13" fill="url(#ice)"/>
+    <circle cx="401" cy="216" r="9" fill="url(#blue)"/>
+    <circle cx="333" cy="244" r="22" fill="url(#teal)"/>
+    <circle cx="254" cy="297" r="12" fill="url(#ice)"/>
+    <circle cx="175" cy="251" r="12" fill="url(#blue)"/>
+    <circle cx="252" cy="204" r="20" fill="url(#blue)"/>
+  </g>
+
+  <!-- Sparse orbital markers, rather than a dense particle field. -->
+  <g fill="#9ACFEA">
+    <circle cx="75" cy="293" r="2.2" opacity=".6"/>
+    <circle cx="442" cy="150" r="2" opacity=".5"/>
+    <circle cx="355" cy="67" r="1.3" opacity=".35"/>
+    <circle cx="83" cy="146" r="1.3" opacity=".35"/>
+    <circle cx="363" cy="379" r="1.5" opacity=".3"/>
+  </g>
+  <circle cx="75" cy="293" r="6" stroke="#9ACFEA" stroke-opacity=".2" stroke-width=".8"/>
+  <circle cx="442" cy="150" r="5" stroke="#9ACFEA" stroke-opacity=".17" stroke-width=".8"/>
+</svg>

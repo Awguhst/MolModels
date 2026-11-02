@@ -198,7 +198,7 @@ Metrics summarise. Plots explain. The two standard pictures for a regression mod
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Two panels. Left: a parity plot of predicted against measured logS for the test molecules, with points scattered around a dashed diagonal line and spreading more at the low-solubility end. Right: residuals against predicted logS, centred on zero with a dashed horizontal line, showing a slight downward trend at high predictions."
+#| fig-alt: "Two panels. Left: a parity plot of predicted against measured logS for the test molecules, with most molecules below measured logS of minus 6 above the dashed identity line. Right: measured-minus-predicted residuals against predicted logS, scattered on both sides of a dashed zero line, with several errors larger than two log units."
 import matplotlib.pyplot as plt
 
 pred_test = linreg.predict(X_test)
@@ -220,8 +220,8 @@ plt.show()
 
 Two things the metrics did not tell you:
 
-- At the **insoluble end** (measured logS below about −6) the model predicts values that are too high. The points sit below the diagonal, and the residuals there are negative. A linear model in these descriptors cannot bend to follow the most lipophilic compounds.
-- The residuals have a **slight slope**: the model over-predicts at the top of its range and under-predicts at the bottom. That is the classic signature of a model that is too simple, which is the motivation for the richer models in Chapter 3.
+- At the **insoluble end** (measured logS below about −6) the model usually predicts values that are too high. These points sit above the diagonal because predicted logS is on the vertical axis; their measured-minus-predicted residuals are negative.
+- Several molecules have **large individual errors**, more than two log units in either direction, even though the average residual is near zero. The plot alone does not establish their cause: missing descriptors, a model that is too rigid, and unusual measurements are all possibilities to investigate.
 
 The residuals also tell you *which* molecules are wrong. Looking at the worst cases is often the most valuable minute in a modelling project.
 

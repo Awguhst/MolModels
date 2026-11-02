@@ -43,6 +43,7 @@ The ESOL dataset was published by Delaney in 2004: 1,128 small organic molecules
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import pandas as pd
 import seaborn as sns
 
@@ -116,7 +117,7 @@ One broad peak, roughly bell-shaped on the log scale, which is itself a sign tha
 
 ## The descriptors
 
-Now the inputs. Six descriptors remain after dropping the two columns discussed above, and a 2 × 3 grid of histograms shows them all at once.
+Now the inputs. Before dropping `Minimum Degree`, inspect all six structural descriptors in a 2 × 3 grid of histograms.
 
 ```{python}
 descriptors = [
@@ -132,18 +133,21 @@ esol[descriptors].describe().round(1)
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "A two-by-three grid of histograms, one per descriptor. Molecular weight is bell-shaped around 200 with a tail to 780; H-bond donors, rings and rotatable bonds are discrete and right-skewed, mostly 0 to 3; polar surface area is right-skewed from 0 to about 270; minimum degree is 1 for nearly every compound."
+#| fig-alt: "A two-by-three grid of histograms, one per descriptor. Molecular weight is right-skewed with a peak around 100 to 150 and a tail to 780; H-bond donors, rings and rotatable bonds are discrete and right-skewed, mostly 0 to 3; polar surface area is right-skewed from 0 to about 270; minimum degree is 1 for nearly every compound, with a smaller bar at 2 and one compound at 0."
 units = {"Molecular Weight": "g/mol", "Polar Surface Area": "Å²"}
 fig, axes = plt.subplots(2, 3, figsize=(10, 6))
 for ax, col in zip(axes.flat, descriptors):
-    sns.histplot(data=esol, x=col, bins=30, ax=ax)
+    is_count = col not in units
+    sns.histplot(data=esol, x=col, bins=30, discrete=is_count, ax=ax)
+    if is_count:
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=5, integer=True))
     ax.set(xlabel=f"{col} ({units[col]})" if col in units else col, ylabel="")
 axes[0, 0].set(ylabel="number of compounds")
 axes[1, 0].set(ylabel="number of compounds")
 plt.show()
 ```
 
-Two kinds of descriptor appear. Molecular weight and polar surface area are continuous and right-skewed. The counts (donors, rings, rotatable bonds) are integers, mostly small, with a few compounds far out on the right. `Minimum Degree` is, as promised, a single bar. From here on we work with the five informative descriptors.
+Two kinds of descriptor appear. Molecular weight and polar surface area are continuous and right-skewed. The counts (donors, rings, rotatable bonds) are integers, mostly small, with a few compounds far out on the right; `discrete=True` centres one bin on each integer. `Minimum Degree` has one dominant bar at 1 (1,060 compounds), a smaller bar at 2 (67), and one compound at 0. From here on we work with the five informative descriptors.
 
 ```{python}
 descriptors = descriptors[:5]
@@ -320,7 +324,7 @@ esol.groupby("donor_group")[target].agg(["count", "median", "mean", "std"]).roun
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Two violin plots of measured logS, for compounds with no hydrogen-bond donors and for compounds with one or more. The 'one or more donors' violin is centred about one log unit higher and is narrower; both violins span roughly eight log units."
+#| fig-alt: "Two violin plots of measured logS, for compounds with no hydrogen-bond donors and for compounds with one or more. The 'one or more donors' violin is centred about one log unit higher and has a smaller vertical spread; the distributions overlap substantially, and the no-donors group has a longer lower tail."
 fig, ax = plt.subplots(figsize=(6, 4.4))
 sns.violinplot(data=esol, x="donor_group", y=target, hue="donor_group", legend=False, ax=ax)
 ax.set(xlabel="", ylabel="measured logS (log10 mol/L)")

@@ -19,55 +19,9 @@ _plt.style.use("assets/mpl/mm-light.mplstyle")
 
 
 def _mm_install():
-    import matplotlib as mpl
+    import runpy
     from IPython import get_ipython
-
-    LIGHT = {"bg": "#FFFFFF", "text": "#1E2228", "axis": "#5E6168", "grid": "#D8D5CE"}
-    DARK = {"bg": "#1C2025", "text": "#E8E4DC", "axis": "#A6A197", "grid": "#2F353D"}
-
-    def same(c1, c2):
-        try:
-            return mpl.colors.to_hex(c1, keep_alpha=False).upper() == mpl.colors.to_hex(c2, keep_alpha=False).upper()
-        except (ValueError, TypeError):
-            return False
-
-    def swap(colour, key):
-        return DARK[key] if same(colour, LIGHT[key]) else colour
-
-    def restyle_dark(fig):
-        """Recolour the chrome of a figure (backgrounds, text, spines, ticks, grid, legend frames)
-        for the dark theme. Data colours are left alone: the palette reads on both backgrounds."""
-        from matplotlib.collections import PathCollection
-        from matplotlib.patches import Patch
-        from matplotlib.text import Text
-
-        fig.patch.set_facecolor(swap(fig.patch.get_facecolor(), "bg"))
-        for ax in fig.axes:
-            ax.patch.set_facecolor(swap(ax.patch.get_facecolor(), "bg"))
-            for spine in ax.spines.values():
-                spine.set_edgecolor(swap(spine.get_edgecolor(), "axis"))
-            ax.tick_params(colors=DARK["axis"], labelcolor=DARK["text"], which="both")
-            for line in ax.get_xgridlines() + ax.get_ygridlines():
-                line.set_color(swap(line.get_color(), "grid"))
-            legend = ax.get_legend()
-            if legend is not None:
-                frame = legend.get_frame()
-                frame.set_facecolor(swap(frame.get_facecolor(), "bg"))
-                frame.set_edgecolor(swap(frame.get_edgecolor(), "grid"))
-            for coll in ax.collections:
-                if isinstance(coll, PathCollection):
-                    ec = coll.get_edgecolor()
-                    if len(ec) and all(same(c, LIGHT["bg"]) for c in ec):
-                        coll.set_edgecolor(DARK["bg"])
-            for patch in ax.patches:
-                if isinstance(patch, Patch) and same(patch.get_edgecolor(), LIGHT["bg"]):
-                    patch.set_edgecolor(DARK["bg"])
-        for text in fig.findobj(Text):
-            text.set_color(swap(text.get_color(), "text"))
-        for legend in fig.legends:
-            frame = legend.get_frame()
-            frame.set_facecolor(swap(frame.get_facecolor(), "bg"))
-        return fig
+    restyle_dark = runpy.run_path("_includes/plot_theme.py")["restyle_dark"]
 
     def _mm_post_execute():
         """Emit light + dark versions of every figure still open at the end of a cell.

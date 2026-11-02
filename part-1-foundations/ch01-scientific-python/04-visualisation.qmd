@@ -82,7 +82,7 @@ matplotlib has two interfaces. The **stateful** one, `plt.plot(...)`, `plt.xlabe
 
 ## Colour by group
 
-The scatter plot shows two clusters, and you already know there are three species. The first way to colour by group is a loop: draw each species separately, give each call a `label`, then ask for a legend.
+The scatter plot shows two clusters, and you already know there are three species. The first way to colour by group is a loop: draw each species separately, give each call a `label`, then ask for a legend. Reuse an explicit order and palette so each species keeps the same colour in later plots.
 
 ::: {.predict}
 Before you run the next cell: which species will sit at the top right (long flippers, heavy)? Gentoo, the largest species in the table of means from episode 1.3? Write down your guess and whether the other two will be separable.
@@ -91,9 +91,15 @@ Before you run the next cell: which species will sit at the top right (long flip
 ```{python}
 #| renderings: [light, dark]
 #| fig-alt: "The same scatter plot of body mass against flipper length, now with one colour per species and a legend. Gentoo points form a separate cluster at the top right; Adelie and Chinstrap overlap at the bottom left."
+species_order = ["Adelie", "Gentoo", "Chinstrap"]
+species_palette = dict(zip(species_order, sns.color_palette(n_colors=3)))
 fig, ax = plt.subplots()
-for species, group in penguins.groupby("species"):
-    ax.scatter(group["flipper_length_mm"], group["body_mass_g"], alpha=0.6, label=species)
+for species in species_order:
+    group = penguins[penguins["species"] == species]
+    ax.scatter(
+        group["flipper_length_mm"], group["body_mass_g"],
+        color=species_palette[species], alpha=0.6, label=species,
+    )
 ax.set(xlabel="flipper length (mm)", ylabel="body mass (g)")
 ax.legend(title="species")
 plt.show()
@@ -109,7 +115,8 @@ The loop works, but seaborn does the same in one call. `hue` colours by a {{< te
 fig, ax = plt.subplots()
 sns.scatterplot(
     data=penguins, x="flipper_length_mm", y="body_mass_g",
-    hue="species", style="sex", alpha=0.7, ax=ax,
+    hue="species", hue_order=species_order, palette=species_palette,
+    style="sex", alpha=0.7, ax=ax,
 )
 ax.set(xlabel="flipper length (mm)", ylabel="body mass (g)")
 plt.show()
@@ -125,7 +132,10 @@ A scatter plot needs two variables. To see the *distribution* of one, bin it and
 #| renderings: [light, dark]
 #| fig-alt: "Overlapping histograms of flipper length for the three penguin species with smooth density curves. Adelie peaks near 190 mm, Chinstrap near 196 mm and Gentoo near 217 mm; Gentoo barely overlaps the other two."
 fig, ax = plt.subplots()
-sns.histplot(data=penguins, x="flipper_length_mm", hue="species", kde=True, bins=25, ax=ax)
+sns.histplot(
+    data=penguins, x="flipper_length_mm", hue="species",
+    hue_order=species_order, palette=species_palette, kde=True, bins=25, ax=ax,
+)
 ax.set(xlabel="flipper length (mm)", ylabel="number of penguins")
 plt.show()
 ```
@@ -138,11 +148,19 @@ When you have several groups and one measurement, overlapping histograms get cro
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Two panels. Left: box plots of body mass for Adelie, Chinstrap and Gentoo, with Gentoo's box clearly higher. Right: violin plots of the same data; the Gentoo violin is wide and slightly bimodal, the other two are narrower."
+#| fig-alt: "Two panels. Left: box plots of body mass for Adelie, Gentoo and Chinstrap, with Gentoo's box clearly higher. Right: violin plots of the same data; the Gentoo violin is slightly bimodal and spans a wider range of body masses."
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.5, 4.2))
-sns.boxplot(data=penguins, x="species", y="body_mass_g", hue="species", legend=False, ax=ax1)
+sns.boxplot(
+    data=penguins, x="species", y="body_mass_g", hue="species",
+    order=species_order, hue_order=species_order, palette=species_palette,
+    legend=False, ax=ax1,
+)
 ax1.set(xlabel="", ylabel="body mass (g)", title="Box plot")
-sns.violinplot(data=penguins, x="species", y="body_mass_g", hue="species", legend=False, ax=ax2)
+sns.violinplot(
+    data=penguins, x="species", y="body_mass_g", hue="species",
+    order=species_order, hue_order=species_order, palette=species_palette,
+    legend=False, ax=ax2,
+)
 ax2.set(xlabel="", ylabel="body mass (g)", title="Violin plot")
 plt.show()
 ```
@@ -177,7 +195,10 @@ plt.rcParams["figure.constrained_layout.use"] = False
 #| renderings: [light, dark]
 #| fig-alt: "A lower-triangular grid of scatter plots for every pair of bill length, bill depth, flipper length and body mass, coloured by species, with density curves on the diagonal. Gentoo is separated in every panel that involves bill depth or flipper length; Adelie and Chinstrap separate only in bill length."
 measurements = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]
-sns.pairplot(penguins[measurements + ["species"]], hue="species", corner=True, height=2.1)
+sns.pairplot(
+    penguins[measurements + ["species"]], hue="species",
+    hue_order=species_order, palette=species_palette, corner=True, height=2.1,
+)
 plt.show()
 ```
 
@@ -242,7 +263,10 @@ Draw a histogram of `bill_length_mm` split by species, with a density curve on t
 #| renderings: [light, dark]
 #| fig-alt: "Overlapping histograms of bill length by species with density curves. Adelie peaks near 39 mm, clearly left of Chinstrap and Gentoo, which both peak near 47 to 49 mm and overlap each other."
 fig, ax = plt.subplots()
-sns.histplot(data=penguins, x="bill_length_mm", hue="species", kde=True, bins=20, ax=ax)
+sns.histplot(
+    data=penguins, x="bill_length_mm", hue="species",
+    hue_order=species_order, palette=species_palette, kde=True, bins=20, ax=ax,
+)
 ax.set(xlabel="bill length (mm)", ylabel="number of penguins")
 plt.show()
 ```
@@ -298,6 +322,7 @@ fig, axes = plt.subplots(2, 2, figsize=(9, 7))
 for i, (ax, (col, label)) in enumerate(zip(axes.flat, columns.items())):
     sns.scatterplot(
         data=penguins, x=col, y="body_mass_g", hue="species",
+        hue_order=species_order, palette=species_palette,
         alpha=0.6, legend=(i == 0), ax=ax,
     )
     ax.set(xlabel=label, ylabel="body mass (g)")
@@ -345,12 +370,15 @@ Redraw the scatter plot of body mass against flipper length coloured by species,
 heaviest = penguins.loc[penguins["body_mass_g"].idxmax()]
 
 fig, ax = plt.subplots()
-sns.scatterplot(data=penguins, x="flipper_length_mm", y="body_mass_g", hue="species", alpha=0.6, ax=ax)
+sns.scatterplot(
+    data=penguins, x="flipper_length_mm", y="body_mass_g", hue="species",
+    hue_order=species_order, palette=species_palette, alpha=0.6, ax=ax,
+)
 ax.annotate(
     f"{heaviest['species']}, {heaviest['body_mass_g']:.0f} g",
     xy=(heaviest["flipper_length_mm"], heaviest["body_mass_g"]),
     xytext=(185, 5900),
-    arrowprops={"arrowstyle": "->", "color": "0.4"},
+    arrowprops={"arrowstyle": "->", "color": plt.rcParams["axes.edgecolor"]},
 )
 ax.set(xlabel="flipper length (mm)", ylabel="body mass (g)")
 plt.show()

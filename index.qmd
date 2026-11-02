@@ -1,78 +1,73 @@
 ---
 title: "Molecules & Models"
+description: "An open collection of notes connecting chemistry, biology, and machine learning. Follow your curiosity, from scientific Python to molecular discovery."
 hide-title: true
 toc: false
+sidebar: false
+page-layout: full
+anchor-sections: false
+css: assets/css/chemistry.css
+resources:
+  - assets/css/chemistry.css
+  - assets/images/connection-field.svg
 ---
 
 ::: {.mm-home}
 
-<div class="mm-home-hero">
-<h1 class="title">Molecules &amp; Models</h1>
-<p class="mm-tagline">A practical path from data science to cheminformatics and bioinformatics, written for graduates in informatics, chemistry, biology and mathematics.</p>
-<div class="mm-actions">
-<a class="mm-btn mm-btn-primary" href="part-1-foundations/ch00-start-here/index.html">Start here</a>
-<a class="mm-btn" href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Find your path</a>
-</div>
-</div>
+```{=html}
+<header class="mm-front-hero">
+  <div class="mm-front-composition">
+    <div class="mm-front-copy">
+      <h1>Molecules<br><em>&amp; Models.</em></h1>
+      <p class="mm-front-intro">A small world. A world of possibilities.</p>
+      <p class="mm-front-description">Explore chemistry, biology, and machine learning through free, hands-on lessons.</p>
+      <div class="mm-front-actions"><a class="mm-primary-link" href="part-1-foundations/ch00-start-here/index.html">Start reading <span aria-hidden="true">↗</span></a><a class="mm-text-link" href="#roadmap">Explore the course map <span aria-hidden="true">↓</span></a></div>
+    </div>
+    <div class="mm-connection-art" aria-hidden="true">
+      <div class="mm-art-orbit mm-art-orbit-one"></div><div class="mm-art-orbit mm-art-orbit-two"></div>
+      <svg class="mm-art-sculpture" viewBox="0 0 600 600" focusable="false">
+        <defs><linearGradient id="mm-field-light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="white" stop-opacity="0"/><stop offset=".32" stop-color="white" stop-opacity=".8"/><stop offset=".68" stop-color="white" stop-opacity="0"/></linearGradient><mask id="mm-field-light-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="600"><rect width="600" height="600" fill="url(#mm-field-light)"/></mask></defs>
+        <use href="assets/images/connection-field.svg#field"></use>
+        <use class="mm-art-highlight" href="assets/images/connection-field.svg#field" mask="url(#mm-field-light-mask)"></use>
+      </svg>
+    </div>
+  </div>
+</header>
+```
+
+<section class="mm-course-explorer" id="roadmap" aria-labelledby="roadmap-title">
+<div class="mm-section-topline"><p class="mm-label"><span>01</span> THE COURSE MAP</p></div>
+<div class="mm-explorer-heading" data-mm-reveal><h2 id="roadmap-title">Start somewhere.<br><em>Go somewhere new.</em></h2><div><p>Build your foundations, then follow the connections into molecules, living systems, and the models that help us understand them.</p></div></div>
+
+{{< generated home-explorer >}}
+
+<details class="mm-network-details">
+<summary><span><svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6h12v12H6zM6 6l12 12" stroke="currentColor"/><circle cx="6" cy="6" r="3" fill="currentColor"/><circle cx="18" cy="6" r="3" fill="currentColor"/><circle cx="18" cy="18" r="3" fill="currentColor"/><circle cx="6" cy="18" r="3" fill="currentColor"/></svg> View the full course map</span><span class="mm-disclosure-icon" aria-hidden="true">+</span></summary>
 
 {{< generated metro >}}
 
-<div class="mm-home-intro">
+</details>
+</section>
 
-You know how to write a loop and a function. You have seen some calculus, some linear algebra and some statistics, possibly a while ago. You may know molecules, or cells, or proofs, or compilers, but not all four. This course takes you, step by step and with runnable code, from scientific Python through machine learning into predicting molecular properties, docking, protein and sequence models, and generative design. Every page is free, open, and works without an account.
+```{=html}
+<section class="mm-letter" id="creator-note" aria-labelledby="creator-note-title" data-mm-reveal>
+  <div class="mm-letter-side"><p class="mm-label"><span>02</span> THE CREATOR’S NOTE</p><h2 id="creator-note-title">Good questions<br>lead to<br><em>unexpected places.</em></h2></div>
+  <div class="mm-letter-body"><span class="mm-letter-greeting">Hello, I’m Rostislav.</span><p class="mm-letter-lead">Chemistry, biology, and machine learning meet in fascinating ways. I’m writing these notes to make those ideas easier to explore, and to share what I learn along the way.</p><p>I’m a chemical engineering graduate now studying bioinformatics. My experience in computational chemistry, data science, and AI engineering has made me curious about the connections between these fields.</p><p>This is a growing collection of ideas, experiments, and things I wish I’d understood sooner. If you’re curious too, you’re in the right place.</p><div class="mm-letter-signoff"><div><span class="mm-signature">Rostislav</span><span class="mm-signature-caption">Rostislav Rusev · Creator &amp; fellow learner</span></div><a class="mm-circle-link" href="about.html#about-the-creator" aria-label="More about Rostislav Rusev"><span aria-hidden="true">↗</span></a></div></div>
+</section>
 
-</div>
+<section class="mm-practice" aria-labelledby="practice-title">
+  <div class="mm-section-topline"><p class="mm-label"><span>03</span> THE WAY WE LEARN</p></div>
+  <div class="mm-practice-heading" data-mm-reveal><h2 id="practice-title">Ideas are just the beginning.<br><em>Make them your own.</em></h2><p>Bring your background in code, chemistry, biology, or maths. Build the connections you’re missing.</p></div>
+  <div class="mm-practice-grid">
+    <article data-mm-reveal><div class="mm-practice-symbol" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M12 48V16h40v32H12ZM32 16v32M18 24h8M18 30h8M38 24h8M38 30h8" stroke="currentColor" stroke-width="1.3"/><path d="M25 52h14" stroke="currentColor" stroke-width="1.3"/></svg></div><h3>Find the intuition.</h3><p>Clear explanations, useful questions, and connections to what you already know. Build a mental model before a machine learning model.</p></article>
+    <article data-mm-reveal><div class="mm-practice-symbol" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="m24 20-13 12 13 12m16-24 13 12-13 12M36 12l-8 40" stroke="currentColor" stroke-width="1.3"/></svg></div><h3>Get your hands on it.</h3><p>Run real code, explore real datasets, and open the labs in Colab. Change something. See what happens. Learn from the result.</p></article>
+    <article data-mm-reveal><div class="mm-practice-symbol" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M16 44 32 16l16 28H16Z" stroke="currentColor" stroke-width="1.3"/><circle cx="32" cy="16" r="5" fill="var(--mm-bg)" stroke="currentColor"/><circle cx="16" cy="44" r="5" fill="var(--mm-bg)" stroke="currentColor"/><circle cx="48" cy="44" r="5" fill="var(--mm-bg)" stroke="currentColor"/></svg></div><h3>Make the next connection.</h3><p>Test your intuition with exercises, reveal solutions when you’re ready, and carry what you’ve learned into a new discipline.</p></article>
+  </div>
+  <a class="mm-background-link" href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Find a starting point for your background <span aria-hidden="true">↗</span></a>
+</section>
 
-## Coming from…
-
-<div class="mm-audience">
-<div class="mm-card cs">
-<h3>Informatics</h3>
-<p><strong>Easy for you:</strong> Python, the estimator API, pipelines, reading tracebacks.</p>
-<p><strong>Slow down for:</strong> statistics and evaluation in Chapter 2, the chemistry and biology bridge boxes, and the statistics section of the maths refresher.</p>
-<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Your suggested path</a>
-</div>
-<div class="mm-card chem">
-<h3>Chemistry</h3>
-<p><strong>Easy for you:</strong> molecules, descriptors, what solubility and docking mean, judging whether a prediction is plausible.</p>
-<p><strong>Slow down for:</strong> the whole of Chapter 1, linear algebra and gradients in the maths refresher, and the boxes written for programmers.</p>
-<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Your suggested path</a>
-</div>
-<div class="mm-card bio">
-<h3>Biology</h3>
-<p><strong>Easy for you:</strong> experimental design, what a confounder is, why a blinded test set matters, sequences and expression data.</p>
-<p><strong>Slow down for:</strong> Chapter 1 and the maths refresher in full, and the maths boxes in Chapter 2. Lab 1 is written with you in mind.</p>
-<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Your suggested path</a>
-</div>
-<div class="mm-card math">
-<h3>Mathematics</h3>
-<p><strong>Easy for you:</strong> least squares, gradients, regularisation as penalised optimisation, the probabilistic view of classification.</p>
-<p><strong>Slow down for:</strong> practical coding habits in Chapter 1, and the chemist's and biologist's boxes, which carry the domain knowledge you will need from Chapter 5 on.</p>
-<a href="part-1-foundations/ch00-start-here/index.html#suggested-paths-by-background">Your suggested path</a>
-</div>
-</div>
-
-## The whole course at a glance {#roadmap}
-
-Four Parts, each a line on the map above; chapters are the stations. Filled stations are written and ready. Dashed ones are planned and appear dimmed in the navigation until they arrive.
-
-{{< generated home-parts >}}
-
-## How a lesson works
-
-<ol class="mm-how">
-<li><h3>Read the overview</h3><p>Every episode opens with the questions it answers, what you will be able to do afterwards, and how long it takes.</p></li>
-<li><h3>Run the code</h3><p>Code cells are exactly what you would type. Copy them into a notebook, or open the lab in Colab with one click. Figures and tables appear as you would see them.</p></li>
-<li><h3>Predict, then check</h3><p>Before key cells you are asked to predict the result. Exercises are graded ★ (check understanding), ★★ (apply) and ★★★ (stretch), with solutions hidden until you want them.</p></li>
-<li><h3>Keep your bearings</h3><p>Bridge boxes speak to chemists, biologists, mathematicians and programmers separately. Glossary tooltips define every term, and key points close each episode. There is nothing to sign up for and nothing to complete: open any page and read.</p></li>
-</ol>
-
-## What you need
-
-- A browser. Every lab runs on free Google Colab, or locally with the one-file environment described in [Setup](part-1-foundations/ch00-start-here/02-setup.html).
-- No GPU, no paid services, no sign-ups. Datasets are small and openly licensed.
-- About 40 hours for Part I; the time for each episode is shown on its page.
-
-<p class="mm-small">Text is licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> and code under the MIT licence. See <a href="about.html">About</a> and <a href="cite.html">Cite this course</a>.</p>
+<section class="mm-final-invitation" aria-labelledby="start-title" data-mm-reveal><div><h2 id="start-title">There’s a whole world<br>in the <em>small things.</em></h2><p>Basic Python. Introductory maths. A willingness to explore.<br>No GPU or paid services required.</p></div><a class="mm-start-orbit" href="part-1-foundations/ch00-start-here/index.html"><span aria-hidden="true">↗</span><span>Let’s begin</span></a></section>
+<div class="mm-home-colophon"><span>Molecules &amp; Models</span><a href="#">Back to top <span aria-hidden="true">↑</span></a></div>
+```
 
 :::

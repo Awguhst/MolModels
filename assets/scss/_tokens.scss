@@ -4,20 +4,20 @@
 // so keep the `--mm-name: #RRGGBB;` form.
 
 @mixin mm-tokens-dark {
-  --mm-bg: #15181C;
-  --mm-surface: #1C2025;
-  --mm-surface-2: #242930;
-  --mm-code-bg: #101317;
-  --mm-border: #2F353D;
-  --mm-text: #E8E4DC;
-  --mm-text-muted: #A6A197;
-  --mm-accent-1: #86AEE0;   // Part I   Foundations (slate blue)
+  --mm-bg: #0D1117;
+  --mm-surface: #141A23;
+  --mm-surface-2: #1C2531;
+  --mm-code-bg: #0A0E14;
+  --mm-border: #2B3543;
+  --mm-text: #EDF2F8;
+  --mm-text-muted: #A0ADBE;
+  --mm-accent-1: #93BBF5;   // Part I   Foundations (slate blue)
   --mm-accent-2: #E3AA5C;   // Part II  Cheminformatics (amber)
   --mm-accent-3: #93C487;   // Part III Bioinformatics (sage)
   --mm-accent-4: #E39AA9;   // Part IV  Generative (rose)
-  --mm-link: #E8E4DC;       // links are ink-coloured; the underline carries the accent
+  --mm-link: #EDF2F8;       // links are ink-coloured; the underline carries the accent
   --mm-focus: #E3AA5C;
-  --mm-note: #86AEE0;
+  --mm-note: #93BBF5;
   --mm-tip: #6FC2B2;
   --mm-pitfall: #E39A6A;
   --mm-challenge: #D9A6D1;
@@ -26,7 +26,7 @@
   --mm-bridge-chem: #E3AA5C;
   --mm-bridge-bio: #93C487;
   --mm-bridge-math: #A9A4E6;
-  --mm-bridge-cs: #86AEE0;
+  --mm-bridge-cs: #93BBF5;
   --mm-checkpoint: #E0B35E;
   --mm-prereq: #B9B1A6;
   --mm-deep-dive: #A9A4E6;
@@ -36,7 +36,7 @@
   --mm-syntax-string: #93C487;
   --mm-syntax-number: #E3AA5C;
   --mm-syntax-comment: #8E8A82;
-  --mm-syntax-function: #86AEE0;
+  --mm-syntax-function: #93BBF5;
   --mm-syntax-builtin: #6FC2B2;
   --mm-syntax-type: #E39A6A;
   --mm-syntax-attribute: #E39AA9;
