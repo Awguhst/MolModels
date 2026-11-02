@@ -3,7 +3,7 @@ title: "Cite this course"
 subtitle: "How to reference Molecules & Models in a paper, a syllabus or a thesis."
 ---
 
-If this course helped your work or your teaching, please cite it. The repository contains a machine-readable [`CITATION.cff`](https://github.com/YOUR-USER/molecules-and-models/blob/main/CITATION.cff) that GitHub renders as a "Cite this repository" button.
+If this course helped your work or your teaching, please cite it. The repository contains a machine-readable [`CITATION.cff`](https://github.com/Awguhst/MolModels/blob/main/CITATION.cff) that GitHub renders as a "Cite this repository" button.
 
 ## Plain text
 
@@ -32,7 +32,7 @@ The last-updated date at the bottom of every page comes from the git history of 
 
 ## Citing the datasets
 
-Please also cite the original data when you use it in your own work; the full references are in the [data README](https://github.com/YOUR-USER/molecules-and-models/blob/main/data/README.md) and on the [About](about.html) page.
+Please also cite the original data when you use it in your own work; the full references are in the [data README](https://github.com/Awguhst/MolModels/blob/main/data/README.md) and on the [About](about.html) page.
 
 ## Licence
 

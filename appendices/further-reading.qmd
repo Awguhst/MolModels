@@ -7,4 +7,4 @@ subtitle: "Appendix D · coming soon"
 
 It will collect, per chapter, a short annotated list of textbooks, review articles and documentation pages that go deeper than the course, each with a sentence on who it is for. Only resources that the authors have actually read and verified will be listed.
 
-For now, the [Setup](../part-1-foundations/ch00-start-here/02-setup.html) and [self-check](../part-1-foundations/ch00-start-here/03-self-check.html) episodes link to free Python refreshers, and the [data README](https://github.com/YOUR-USER/molecules-and-models/blob/main/data/README.md) gives the primary references for every dataset.
+For now, the [Setup](../part-1-foundations/ch00-start-here/02-setup.html) and [self-check](../part-1-foundations/ch00-start-here/03-self-check.html) episodes link to free Python refreshers, and the [data README](https://github.com/Awguhst/MolModels/blob/main/data/README.md) gives the primary references for every dataset.

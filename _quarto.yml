@@ -33,7 +33,7 @@ metadata-files:
 # --- Site-wide settings used by the mm extension and the templates ---
 site-title: "Molecules & Models"
 site-tagline: "A practical path from data science to cheminformatics and bioinformatics"
-github-repo: "YOUR-USER/molecules-and-models"
+github-repo: "Awguhst/MolModels"
 github-branch: "main"
 author-name: "Rostislav Rusev"
 course-version: "0.1.0"
@@ -42,7 +42,7 @@ website:
   title: "Molecules & Models"
   description: "An open, step-by-step course taking graduates in informatics, chemistry, biology or mathematics from scientific Python through machine learning into cheminformatics and bioinformatics."
   site-url: "https://YOUR-USER.github.io/molecules-and-models/"
-  repo-url: "https://github.com/YOUR-USER/molecules-and-models"
+  repo-url: "https://github.com/Awguhst/MolModels"
   repo-branch: main
   favicon: brand/favicon.svg
   open-graph: true
@@ -75,12 +75,12 @@ website:
         href: part-4-generative/index.qmd
     tools:
       - icon: github
-        href: "https://github.com/YOUR-USER/molecules-and-models"
+        href: "https://github.com/Awguhst/MolModels"
         text: "GitHub repository"
         aria-label: "GitHub repository"
   page-footer:
     left: |
-      Text licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, code under the <a href="https://github.com/YOUR-USER/molecules-and-models/blob/main/LICENSE">MIT licence</a>.
+      Text licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, code under the <a href="https://github.com/Awguhst/MolModels/blob/main/LICENSE">MIT licence</a>.
       No cookies, no analytics, no trackers.
     right:
       - text: "About"

@@ -6,7 +6,7 @@ version: 0.1.0
 date-released: "2026-10-31"
 license: "CC-BY-4.0 AND MIT"
 url: "https://YOUR-USER.github.io/molecules-and-models/"
-repository-code: "https://github.com/YOUR-USER/molecules-and-models"
+repository-code: "https://github.com/Awguhst/MolModels"
 abstract: >-
   An open educational website with runnable code and Jupyter notebooks that takes graduates in
   informatics, chemistry, biology or mathematics from scientific Python through machine learning
