@@ -23,10 +23,10 @@ LIBRARIES = [
     ("joblib", "joblib", "1.6.0", True),
     ("IPython", "ipython (notebooks)", None, True),
     ("jupyterlab", "jupyterlab", "4.6.5", False),
+    ("torch", "pytorch (Chapter 4)", "2.9.1", True),
     # Added by later chapters; not needed yet:
     ("rdkit", "rdkit (Part II)", None, False),
     ("Bio", "biopython (Part III)", None, False),
-    ("torch", "pytorch (Chapter 4+)", None, False),
 ]
 
 OK, MISSING, OPTIONAL = "✅", "❌", "➖"
@@ -53,13 +53,13 @@ def main() -> int:
         except ImportError:
             if essential:
                 problems += 1
-                print(f"{MISSING} {name:<24} not installed   -> pip install {name.split()[0]}" + (f"=={pinned}" if pinned else ""))
+                print(f"{MISSING} {name:<24} not installed   -> python -m pip install -r requirements.txt")
             else:
                 print(f"{OPTIONAL} {name:<24} not installed   (optional for now)")
             continue
         v = version_of(m)
         note = ""
-        if pinned and v != pinned:
+        if pinned and v.split("+")[0] != pinned:
             note = f"   (course pins {pinned}; a different version usually works)"
         print(f"{OK} {name:<24} {v}{note}")
     print()
@@ -92,7 +92,7 @@ def main() -> int:
     if problems:
         print(f"{problems} problem(s). See the troubleshooting section of the Setup episode.")
         return 1
-    print("All good. You are ready for Chapter 1.")
+    print("All good. The environment is ready for Part I, including CPU deep learning.")
     return 0
 
 

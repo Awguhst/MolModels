@@ -1,0 +1,56 @@
+---
+title: "Tabular model comparison: select, explain, then test"
+chapter: 3
+lab: 3
+duration: "90–120 min"
+minutes: 110
+level: intermediate
+objectives:
+  - "Compare ridge, random forests, gradient boosting and SVR with a shared search protocol."
+  - "Use nested cross-validation to evaluate selection across both families and hyperparameters."
+  - "Explain a fitted outer-fold model using its held-out development rows."
+  - "Freeze a chosen pipeline before a final test evaluation and write a qualified recommendation."
+prerequisites-text: ["Chapter 3 episodes 3.1–3.6", "Chapter 2 cross-validation and tuning", "Lab 2"]
+summary: "Choose a solubility model from four families using a modest nested search; compare the complete selection procedure with a mean baseline, inspect development-fold permutation importance, and evaluate a frozen winner once. An optional classification extension compares PCA plus logistic regression with a forest."
+dataset: "ESOL / Delaney aqueous solubility; optional breast cancer Wisconsin diagnostic data"
+notebook: lab-03-tabular-comparison
+---
+
+A better score is useful only if the comparison is fair. This lab turns the methods of Chapter 3 into one declared selection procedure: the inner loop chooses **both the family and its settings**, and the outer loop evaluates that choice on rows excluded from the entire search. You then refit the same search on the development set and open the final test set once.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/part-1-foundations/ch03-beyond-linear-models/labs/lab-03-tabular-comparison.ipynb">Open in Colab</a>
+<a class="mm-btn" href="lab-03-tabular-comparison.ipynb" download>Download .ipynb</a>
+<a class="mm-btn" href="lab-03-tabular-comparison-solutions.html">View solutions</a>
+</div>
+
+## How to work
+
+Run the student notebook from the top in the [course environment](../../ch00-start-here/02-setup.html) or Colab. Complete the cells marked `# TODO`; keep the requested variable names so the following checks can give useful feedback. The search deliberately uses small grids, single-process fitting and CPU-only models. Allow 90 minutes for the core investigation and 20–30 minutes for the classification extension and discussion.
+
+The numerical choices are an exercise budget, not a claim that the grids contain the optimal model. If you change the grid, make that decision before looking at outer or final test outcomes. After viewing them, treat further experiments as a new development round and qualify the old evaluation accordingly.
+
+## The tasks
+
+1. **Define the comparison.** Reuse the five ESOL descriptors and reserve the same 20% test set as Lab 2. Write down the target units, RMSE metric and random-split limitation.
+2. **Build one search space.** Include scaled ridge, an unscaled forest, unscaled histogram gradient boosting and scaled SVR in a `Pipeline` search.
+3. **Evaluate selection, not just fitting.** Run three outer folds, each containing a three-fold inner grid search. Report every outer RMSE and the family selected in each fold.
+4. **Check the baseline.** Evaluate a training-mean predictor on the identical outer folds. Distinguish the selected inner score from the outer assessment.
+5. **Interpret development behaviour.** Compute permutation importance for one outer-fold winner using its held-out outer rows. Discuss correlation, shuffle variability and the absence of causal evidence.
+6. **Freeze the final candidate.** Run the unchanged search on all development rows. Record the family, complete parameters and selection criterion before evaluating the test.
+7. **Evaluate once.** Compare the frozen candidate and declared baseline on the final test, then draw the candidate's parity plot. Do not change the candidate based on this table.
+8. **Write a recommendation.** Include nested-CV and test results, units, variation across folds, search budget and the limitations of random molecular splits.
+
+## Optional classification extension
+
+Apply the same principle to the breast-cancer teaching dataset: compare scaled PCA plus logistic regression with a forest, using stratified inner and outer folds and balanced accuracy. The notebook supplies a compact worked implementation in the solutions and a task cell in the student version. Explain why PCA is fitted inside each fold and why this educational experiment does not establish clinical performance.
+
+## What a good submission includes
+
+Submit the executed notebook, a results table and a short recommendation. The recommendation should say which **procedure** was evaluated, not simply name the lowest number. Mention when selection differs between outer folds; this is useful evidence of sensitivity. Do not label fold standard deviation as a confidence interval or interpret tree disagreement as calibrated predictive uncertainty.
+
+::: {.discussion}
+The dataset and fixed split are reused across this course to teach comparable experiments. If you have already seen their test outcomes, the split is no longer a genuinely blinded research test for you. For a publishable claim, use newly reserved or external evidence and a split that matches the intended deployment, such as unseen scaffolds or later measurements.
+:::
+
+The distinction between a tuned score and an assessment of tuning is illustrated in scikit-learn's [nested versus non-nested cross-validation example](https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html). The lab extends that logic to family selection: the family choice must live inside the inner loop too.

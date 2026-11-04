@@ -8,6 +8,12 @@
 #   chapter:    where the term is introduced
 #   see:        related ids
 terms:
+  - id: random-search
+    term: random search
+    short: "A hyperparameter search that samples a fixed number of configurations from declared distributions."
+    definition: "Random search evaluates sampled hyperparameter configurations with validation, often using logarithmic distributions for positive scale parameters. Its trial budget is explicit; it does not guarantee a global optimum. Final evaluation requires held-out data or outer cross-validation."
+    chapter: 2
+    see: [hyperparameter, grid-search, nested-cv]
   - id: baseline
     term: baseline
     plural: baselines
@@ -156,8 +162,8 @@ terms:
     see: [estimator, data-leakage]
   - id: cross-validation
     term: cross-validation
-    short: Repeatedly splitting the data into folds so that every sample is tested on exactly once.
-    definition: A resampling method that splits the data into $k$ folds, trains on $k-1$ of them and evaluates on the remaining fold, rotating until each fold has served as the evaluation set. The $k$ scores are averaged. It gives a more stable estimate than a single split and is the standard way to choose hyperparameters.
+    short: Evaluating a fitting procedure over multiple training and held-out subsets chosen to match the prediction task.
+    definition: "In ordinary k-fold cross-validation, each row is held out once while a fresh model trains on the other folds. Grouped, repeated and temporal variants use different constraints. CV supports model selection and assessment, but the winning selection score is optimistic as a final estimate. Fold standard deviation is descriptive variability, not a confidence interval."
     chapter: "2.4"
     see: [validation-set, hyperparameter]
   - id: hyperparameter
@@ -169,7 +175,7 @@ terms:
     see: [cross-validation, regularisation]
   - id: regularisation
     term: regularisation
-    short: Adding a penalty on large coefficients so that a model stays simpler and generalises better.
+    short: Constraining a fitting procedure to reduce overfitting, for example by penalising large coefficients.
     definition: Adding a penalty term to the loss function that discourages large or many coefficients, trading a little training accuracy for better generalisation. Ridge regression penalises squared coefficients; Lasso penalises absolute values and drives some coefficients to exactly zero.
     chapter: "2.4"
     see: [overfitting, hyperparameter]
@@ -617,8 +623,8 @@ terms:
     see: [cross-validation, hyperparameter]
   - id: nested-cv
     term: nested cross-validation
-    short: "Cross-validation inside cross-validation, so that hyperparameter tuning does not bias the final estimate."
-    definition: "An outer cross-validation loop for estimating performance with an inner loop, run on each outer training fold, for choosing hyperparameters. It is the honest way to report the performance of a tuned model when you cannot afford a separate test set."
+    short: "An outer cross-validation loop that evaluates an entire selection procedure, including its inner search."
+    definition: "Inside each outer training fold, an inner search chooses preprocessing, model family and hyperparameters without access to the outer held-out rows. Outer scores assess that predefined procedure trained on the smaller outer training sets. Repeatedly redesigning the procedure from outer scores makes those scores part of development too."
     chapter: "2.4"
     see: [cross-validation]
   - id: decision-boundary
@@ -680,3 +686,365 @@ terms:
     definition: "Random variables $X_1, \\ldots, X_n$ are *independent and identically distributed* if they all have the same distribution and are mutually independent. Most results about averages (the law of large numbers, the central limit theorem) assume it, and a random train/test split assumes that training and test samples are i.i.d. draws from the same population. Duplicates, closely related molecules and batch effects break the assumption, which is why later chapters use scaffold and group splits."
     chapter: "A"
     see: [train-test-split, data-leakage]
+
+  - id: tensor
+    term: tensor
+    plural: tensors
+    short: A multidimensional numerical array with a shape, data type and device.
+    definition: In PyTorch, a numerical array that may represent a scalar, vector, matrix
+      or higher-dimensional data. Tensors can participate in automatic differentiation
+      when gradient tracking is enabled. Their axes must have explicit scientific meanings,
+      such as samples and features.
+    chapter: '4.1'
+    see:
+    - shape
+    - dtype
+    - autograd
+
+  - id: autograd
+    term: autograd
+    short: Automatic differentiation through the tensor operations that produced a result.
+    definition: PyTorch's system for tracking operations and applying the chain rule
+      to calculate derivatives. For a scalar training loss, backward computes gradients
+      with respect to tracked parameters; an optimiser then uses those gradients to
+      update the parameters.
+    chapter: '4.2'
+    see:
+    - gradient
+    - gradient-descent
+    - tensor
+
+  - id: mlp
+    term: multilayer perceptron (MLP)
+    short: A feedforward neural network that alternates learned linear maps with nonlinear
+      activations.
+    definition: A network for fixed-length feature vectors, with hidden layers that
+      transform the input before an output layer. Width, depth and activation choices
+      control its capacity; a suitable output and loss are chosen for the prediction
+      target.
+    chapter: '4.3'
+    see:
+    - activation-function
+    - parameter
+    - hyperparameter
+
+  - id: activation-function
+    term: activation function
+    short: A usually nonlinear transformation applied to a layer's values, such as ReLU
+      or tanh.
+    definition: A transformation used between learned affine maps so a network can represent
+      nonlinear functions. ReLU returns the input if positive and zero otherwise. Stacking
+      affine layers without a nonlinear activation still represents an affine function.
+    chapter: '4.3'
+    see:
+    - mlp
+    - sigmoid
+
+  - id: logit
+    term: logit
+    plural: logits
+    short: A real-valued classification score supplied before a sigmoid or softmax probability
+      transformation.
+    definition: In binary classification, a score whose sigmoid is the predicted positive-class
+      probability, equivalently the log odds of that probability. Multiclass networks
+      output one score per class before softmax. PyTorch's BCEWithLogitsLoss and CrossEntropyLoss
+      expect raw logits in their usual interfaces.
+    chapter: '4.3'
+    see:
+    - sigmoid
+    - loss-function
+    - classification
+
+  - id: mini-batch
+    term: mini-batch
+    plural: mini-batches
+    short: A subset of training examples used to calculate one parameter update.
+    definition: A group of examples processed together to compute a loss and its gradient.
+      Mini-batch training makes several updates during an epoch. Batch size affects
+      memory, update count and the optimisation trajectory.
+    chapter: '4.4'
+    see:
+    - epoch
+    - gradient-descent
+
+  - id: epoch
+    term: epoch
+    plural: epochs
+    short: One pass through the training examples during model fitting.
+    definition: A complete pass through the training dataset, usually divided into mini-batches.
+      The number of epochs and the rule for selecting a final epoch are parts of the
+      training procedure, chosen without consulting the test set.
+    chapter: '4.4'
+    see:
+    - mini-batch
+    - early-stopping
+
+  - id: dropout
+    term: dropout
+    short: Regularisation that randomly sets some activations to zero during training.
+    definition: A neural-network regularisation technique that randomly disables a fraction
+      of activations during training and rescales retained activations. Standard PyTorch
+      dropout is disabled in evaluation mode, making train/eval mode an essential part
+      of a correct workflow.
+    chapter: '4.5'
+    see:
+    - regularisation
+    - mlp
+
+  - id: weight-decay
+    term: weight decay
+    short: Parameter shrinkage applied during optimisation to control model complexity.
+    definition: An optimisation control that shrinks weights during updates. AdamW decouples
+      weight decay from its adaptive gradient calculation; it is not generally equivalent
+      to adding an L2 penalty to an adaptive optimiser's loss. Its strength is a hyperparameter
+      selected on development data.
+    chapter: '4.5'
+    see:
+    - regularisation
+    - hyperparameter
+
+  - id: early-stopping
+    term: early stopping
+    short: Selecting a training checkpoint using validation performance before the maximum
+      training budget is exhausted.
+    definition: Monitoring a validation metric during training, saving sufficiently
+      improved checkpoints and stopping after a specified patience without improvement.
+      Restore the saved checkpoint, not simply the last weights. The validation data
+      guide selection, so an untouched test set or outer evaluation is still needed.
+    chapter: '4.5'
+    see:
+    - validation-set
+    - epoch
+    - overfitting
+
+  - id: decision-tree
+    term: decision tree
+    plural: decision trees
+    short: A model that follows feature-threshold questions to a terminal region and
+      its prediction.
+    definition: A model that recursively divides feature space with questions about
+      input values. A regression tree with squared-error loss predicts the mean training
+      target in each terminal leaf; a classification tree uses class proportions. Depth,
+      minimum leaf size and pruning control complexity.
+    chapter: '3.1'
+    see:
+    - overfitting
+    - random-forest
+    - boosting
+
+  - id: ensemble
+    term: ensemble
+    plural: ensembles
+    short: A predictor that combines several fitted models.
+    definition: A collection of fitted models whose predictions are combined. Averaging
+      diverse models can reduce prediction variability; sequentially adding corrections
+      is another strategy. Shared data errors or systematic biases are not automatically
+      removed by combining models.
+    chapter: '3.2'
+    see:
+    - bagging
+    - boosting
+    - random-forest
+
+  - id: bagging
+    term: bagging
+    short: Fitting models to bootstrap samples and aggregating their predictions.
+    definition: Bootstrap aggregation draws training samples with replacement, fits
+      a model to each sample and combines their predictions. With unstable base models
+      such as trees, diversity between fits can reduce prediction variance when their
+      outputs are averaged.
+    chapter: '3.2'
+    see:
+    - ensemble
+    - random-forest
+    - out-of-bag
+
+  - id: random-forest
+    term: random forest
+    plural: random forests
+    short: An ensemble of trees trained with randomised samples and candidate features.
+    definition: A tree ensemble that uses randomisation in training samples and in the
+      features considered at splits. Regression predictions are averaged across trees.
+      The number of trees controls computation and averaging stability; leaf size and
+      other tree controls affect model complexity.
+    chapter: '3.2'
+    see:
+    - decision-tree
+    - bagging
+    - ensemble
+
+  - id: boosting
+    term: boosting
+    short: Building an ensemble sequentially by adding models that improve the current
+      prediction.
+    definition: A family of ensemble methods that fit successive models in response
+      to the current ensemble's errors. Gradient boosting adds models fitted to negative
+      loss gradients; for squared-error regression these correspond to residuals. Learning
+      rate and iteration count work together.
+    chapter: '3.2'
+    see:
+    - ensemble
+    - learning-rate
+    - loss-function
+
+  - id: out-of-bag
+    term: out-of-bag
+    short: An estimate for a training row using only bootstrap models whose samples
+      excluded that row.
+    definition: A bootstrap model leaves some training rows out of its sample. Combining
+      predictions only from models that excluded a given row gives an out-of-bag prediction.
+      This is a useful development diagnostic, but does not protect against related
+      groups crossing samples or repeated selection using the same scores.
+    chapter: '3.2'
+    see:
+    - bagging
+    - random-forest
+    - group-split
+
+  - id: margin
+    term: margin
+    short: The separation between a decision boundary and nearby supporting observations.
+    definition: In a support vector classifier, the margin describes the width around
+      the separating boundary. A soft-margin objective balances a wide margin against
+      violations; the parameter C controls the penalty for those violations.
+    chapter: '3.3'
+    see:
+    - decision-boundary
+    - regularisation
+    - svm-kernel
+
+  - id: svm-kernel
+    term: kernel function
+    short: A similarity function used to build a predictor in an implicit feature space.
+    definition: In support vector methods, a kernel gives the inner product of examples
+      in a possibly implicit feature space. The RBF kernel decreases exponentially with
+      squared distance, with gamma controlling locality. This use of kernel is different
+      from the Python process that executes a notebook.
+    chapter: '3.3'
+    see:
+    - margin
+    - feature-scaling
+    - kernel
+
+  - id: pca
+    term: principal component analysis
+    short: An unsupervised projection onto orthogonal directions of greatest input variance.
+    definition: Principal component analysis (PCA) constructs orthogonal directions
+      that successively capture the greatest remaining variance in a centred feature
+      table. Retaining only some directions reduces dimensionality. Scaling changes
+      the result, and retained input variance is not a measure of predictive accuracy.
+    chapter: '3.4'
+    see:
+    - principal-component
+    - unsupervised-learning
+    - feature-scaling
+
+  - id: principal-component
+    term: principal component
+    plural: principal components
+    short: A direction, and its corresponding scores, in the coordinate system learned
+      by PCA.
+    definition: A PCA direction is a unit-weighted linear combination of centred features
+      chosen for high variance and orthogonality to previous directions. Projecting
+      each row onto a direction gives its component score. Reversing the signs of both
+      the direction and scores leaves the geometry unchanged.
+    chapter: '3.4'
+    see:
+    - pca
+    - feature
+    - correlation
+
+  - id: clustering
+    term: clustering
+    short: Grouping observations by a chosen representation and similarity rule without
+      supplied target labels.
+    definition: Unsupervised methods that assign groups or describe grouping structure
+      in a feature table. The result depends on representation, scaling, distance and
+      algorithm. A cluster is an analysis result, not proof of a biological category
+      or causal mechanism.
+    chapter: '3.5'
+    see:
+    - unsupervised-learning
+    - k-means
+    - silhouette
+
+  - id: k-means
+    term: k-means
+    short: A clustering algorithm that minimises squared distances to k cluster centres.
+    definition: An iterative method that alternates assigning observations to their
+      nearest centre and moving centres to their assigned observations' means. Its inertia
+      is the sum of within-cluster squared distances. Initialisation, scaling and the
+      chosen number of clusters affect the solution.
+    chapter: '3.5'
+    see:
+    - clustering
+    - silhouette
+    - feature-scaling
+
+  - id: silhouette
+    term: silhouette coefficient
+    short: A geometric measure comparing within-cluster distance with distance to the
+      nearest other cluster.
+    definition: For each sample, the silhouette compares its mean within-cluster distance
+      with its mean distance to the nearest other cluster, normalised to lie between
+      -1 and 1. High values suggest separation under the chosen distance, not proof
+      of scientific validity.
+    chapter: '3.5'
+    see:
+    - clustering
+    - k-means
+
+  - id: dendrogram
+    term: dendrogram
+    plural: dendrograms
+    short: A tree diagram showing the sequence and heights of hierarchical cluster merges.
+    definition: A visual representation of hierarchical clustering. Branches join at
+      the linkage value at which groups merge; cutting at different heights yields different
+      partitions. Merge heights depend on the features, distance and linkage rule and
+      do not automatically represent evolutionary time.
+    chapter: '3.5'
+    see:
+    - clustering
+    - feature-scaling
+
+  - id: permutation-importance
+    term: permutation importance
+    short: The decrease in predictive score when a feature's values are shuffled across
+      evaluation rows.
+    definition: A model inspection method that compares the original score with scores
+      after randomly permuting a feature column. It measures reliance for a particular
+      fitted model, dataset and scoring rule. Correlated predictors, unrealistic shuffled
+      combinations and evaluation noise complicate interpretation.
+    chapter: '3.6'
+    see:
+    - correlation
+    - partial-dependence
+    - data-leakage
+
+  - id: partial-dependence
+    term: partial dependence
+    short: The average model response to hypothetical values of selected features across
+      a reference dataset.
+    definition: A partial-dependence plot replaces selected features with grid values
+      in reference rows, predicts and averages the responses. It describes the fitted
+      model, not a causal intervention; correlated features may make some hypothetical
+      combinations unrealistic.
+    chapter: '3.6'
+    see:
+    - ice
+    - permutation-importance
+    - correlation
+
+  - id: ice
+    term: individual conditional expectation
+    short: A curve showing one row's model prediction as selected feature values are
+      varied hypothetically.
+    definition: An individual conditional expectation (ICE) curve retains the model
+      response for one reference row while varying a feature and keeping its other features
+      fixed. Comparing several curves can reveal interactions hidden by their average
+      partial-dependence curve. The changes need not correspond to feasible interventions.
+    chapter: '3.6'
+    see:
+    - partial-dependence
+    - feature
+    - correlation

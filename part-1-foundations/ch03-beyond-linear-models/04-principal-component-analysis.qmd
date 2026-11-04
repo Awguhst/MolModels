@@ -1,0 +1,205 @@
+---
+title: "PCA: seeing variation in many measurements"
+chapter: 3
+episode: 4
+teaching: 35
+exercises: 20
+level: intermediate
+questions:
+  - "How can I view thirty measurements on a two-dimensional plot?"
+  - "Does retaining most of the variance retain the information needed to predict?"
+objectives:
+  - "Fit a scaled PCA and interpret scores, component weights and explained variance."
+  - "Distinguish exploratory visualisation from validated predictive preprocessing."
+  - "Place PCA inside a cross-validated classification pipeline."
+keypoints:
+  - "PCA finds orthogonal directions of high input variance without using the target."
+  - "Scale deliberately: PCA centres features but does not automatically standardise their units."
+  - "Explained variance measures retained input variation, not predictive accuracy."
+  - "When PCA is part of prediction, fit both scaling and PCA inside each training fold."
+prerequisites: [ch03-ep03]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+The breast-cancer teaching dataset has thirty measurements per sample. A scatter plot can show two at a time, but hundreds of possible pairs make it hard to see the overall arrangement. {{< term pca "Principal component analysis (PCA)" >}} constructs new coordinates that summarise variation across the original measurements. It lets us ask whether samples lie along a few dominant directions without using the diagnosis to construct those directions.
+
+PCA is {{< term unsupervised-learning >}}. It answers a question about the feature table, not “which measurements best predict the label?” A prominent direction might represent size, biological heterogeneity, an instrument effect or a batch difference. The algorithm alone cannot tell us which interpretation is correct.
+
+## Rotate the coordinate system, then discard directions
+
+Imagine a cloud of points shaped like a long, narrow ellipse. The horizontal and vertical axes may describe the same movement redundantly. Rotate the axes so that one points along the long direction, and most variation can be expressed by a single coordinate. PCA generalises this construction to many features.
+
+The first {{< term principal-component >}} is the direction with greatest variance. The next captures the greatest remaining variance while being perpendicular to the first, and so on. Each new coordinate, or **score**, is a weighted sum of centred features. Those weights describe a direction; they are not coefficients fitted to predict the target.
+
+For centred and standardised row $z_i$, the first score is
+
+$$t_{i1} = z_i^\mathsf{T} v_1.$$
+
+Here $v_1$ is a unit-length vector of component weights. Retaining two components gives every observation two scores for plotting. Discarding the other components loses variation; no two-dimensional picture can promise to preserve every important relationship among thirty-dimensional observations.
+
+::: {.bridge audience="math"}
+PCA's directions are eigenvectors of the sample covariance matrix; their eigenvalues are the variances along those directions. A singular value decomposition obtains the same directions without explicitly constructing the covariance matrix. The implementation handles this algebra. What you must choose is the representation, scaling and number of retained dimensions.
+:::
+
+## Start with development data
+
+We reserve a stratified test set before looking for patterns. Stratification preserves approximate class proportions; it does not address repeated patients or batch relationships. This dataset is used as an educational example, not as a validated clinical tool.
+
+```{python}
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import StratifiedKFold, train_test_split
+
+data = load_breast_cancer(as_frame=True)
+X = data.data
+y = data.target
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+pd.Series(dict(enumerate(data.target_names)), name="class name")
+```
+
+Read the mapping rather than guessing: class 0 is malignant and class 1 is benign in this dataset. The plot labels will use those names. Neither class is supplied to the PCA fit; we may later colour the plot by diagnosis to describe an association.
+
+Measurements have different scales: area and smoothness are not directly comparable numeric quantities. Standardisation gives each feature unit variance on the development data before PCA. That is appropriate for this introductory comparison, but not mandatory for every scientific use of PCA. If absolute measurement variation is meaningful, preserving original units may be deliberate.
+
+```{python}
+from sklearn.decomposition import PCA
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+projection = make_pipeline(StandardScaler(), PCA(svd_solver="full"))
+scores = projection.fit_transform(X_train)
+pca = projection.named_steps["pca"]
+print(f"First two components retain {pca.explained_variance_ratio_[:2].sum():.1%} of variance")
+```
+
+PCA itself centres but does not standardise its inputs, so the explicit scaler is necessary for this chosen geometry. `components_` stores unit component directions, and `explained_variance_ratio_` reports each direction's share of the fitted input variance. These attribute definitions are documented in the [PCA API](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+
+## Read the map without overclaiming
+
+::: {.predict}
+If the first two components retain a large fraction of variance, must the diagnosis classes separate on the plot? Give a counterexample before looking.
+:::
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Development samples projected onto the first two principal components of the thirty standardised measurements, with diagnosis indicated by both marker shape and colour."
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+for value, marker in [(0, "o"), (1, "^")]:
+    mask = y_train.to_numpy() == value
+    ax.scatter(scores[mask, 0], scores[mask, 1], marker=marker,
+               alpha=0.6, label=data.target_names[value])
+ax.set(xlabel="PC1 score (standardised coordinates)",
+       ylabel="PC2 score (standardised coordinates)")
+ax.legend()
+plt.show()
+```
+
+A visible association with diagnosis can be useful, but this is a development-data description. It does not estimate classification accuracy on new patients. Conversely, overlap in two components does not prove prediction is impossible: discarded directions or nonlinear relationships may contain useful information.
+
+Outliers deserve investigation. A distant point can reflect an unusual sample, a measurement error or a meaningful subgroup. Automatically deleting it because it spoils the plot risks removing precisely the cases the model must handle. Check the original measurements and their provenance before deciding what to do.
+
+## How much variation remains?
+
+A scree plot shows variance contributed by each component; a cumulative plot shows the total retained as components are added. A sharp bend can suggest a compact representation, but it is a heuristic. There need not be a unique correct number of components.
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Cumulative explained variance against the number of retained principal components, with a horizontal guide at 90 percent."
+fig, ax = plt.subplots()
+ax.plot(np.arange(1, X.shape[1] + 1),
+        np.cumsum(pca.explained_variance_ratio_), "o-")
+ax.axhline(0.9, linestyle="--", color="0.5", label="90% of input variance")
+ax.set(xlabel="Number of components", ylabel="Cumulative explained variance",
+       ylim=(0, 1.02))
+ax.legend()
+plt.show()
+```
+
+Variance is not signal by definition. A high-variance direction could track instrument brightness while a low-variance direction distinguishes a disease subtype. Retaining 90% of variance can be sensible for compression, but does not guarantee retaining 90% of the useful predictive information. To use PCA for prediction, choose the dimension count by an appropriate development metric inside the pipeline.
+
+## Inspect component weights carefully
+
+```{python}
+weights = pd.Series(pca.components_[0], index=X.columns, name="PC1 weight")
+weights.loc[weights.abs().sort_values(ascending=False).index].head(8).round(3)
+```
+
+Large absolute weights identify measurements contributing strongly to this direction in **standardised units**. The signs show which measurements move together or oppositely along that axis. Correlated radius, perimeter and area features can jointly describe size, but that interpretation should come from the listed measurements, not from naming every first component “size”.
+
+The sign of a whole component is arbitrary: multiplying all weights and all scores by −1 describes the same geometry. A left-to-right reversal in another implementation is not a biological disagreement. Terminology also varies: some sources call these unit direction weights “loadings”, while others reserve that word for weights multiplied by the square root of the eigenvalue. State what numbers you are reporting.
+
+::: {.pitfall title="Unsupervised preprocessing can still leak"}
+Fitting PCA on every sample uses the validation and test feature distributions, even without their labels. If the components then feed a predictive model, the evaluation no longer represents learning the entire procedure from training data alone. Put PCA inside the cross-validation pipeline, just like the scaler.
+:::
+
+## Reconstruction clarifies what compression preserves
+
+Projecting a standardised observation onto the first $k$ directions and mapping it back gives an approximation of the original feature vector. With directions stored in columns of $V_k$, the reconstruction is $\hat z_i = V_k V_k^\mathsf{T} z_i$. Add the fitted means and undo standardisation to express that approximation in the original measurement units. Discarded directions explain the difference between the measured row and its reconstruction.
+
+PCA chooses its retained linear subspace to minimise squared reconstruction error for the fitted, centred table. This gives a precise meaning to “preserving information”: it preserves variation measured by that particular squared-distance objective. It does not know which reconstruction errors matter for diagnosis. A small change in one low-variance feature may be decisive for a downstream label even when its contribution to total reconstruction error is tiny.
+
+Think of two tasks with the same measurements. For a compact visual summary, two components may be a reasonable compromise that makes the main cloud visible. For archiving measurements, a higher variance-retention threshold may be needed. For predicting a target, the dimension count is a model hyperparameter chosen by predictive validation, with a no-PCA option kept as a baseline. The correct compression level depends on the intended use.
+
+A large reconstruction error can also flag an unusual observation relative to the fitted subspace, but it is not a universal anomaly detector. A sample can lie far along a retained component and still reconstruct well, while a legitimate rare sample can reconstruct poorly. Any rule that flags samples from reconstruction error needs its own development threshold and independent evaluation against the intended scientific definition of an anomaly.
+
+## Evaluate PCA as part of a classifier
+
+Compare a few dimension counts and an option to skip PCA. The identical pipeline structure ensures both standardisation and the component fit happen within each fold. Balanced accuracy averages sensitivity across the two classes; it is used here as a simple development metric, not a complete assessment of clinical usefulness.
+
+```{python}
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+
+model = Pipeline([("scale", StandardScaler()), ("pca", PCA(svd_solver="full")),
+                  ("classifier", LogisticRegression(max_iter=3000))])
+grids = [{"pca__n_components": [2, 5, 10, 20]}, {"pca": ["passthrough"]}]
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+search = GridSearchCV(model, grids, cv=cv, scoring="balanced_accuracy")
+search.fit(X_train, y_train)
+print(search.best_params_)
+print(f"Selected development balanced accuracy: {search.best_score_:.3f}")
+```
+
+Keeping all original features is a legitimate result. PCA may help with redundancy, noise, storage or visualisation, but reducing dimensions is not automatically an improvement. The selected CV score has participated in a decision, so it must not be presented as the final independent evaluation. Keep the reserved test closed until the full classification procedure is fixed.
+
+## Exercises
+
+::: {.challenge level=1 title="What did 90% mean?"}
+A colleague says “our first five components explain 90% of the variance, so the classifier will be 90% accurate.” What is wrong?
+
+:::: {.solution}
+Explained variance concerns how much variation in the input coordinates is retained. Classification accuracy concerns agreement with labels on unseen observations. PCA did not optimise label prediction, and there is no conversion from one percentage to the other.
+::::
+:::
+
+::: {.challenge level=2 title="Project genuinely new rows"}
+Without refitting, project the first three reserved feature rows with the exploratory `projection` object. Why must you use `transform` rather than `fit_transform`?
+
+:::: {.solution}
+```{python}
+new_scores = projection.transform(X_test.iloc[:3])
+pd.DataFrame(new_scores[:, :2], columns=["PC1", "PC2"],
+             index=X_test.index[:3]).round(3)
+```
+`transform` uses the development means, scales and axes. Refitting would create a different coordinate system. This demonstrates applying a fixed transformation; it does not use the reserved labels or compare candidate models. In a final modelling workflow, apply the complete chosen prediction pipeline directly.
+::::
+:::
+
+::: {.challenge level=3 title="A batch-shaped map"}
+PC1 separates samples almost perfectly by laboratory, and most cases were measured in one laboratory while most controls were measured in the other. Would the class-coloured map demonstrate a disease signature?
+
+:::: {.solution}
+No. Laboratory and diagnosis are confounded, so the map cannot separate their contributions. Inspect metadata, improve the study design and evaluate across laboratories or batches. Simply removing PC1 may also remove biological signal and is not a substitute for resolving the confounding.
+::::
+:::
+
+## Where this is going
+
+[Clustering](05-clustering.html) assigns groups in a chosen feature geometry, while PCA provides a lower-dimensional view of that geometry. Both become common tools for gene-expression and sequence-derived features in Part III. Their plots are starting points for hypotheses; evidence about predictive performance or biological mechanisms requires additional evaluation.

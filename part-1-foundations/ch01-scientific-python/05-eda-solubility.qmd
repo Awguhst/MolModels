@@ -17,9 +17,9 @@ objectives:
   - "State the modelling question that Chapter 2 answers, and what the EDA suggests about it."
 keypoints:
   - "Exploratory data analysis is the same short checklist every time: shape, types, missing values, the target's distribution, each feature's distribution, feature–target relationships, correlations, outliers, duplicates."
-  - "logS is log10 of solubility in mol/L: one unit is a factor of ten. Modelling the log turns a quantity spanning thirteen orders of magnitude into one a line can fit, and makes errors relative rather than absolute."
+  - "logS is log10 of solubility in mol/L: one unit is a factor of ten. Modelling logS changes the error scale: equal errors correspond to equal multiplicative factors in solubility."
   - "In ESOL, molecular weight (r ≈ −0.64) and ring count (r ≈ −0.51) are the descriptors most strongly related to solubility; hydrogen-bond donors and polar surface area help weakly."
-  - "The extremes make chemical sense: tiny polar molecules at the top, large chlorinated or polyaromatic hydrocarbons at the bottom. Outliers that make sense stay in."
+  - "Extreme values suggest source, unit and identity checks. Exclude observations only for documented reasons, not because they are inconvenient to model."
   - "ESOL contains no duplicated SMILES strings or compound names, but two different strings can describe one molecule; a chemistry toolkit (Chapter 5) is needed to be sure."
   - "A SMILES string is a molecule written as text. Every descriptor in this file was computed from it, and so will yours be."
 prerequisites: [ch01-ep04]
@@ -27,12 +27,22 @@ prerequisites: [ch01-ep04]
 
 {{< include /_includes/mm-setup.qmd >}}
 
-A medicinal chemist has just made a compound that binds its target beautifully in the assay. Then it fails: it will not dissolve in water, so it never reaches the bloodstream of the animal it is dosed to. Poor aqueous solubility is one of the most common reasons a promising compound goes no further, and it would be enormously useful to predict it *before* the compound is made. That is the question behind this episode and behind Chapter 2: **can we predict how soluble a molecule is from a few numbers that describe its structure?**
+A medicinal chemist has just made a compound that binds its target beautifully in the assay. The next experiment may still fail if the compound cannot dissolve at the concentration the assay or formulation requires. Predicting aqueous solubility *before* synthesis can help decide what to make and measure next. That is the question behind this episode and behind Chapter 2: **can we predict how soluble a molecule is from a few numbers that describe its structure?**
 
 Before anyone fits a model, a careful scientist spends an hour looking at the data. That hour is {{< term eda "exploratory data analysis" >}} (EDA), and it has a checklist that is nearly the same for every table you will ever meet: shape, types, missing values, the distribution of the thing you want to predict, the distribution of each input, how the inputs relate to the target and to each other, outliers, duplicates. This episode runs that checklist on a classic dataset, using everything from [episode 1.3](03-pandas-dataframes.html) and [episode 1.4](04-visualisation.html).
 
 ::: {.bridge audience="bio"}
-*Aqueous solubility* is how much of a compound dissolves in water at equilibrium, here expressed as a concentration in moles per litre. For a drug taken by mouth it is a gatekeeper: a tablet has to dissolve in the fluid of the gut before anything can be absorbed across the gut wall, and a compound that stays as a solid passes straight through. In the laboratory it decides whether you can make a stock solution at a useful concentration without a solvent that harms your cells. *Formulation*, the craft of turning a compound into a dosable medicine, has tricks to help (salts, particle size, carriers), but every trick costs time and money, so projects try hard to avoid insoluble compounds in the first place.
+*Aqueous solubility* is the concentration that dissolves in water at equilibrium, expressed here in mol/L. It affects whether an assay can reach its intended concentration. Temperature, pH and solid form can change that concentration; structural descriptors alone do not specify the entire experiment.
+:::
+
+## What a row represents, and what EDA can establish
+
+Before plotting, make a small data record: where the file came from, its version or checksum, what one row represents, the units, how measurements were collected, and which population you hope to predict. The course’s `data/README.md` records the source and checksum. Run `python scripts/fetch_data.py` for the verified local copy; reading the URL directly below is convenient but does not itself verify that checksum.
+
+Here a row contains a recorded solubility and descriptors for a molecular structure. The processed table does not expose every condition behind the measurements, such as pH or temperature. Absence of a column is not evidence that the condition was constant. Ask which inputs would actually be available for a newly proposed molecule; a value derived from a future measurement is unsuitable as a predictor even if it correlates strongly with the target.
+
+::: {.pitfall title="Exploration is not independent confirmation"}
+This chapter explores the whole benchmark to teach data analysis. Once you make modelling decisions from target-related plots, those same rows cannot provide an untouched confirmation of those decisions. In a new project, define the intended use and reserve the test set **before** target-guided feature selection or modelling. Explore and tune on development data; learn preprocessing separately within each training fold. Chapter 2 develops this workflow, including [cross-validation](../ch02-ml-fundamentals/07-cross-validation.html) and [hyperparameter tuning](../ch02-ml-fundamentals/08-hyperparameter-tuning.html).
 :::
 
 ## The data
@@ -66,7 +76,7 @@ target = "measured log solubility in mols per litre"
 esol[["Compound ID", "Molecular Weight", "Number of Rings", target]].head()
 ```
 
-The other numeric columns are {{< term descriptor plural >}}: numbers computed from the molecular structure, which will be the model's {{< term feature plural >}}. One column is special, `ESOL predicted log solubility in mols per litre`: it is the output of Delaney's own model, not a property of the molecule, and we will keep it out of the descriptor set. `Minimum Degree` is a graph-theoretic quantity that is 1 for all but 68 of the molecules, so it carries almost no information and we will drop it too.
+The other numeric columns are {{< term descriptor plural >}}: numbers computed from the molecular structure, which will be the model's {{< term feature plural >}}. One column is special, `ESOL predicted log solubility in mols per litre`: it is the output of Delaney's own model, not a property of the molecule, and we will keep it out of the descriptor set. `Minimum Degree` is a graph-theoretic quantity that is 1 for all but 68 of the molecules, so we omit it from this small teaching baseline. Low variation does not prove that a feature is useless; deciding whether to keep it in a predictive model is a training-data question.
 
 Types and missing values next, exactly as in episode 1.3.
 
@@ -78,7 +88,7 @@ esol.dtypes
 esol.isna().sum().sum()
 ```
 
-Two text columns (`Compound ID` and `smiles`), eight numeric ones, and not a single missing value. That is unusual for real data and worth noting: this file has already been cleaned. Do not expect it elsewhere.
+Two text columns (`Compound ID` and `smiles`), eight numeric ones, and not a single missing value. There are no missing markers in the processed file. That does not establish that it is representative or error-free; do not assume other datasets will have complete measurements.
 
 ## What is logS?
 
@@ -88,16 +98,16 @@ The target is called *log solubility*: it is $\log_{10}$ of the solubility $S$ i
 esol[target].describe().round(2)
 ```
 
-The median compound has logS ≈ −2.9, about one millimole per litre. The range runs from +1.58 (acetamide, so soluble that it dissolves at nearly 40 mol/L) down to −11.6, a difference of more than thirteen orders of magnitude.
+The median compound has logS ≈ −2.9, about one millimole per litre. The range runs from +1.58 (acetamide, equivalent to nearly 40 mol/L on the recorded scale) down to −11.6, a difference of more than thirteen orders of magnitude.
 
 ::: {.bridge audience="chem"}
-Why does everyone model logS rather than $S$ itself? Three reasons. First, the range: $S$ in this file spans from $10^{-11.6}$ to $10^{1.6}$ mol/L. A straight line fitted to $S$ would spend all its effort on the dozen most soluble compounds, because their values are millions of times larger than everyone else's, and would treat the difference between 1 µM and 1 nM as zero. Second, errors in log units are *relative* errors, which is how you think at the bench: being out by one log unit means a factor of ten, whether the compound is at 1 M or 1 µM. Third, the physics: solubility is governed by free energies of solvation and crystal packing, and free energy is proportional to the logarithm of a concentration, so the quantities that structure actually controls are additive on the log scale. The same argument applies to IC₅₀ (hence pIC₅₀), partition coefficients (logP) and rate constants.
+On the original scale, squared-error fitting is dominated by the largest solubilities. On the log scale, a one-unit error means a factor of ten at any concentration, so the modelling objective weights proportional errors instead. This is a choice of what an error means scientifically, not a rule that every skewed variable must be logged. Always state the units before transforming.
 :::
 
 ::: {.deep-dive title="Logarithms, factors and the geometric mean"}
 $\log_{10} S$ is the power to which 10 must be raised to give $S$: $\log_{10} 10^{-3} = -3$. Adding 1 to logS multiplies $S$ by 10; adding 0.3 multiplies it by $10^{0.3} \approx 2$. Differences on the log scale are therefore *ratios* on the original scale.
 
-Averages behave differently on the two scales. The arithmetic mean of logS in this dataset is −3.05, which corresponds to $10^{-3.05} \approx 0.9$ mmol/L. The arithmetic mean of $S$ itself is 0.39 mol/L, four hundred times larger, because a few very soluble compounds dominate the sum. The quantity $10^{\text{mean}(\log S)}$ is the *geometric mean*, $\left(\prod_i S_i\right)^{1/n}$, and it is the sensible "typical" solubility when values spread over many orders of magnitude. The same is true of the {{< term log-transform >}} of any right-skewed positive quantity: concentrations, counts, incomes, gene expression levels.
+Averages behave differently on the two scales. The arithmetic mean of logS in this dataset is −3.05, which corresponds to $10^{-3.05} \approx 0.9$ mmol/L. The arithmetic mean of $S$ itself is 0.39 mol/L, four hundred times larger, because a few very soluble compounds dominate the sum. The quantity $10^{\text{mean}(\log S)}$ is the *geometric mean*, $\left(\prod_i S_i\right)^{1/n}$, and it is the sensible "typical" solubility when values spread over many orders of magnitude. A {{< term log-transform >}} can be useful for positive quantities spanning orders of magnitude. It is undefined at zero and for negative values; adding an arbitrary constant changes its meaning. For counts or expression data, the measurement process and later model determine the appropriate transformation.
 :::
 
 ## The distribution of the target
@@ -113,7 +123,7 @@ ax.set(xlabel="measured logS (log10 mol/L)", ylabel="number of compounds")
 plt.show()
 ```
 
-One broad peak, roughly bell-shaped on the log scale, which is itself a sign that the log transform was the right choice. The left tail is long: a few dozen compounds below −7 that are practically insoluble. Keep them in mind; models tend to struggle at the ends of a distribution.
+One broad peak, roughly bell-shaped on the log scale, which is itself a useful description of the data, not a requirement that regression targets be normally distributed. The left tail is long: a few dozen compounds below −7 that are practically insoluble. Keep them in mind; models tend to struggle at the ends of a distribution.
 
 ## The descriptors
 
@@ -147,7 +157,7 @@ axes[1, 0].set(ylabel="number of compounds")
 plt.show()
 ```
 
-Two kinds of descriptor appear. Molecular weight and polar surface area are continuous and right-skewed. The counts (donors, rings, rotatable bonds) are integers, mostly small, with a few compounds far out on the right; `discrete=True` centres one bin on each integer. `Minimum Degree` has one dominant bar at 1 (1,060 compounds), a smaller bar at 2 (67), and one compound at 0. From here on we work with the five informative descriptors.
+Two kinds of descriptor appear. Molecular weight and polar surface area are continuous and right-skewed. The counts (donors, rings, rotatable bonds) are integers, mostly small, with a few compounds far out on the right; `discrete=True` centres one bin on each integer. `Minimum Degree` has one dominant bar at 1 (1,060 compounds), a smaller bar at 2 (67), and one compound at 0. From here on we use the same five descriptors as the Chapter 2 teaching baseline.
 
 ```{python}
 descriptors = descriptors[:5]
@@ -173,7 +183,7 @@ ax.set(xlabel="molecular weight (g/mol)", ylabel="measured logS (log10 mol/L)")
 plt.show()
 ```
 
-Heavier molecules are less soluble: the cloud slopes down, though it is wide. At the same weight, the yellower points (more rings) tend to sit lower than the purple ones (few rings). (Because the `hue` column is numeric, seaborn treats colour as a continuous scale and lists only a few representative values in the legend; the full scale runs from 0 to 8 rings.) Rings, particularly aromatic ones, make a molecule flat and rigid and good at packing into a crystal, and they contribute little polarity.
+In this dataset, heavier molecules tend to be less soluble: the cloud slopes down, though it is wide. At the same weight, the yellower points (more rings) tend to sit lower than the purple ones (few rings). (Because the `hue` column is numeric, seaborn treats colour as a continuous scale and lists only a few representative values in the legend; the full scale runs from 0 to 8 rings.) Ring count can reflect rigidity and other structural differences, but it does not tell us aromaticity, ring shape or polarity. This plot alone cannot isolate a causal effect of adding a ring.
 
 Now polar surface area, coloured by the number of hydrogen-bond donors. Both are measures of how much of the molecule can interact with water.
 
@@ -192,7 +202,7 @@ plt.show()
 The relationship is far weaker. Polar molecules are, on average, slightly more soluble, but the band is wide and the most insoluble compounds in the file all have polar surface area near zero without being distinguishable from many soluble ones. Polarity helps; its absence does not condemn a molecule by itself.
 
 ::: {.bridge audience="chem"}
-Nothing in these plots will surprise you: the "general solubility equation" says that logS falls with the melting point and with logP, and both are driven by size, rigidity and lipophilicity. The point of the exercise is different. We are checking what a model could learn *from these five numbers alone*, with no logP and no melting point. Molecular weight and ring count are standing in for lipophilicity, imperfectly. That is why the linear model in Chapter 2 will reach only about $R^2 \approx 0.7$, and why Part II spends so much time on better representations of a molecule.
+Here we ask what a model might learn *from these five numbers alone*, without logP, melting point or measurement conditions. Molecular weight and ring count may capture some related structural variation, imperfectly. Their contributions must be evaluated together on held-out data; a scatter plot cannot predict the model’s final score.
 :::
 
 ## Correlations
@@ -218,7 +228,7 @@ ax.set(title="Pearson correlation, ESOL descriptors and logS")
 plt.show()
 ```
 
-Read the last row. Molecular weight (−0.64) and ring count (−0.51) are the strongest single predictors of logS; rotatable bonds (−0.24) and the two polarity descriptors (+0.21, +0.12) are weak. Now read the rest. Weight and rings correlate at 0.65, so they partly carry the same information; donors and polar surface area correlate at 0.76, for the obvious reason that donor groups are polar. When two inputs say nearly the same thing, a model gains less from the second than its correlation with the target suggests. You will meet this again under the name *collinearity* in [episode 2.4](../ch02-ml-fundamentals/04-overfitting-regularisation.html).
+Read the last row. Molecular weight (−0.64) and ring count (−0.51) have the strongest absolute linear correlations with logS among these descriptors; rotatable bonds (−0.24) and the two polarity descriptors (+0.21, +0.12) are weak. Now read the rest. Weight and rings correlate at 0.65, so they partly carry the same information; donors and polar surface area correlate at 0.76, for the obvious reason that donor groups are polar. When two inputs say nearly the same thing, a model gains less from the second than its correlation with the target suggests. You will meet this again under the name *collinearity* in [episode 2.4](../ch02-ml-fundamentals/04-overfitting-regularisation.html).
 
 ::: {.pitfall title="Correlation measures lines"}
 Pearson's $r$ measures how well a straight line describes the relationship. A descriptor that affects solubility strongly but non-linearly, say with a threshold, can have a small $r$ and still be the most useful input for a flexible model. The scatter plots are the check: look for curves, clusters and thresholds that a single number cannot express.
@@ -236,7 +246,7 @@ esol.nlargest(5, target)[["Compound ID", "smiles", target]]
 esol.nsmallest(5, target)[["Compound ID", "smiles", target]]
 ```
 
-The most soluble compounds are tiny and polar: acetamide, methanol, methyl hydrazine, glycerol. The least soluble are large, flat molecules made only of carbon and chlorine: a biphenyl with all ten positions chlorinated at the bottom, then coronene and benzo[ghi]perylene, which are sheets of fused benzene rings. Every one of them is chemically reasonable. An {{< term outlier >}} that makes sense is a real observation at the edge of the range, and it stays in. The time to drop a row is when it does not make sense: a logS of +5, a molecular weight of 3, a name that belongs to a different structure.
+The most soluble compounds are tiny and polar: acetamide, methanol, methyl hydrazine, glycerol. The least soluble are large, flat molecules made only of carbon and chlorine: a biphenyl with all ten positions chlorinated at the bottom, then coronene and benzo[ghi]perylene, which are sheets of fused benzene rings. These structures offer plausible reasons for extreme values. Plausibility does not verify a measurement: an {{< term outlier >}} should trigger a source, unit and identity check. Keep observations unless a documented reason justifies correction or exclusion; neither an unusual value nor a large model error is sufficient by itself.
 
 ## Duplicates
 
@@ -249,6 +259,8 @@ print("duplicated names: ", esol["Compound ID"].duplicated().sum())
 
 None of either. That is reassuring but not conclusive, as the next section explains.
 
+Exact duplicates are only one kind of dependence. Repeated measurements of the same molecule, close analogues in one chemical series and measurements from the same assay batch can share information. Keep the identifiers needed to group them during evaluation. Averaging replicates or dropping rows may be appropriate for a defined question, but document the rule, preserve the raw table and never choose the rule because it improves a test score.
+
 ## The `smiles` column
 
 What is in that last column? Plain text.
@@ -260,12 +272,12 @@ esol["smiles"].head()
 Each string is a {{< term smiles "SMILES" >}} representation of the molecule: atoms as their element symbols, bonds implied by adjacency, branches in parentheses, ring closures as matching digits, aromatic atoms in lower case. `CO` is methanol and `c1ccsc1` is thiophene. Every descriptor in this file was computed from the string in this column, and nothing else about the molecule is stored.
 
 ::: {.note title="Coming in Chapter 5"}
-For now the `smiles` column is a label you can read but not compute with. In Chapter 5 you will parse these strings with RDKit, draw the molecules, and compute molecular weight, ring count, polar surface area and hundreds of other descriptors yourself, which is how you will build features for molecules that have *no* ready-made table. RDKit also answers the duplicate question properly: it converts every string to a canonical form, so that two different spellings of the same molecule become identical. Without it, `duplicated()` compares spellings, not molecules.
+For now the `smiles` column is a label you can read but not compute with. In Chapter 5 you will parse these strings with RDKit, draw the molecules, and compute molecular weight, ring count, polar surface area and hundreds of other descriptors yourself, which is how you will build features for molecules that have *no* ready-made table. RDKit also answers the duplicate question properly: it can canonicalise molecular representations, helping identify equivalent spellings. Salts, protonation, tautomers and stereochemistry still require an explicit identity policy. Without it, `duplicated()` compares spellings, not molecules.
 :::
 
 ## Framing the question
 
-The EDA has told you what a model is up against. The target is well behaved on the log scale but spans thirteen orders of magnitude, with a thin insoluble tail. Two descriptors carry most of the linear signal and are partly redundant with each other; two more carry a weak signal of the opposite sign. The extremes are real molecules, not errors. There are no missing values and no exact duplicates.
+The EDA has told you what a model is up against. The target is well behaved on the log scale but spans thirteen orders of magnitude, with a thin insoluble tail. Two descriptors carry most of the linear signal and are partly redundant with each other; two more carry a weak signal of the opposite sign. The extremes warrant checking against their original measurements. There are no missing values and no exact duplicates.
 
 So, the question for Chapter 2: **given a molecule's weight, hydrogen-bond donors, rings, rotatable bonds and polar surface area, how accurately can we predict its logS, and how would we know?** The first part is a regression problem. The second part, knowing, is what [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html) is about, and the whole chapter begins with [episode 2.1](../ch02-ml-fundamentals/01-what-is-machine-learning.html), which sets out what "learning from data" means.
 
@@ -331,10 +343,10 @@ ax.set(xlabel="", ylabel="measured logS (log10 mol/L)")
 plt.show()
 ```
 
-Compounds with at least one donor are more soluble by about 0.85 log units at the median (−2.4 versus −3.3), a factor of about seven in solubility, so the effect is real and in the expected direction. But the standard deviation within each group is about 2 log units, more than twice the shift between them, and the violins overlap over nearly their whole length. Knowing only whether a molecule has a donor would tell you very little about its solubility; the descriptor is useful *in combination* with size and ring count, which is exactly what a multi-feature model is for. `np.where(condition, a, b)` is NumPy's vectorised if/else, and `assign` returns a new frame rather than modifying `esol` in place.
+Compounds with at least one donor are more soluble by about 0.85 log units at the median (−2.4 versus −3.3), a factor of about seven in solubility, so the observed difference is in the expected direction. This is an association in the dataset, not evidence that adding a donor causes that change. But the standard deviation within each group is about 2 log units, more than twice the shift between them, and the violins overlap over nearly their whole length. Knowing only whether a molecule has a donor would tell you very little about its solubility; the descriptor is useful *in combination* with size and ring count, which is exactly what a multi-feature model is for. `np.where(condition, a, b)` is NumPy's vectorised if/else, and `assign` returns a new frame rather than modifying `esol` in place.
 ::::
 :::
 
 ## Where this is going
 
-[Episode 2.1](../ch02-ml-fundamentals/01-what-is-machine-learning.html) takes the question you have just framed and defines what a model is; [episode 2.2](../ch02-ml-fundamentals/02-linear-regression.html) fits a straight line through these five descriptors; and [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html) measures how well it does, honestly, on compounds it has never seen. Everything you noticed today reappears there: the thin insoluble tail is where the model's residuals will be largest, the redundancy between weight and rings is why regularisation helps in episode 2.4, and the `smiles` column, ignored until Chapter 5, is where the better features will come from.
+[Episode 2.1](../ch02-ml-fundamentals/01-what-is-machine-learning.html) takes the question you have just framed and defines what a model is; [episode 2.2](../ch02-ml-fundamentals/02-linear-regression.html) fits a straight line through these five descriptors; and [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html) measures how well it does, honestly, on compounds it has never seen. Everything you noticed today reappears there: the thin insoluble tail is where the model's residuals will be largest, the redundancy between weight and rings motivates investigating regularisation in episode 2.4, and the `smiles` column, ignored until Chapter 5, is where the better features will come from.

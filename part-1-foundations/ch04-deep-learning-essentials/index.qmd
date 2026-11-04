@@ -1,30 +1,40 @@
 ---
 title: "Deep learning essentials with PyTorch"
 chapter-index: true
-summary: "Tensors, automatic differentiation and the training loop, built up from the gradient descent you wrote in Chapter 2, then multilayer perceptrons on tabular scientific data."
+summary: "Build a small neural network from tensors and automatic differentiation, write its training loop, and evaluate it with early stopping and a classical baseline. Five runnable episodes lead to a CPU-only solubility lab."
 ---
 
 {{< generated ch04-hero >}}
 
-<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+Neural networks use the same features, losses and evaluation principles as the models you already know. This chapter makes their training machinery visible, then returns to the central scientific question: does the extra flexibility improve predictions on unseen examples?
 
-## What it will cover
+## What you will be able to do
 
-::: {.mm-stub-outline}
-- Tensors, devices and broadcasting in PyTorch
-- Autograd: what loss.backward() computes
-- Writing a training loop by hand: forward, loss, backward, step
-- Multilayer perceptrons, activation functions and initialisation
-- Regularisation for neural networks: early stopping, dropout, weight decay
-- Lab 4: an MLP for solubility, compared honestly with ridge regression
+::: {.mm-outcomes-wrap}
+- Trace shapes, dtypes and sample identities from a descriptor table to a prediction.
+- Explain the difference between calculating gradients and updating parameters.
+- Build a multilayer perceptron with an output and loss suited to its target.
+- Train in mini-batches and use the correct training and evaluation modes.
+- Restore an early-stopped checkpoint and assess dropout and weight decay.
+- Compare a neural network with ridge regression using validation for selection and a final held-out test report.
 :::
 
-## Planned learning outcomes
+## Schedule
 
-1. Implement and train a small neural network in PyTorch with an explicit training loop.
-2. Diagnose training problems from loss curves (divergence, plateaus, overfitting).
-3. Compare a neural network against a strong classical baseline using the evaluation habits of Chapter 2.
+{{< generated ch04-schedule >}}
 
-## In the meantime
+## Lab
 
-Chapters [0](../ch00-start-here/index.html), [1](../ch01-scientific-python/index.html) and [2](../ch02-ml-fundamentals/index.html) are complete and are the prerequisites for this chapter.
+{{< generated ch04-labs >}}
+
+## Before you start
+
+::: {.prereq}
+Review NumPy shapes in [episode 1.2](../ch01-scientific-python/02-numpy-arrays.html), gradient descent in [episode 2.2](../ch02-ml-fundamentals/02-linear-regression.html), and the cross-validation and tuning workflow in [episodes 2.7–2.8](../ch02-ml-fundamentals/07-cross-validation.html). You should be able to distinguish training, validation and test data before adding a more flexible model.
+:::
+
+Use the course environment from [Chapter 0](../ch00-start-here/02-setup.html), which includes PyTorch. All examples and the lab run on a laptop CPU; the lab setup also supports Google Colab. The lessons use synthetic data or scikit-learn's bundled breast-cancer benchmark, and the lab reuses ESOL from Chapter 2.
+
+## Check your understanding
+
+Finish with the [ten-question checkpoint](checkpoint.html) and [chapter key points](key-points.html). If a model fails to learn, revisit the tensor, loss and loop contracts before changing its size. If it learns the training set but performs poorly on validation data, revisit the evaluation design and complexity controls.

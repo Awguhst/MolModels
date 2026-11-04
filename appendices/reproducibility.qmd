@@ -1,23 +1,71 @@
 ---
 title: "Reproducibility toolkit"
-subtitle: "Appendix C · coming soon"
+subtitle: "Appendix C · Make a modelling result traceable and rerunnable."
 ---
 
-<p class="mm-soon-banner"><span class="mm-chip">soon</span> This appendix is planned and not yet written.</p>
+A modelling report should let someone reconstruct the result and the choices behind it. A seed alone is insufficient: keep the exact data, code, preprocessing, split rules and environment. Use this checklist with all four Foundations labs.
 
-## What it will cover
+## Define the experiment
 
-- git for scientists: commits, branches, what to commit and what to ignore
-- Environments: conda/mamba, uv, lock files, and recording versions
-- Project layout: data/, notebooks/, src/, tests/, results/
-- Seeds, logging and recording the exact inputs of every result
-- Turning a notebook into a script and a script into a package
-- Sharing: README, licence, citation, and a one-command rebuild
+Write down the independent sampling unit, prediction target and units, information available at prediction time, and intended future population. Choose a baseline and primary metric before looking at final outcomes. State whether a new sample means a new row, patient, laboratory, chemical scaffold or future period; this determines the split.
 
-## Planned learning outcomes
+An integrity audit may inspect schemas, identifiers and units across the collection. Outcome-driven exploration, feature selection and tuning belong within development data. If test-error inspection leads to a modelling choice, label it as new development and obtain fresh independent evaluation.
 
-1. Keep a project under version control and explain every commit.
-2. Reproduce a result from a clean clone with one command.
-3. Package a small analysis so that a colleague can run and extend it.
+## Preserve data and code provenance
 
-Until then, the reproducibility checklist in [episode 2.6](../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) and the [Setup](../part-1-foundations/ch00-start-here/02-setup.html) episode cover the essentials.
+Record source URLs, licences, download dates, checksums, column definitions and inclusion rules. Keep raw data unchanged; write cleaning as a reproducible transformation. Explain how you handled missing values, duplicates and repeated measurements. Store stable sample IDs with split memberships, since row positions can change after sorting.
+
+The [data README](https://github.com/Awguhst/MolModels/blob/main/data/README.md) and `scripts/fetch_data.py` demonstrate provenance and checksum verification. For a small local file:
+
+```python
+from hashlib import sha256
+from pathlib import Path
+print(sha256(Path("data/esol.csv").read_bytes()).hexdigest())
+```
+
+Keep code under Git, with commits that explain one coherent change. Record the commit that produced a result. Uncommitted edits are not captured by that identifier: commit them or retain a patch. Ignore credentials, private data, local environments and large generated outputs. A simple project layout separates `data/`, `notebooks/`, reusable code, tests and results.
+
+## Recreate the environment
+
+Install the course's [environment.yml](../environment.yml) or [requirements.txt](../requirements.txt) in an isolated environment, as described in [Setup](../part-1-foundations/ch00-start-here/02-setup.html). Both include CPU-capable PyTorch for Chapter 4. Record the environment actually used, including Python, operating system and relevant hardware:
+
+```bash
+python scripts/check_env.py
+python -m pip freeze > environment-resolved.txt
+git rev-parse HEAD
+git status --short
+```
+
+Requirements describe the intended environment; the resolved package list records the installed one. Fix split, search and training seeds. Assess sensitivity to training randomness within development when it matters. PyTorch does not guarantee identical results across releases or hardware solely from a seed; its [reproducibility notes](https://docs.pytorch.org/docs/stable/notes/randomness.html) explain the scope of deterministic settings.
+
+## Save the complete procedure
+
+| Stage | Record |
+|---|---|
+| Data audit | Source, checksum, units, exclusions, missingness and duplicate policy |
+| Split | Sample IDs, group/time rule, seeds, counts and class balance |
+| Preprocessing | Input schema, column order, fitted imputation, encoding and scaling |
+| Search | Candidate spaces, metric, folds, budget, all scores and revisions |
+| Selection | Chosen configuration and the decision rule |
+| Evaluation | Fixed predictions, metrics, baseline and limitations |
+| Handoff | Pipeline or weights plus architecture, environment and usage instructions |
+
+For scikit-learn, save the fitted pipeline so preprocessing travels with the model. Reload it in the recorded environment and compare predictions. Cross-version loading is unsupported; only load trusted pickle/joblib files. See [model persistence](https://scikit-learn.org/stable/model_persistence.html).
+
+For PyTorch, save `state_dict` together with architecture settings, preprocessing statistics and feature/target definitions. Early stopping needs the weights from the selected epoch, not simply the last epoch trained. Chapter 4 demonstrates this.
+
+Restart the notebook kernel and run all cells in order. This exposes hidden state and stale variables. For repeated experiments, move reusable steps into functions or scripts while keeping the notebook's interpretation. Checks should address meaningful failures: overlapping groups, changed row counts, target leakage, missing classes and inconsistent feature order.
+
+## A report you can fill in
+
+> **Question:** We predict ___ in units of ___ using information available at ___. The independent unit is ___ and intended future samples are ___.
+>
+> **Data and design:** Source/version/checksum ___; inclusion rules ___; development/test or nested-CV design ___; group/time handling ___.
+>
+> **Procedure:** Features and preprocessing ___; baseline ___; primary metric ___; candidate configurations and budget ___. Development-only selection chose ___ using the rule ___.
+>
+> **Results:** Baseline ___; selected procedure ___; sample counts and individual fold scores ___. Reported spread means ___, not a prediction interval. Error inspection shows ___; proposed explanations are ___.
+>
+> **Limits and reproduction:** These results support ___ but do not establish ___. Reproduce using commit ___, environment ___ and notebook/command ___.
+
+A good score alone does not establish a causal mechanism or transfer to another population. Share a README with the exact run order, environment, data access instructions and expected outputs, plus an appropriate licence and citation. Reproduction should reconstruct an honest claim, not just the same number.

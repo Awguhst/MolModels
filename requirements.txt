@@ -6,6 +6,11 @@ matplotlib==3.10.9
 seaborn==0.13.2
 scikit-learn==1.9.1
 joblib==1.6.0
+# CPU wheels on Linux/Windows; Apple Silicon macOS uses the PyPI wheel.
+# Intel Mac users can run Chapter 4 in Colab (no torch 2.9.1 macOS x86_64 wheel).
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.9.1+cpu; sys_platform == "linux" or sys_platform == "win32"
+torch==2.9.1; sys_platform == "darwin"
 jupyterlab==4.6.5
 ipykernel==7.4.0
 # tooling

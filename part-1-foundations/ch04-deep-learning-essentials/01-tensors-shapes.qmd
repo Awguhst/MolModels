@@ -1,0 +1,175 @@
+---
+title: "Tensors, shapes and scientific data"
+chapter: 4
+episode: 1
+teaching: 35
+exercises: 20
+level: beginner
+questions:
+  - "How is a PyTorch tensor different from a NumPy array?"
+  - "What shape should features, predictions and targets have?"
+objectives:
+  - "Convert a feature matrix into a floating-point tensor."
+  - "Trace the shapes in a batched linear prediction."
+  - "Detect unintended broadcasting before computing a loss."
+keypoints:
+  - "A tensor has a shape, dtype and device; check all three at a model boundary."
+  - "Keep the sample dimension first and make predictions and targets have identical shapes."
+  - "Matrix multiplication combines features; elementwise multiplication does not."
+  - "Fit preprocessing on training data before converting the arrays to tensors."
+prerequisites: [ch01-ep02, ch02-ep06]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A descriptor table contains one row per molecule and one column per measurement. A neural network needs the same information as a ridge model: numerical features, an explicit target and a sound split. The new ingredient is a numerical library that can also track how a prediction depends on its parameters. Before fitting anything, you need to make the meaning of each array dimension unambiguous.
+
+PyTorch calls its arrays {{< term tensor plural >}}. For this chapter, a tensor is a multidimensional container of numbers: a scalar has no axes, a vector has one and a matrix has two. The word does not imply a neural network, a GPU or advanced geometry. You already know most of the practical ideas from NumPy; we will add the few differences that matter for training.
+
+## Keep the scientific meaning of each axis
+
+Imagine three hypothetical compounds measured with two descriptors: molecular mass in g/mol and a hydrogen-bond donor count. These small numbers illustrate the interface; they are not a training dataset or a claim about real compounds.
+
+```{python}
+import torch
+
+X = torch.tensor([[100.0, 1.0], [200.0, 2.0], [150.0, 0.0]])
+print(X)
+print("shape:", tuple(X.shape), "dtype:", X.dtype, "device:", X.device)
+```
+
+The shape is `(3, 2)`: three samples, two features. PyTorch displays its shape as a `torch.Size`, which can be inspected like a tuple. The default device is CPU. A floating-point literal such as `100.0` makes these values floating point; writing every number as an integer would produce an integer tensor instead.
+
+Keep a note beside every model boundary: `(n_samples, n_features)` for its input, and the intended output shape. A tensor contains no column names and no units. Once you convert a DataFrame, the library cannot tell whether the second column is a donor count or a melting point. Preserve the feature names and their order as part of the model's preprocessing specification.
+
+::: {.bridge audience="chem"}
+Think of a tensor as a numbered sample plate whose labels are stored elsewhere. The wells can hold perfectly valid measurements while their order is wrong. Check row identifiers before converting a DataFrame, and save the descriptor order alongside the model. A low training loss cannot rescue a future prediction made with swapped columns.
+:::
+
+Indexing behaves much like NumPy, including an easily missed distinction:
+
+```{python}
+print("first sample:", tuple(X[0].shape))
+print("batch of one:", tuple(X[0:1].shape))
+print("donor column:", tuple(X[:, 1].shape))
+print("donor matrix:", tuple(X[:, 1:2].shape))
+```
+
+`X[0]` is a vector of length two. `X[0:1]` is a matrix with one row and two columns. The latter preserves the sample axis, which is helpful when a model expects a batch. Likewise, selecting one column by an integer removes that axis; selecting it by a slice keeps it. Neither choice is universally correct: choose the shape that matches the next operation.
+
+## A batch of linear predictions
+
+Recall the linear model from Chapter 2: multiply each feature by its coefficient, add across features, then add a bias. If `X` is `(n, d)` and `w` is `(d, 1)`, the matrix product `X @ w` is `(n, 1)`. The shared dimension `d` disappears because each prediction sums over the features.
+
+::: {.predict}
+For the three samples above, what shapes will `X * torch.tensor([0.01, -0.5])` and `X @ torch.tensor([[0.01], [-0.5]])` have? Which expression makes one prediction per sample?
+:::
+
+```{python}
+w = torch.tensor([[0.01], [-0.5]])
+b = torch.tensor([-2.0])
+prediction = X @ w + b
+print("elementwise:", tuple((X * w.T).shape))
+print("predictions:", prediction)
+```
+
+Elementwise multiplication gives a `(3, 2)` table of contributions. Matrix multiplication adds those contributions into a `(3, 1)` column. Adding the one-element bias uses {{< term broadcasting >}}: the same intercept is applied to every sample. The coefficients here are deliberately supplied by hand. Autograd and an optimiser will learn them in the next episode.
+
+In a neural network, each layer may produce several numbers per sample. A first layer mapping two features to eight hidden features transforms `(n, 2)` into `(n, 8)`. A final layer mapping eight hidden features to one output transforms `(n, 8)` into `(n, 1)`. Keeping `n` unchanged lets you process one sample or an entire batch with the same model.
+
+## Broadcasting can compute the wrong scientific quantity
+
+Broadcasting is useful when subtracting a feature mean from every row. It is dangerous when subtracting predictions from a target with a different shape. Suppose the targets are a vector `(3,)`, while predictions are a column `(3, 1)`. Their difference is **not** a three-element vector of matched residuals.
+
+```{python}
+y = torch.tensor([-1.5, -1.0, -0.5])
+wrong_residual = prediction - y
+right_residual = prediction.squeeze(1) - y
+print("unintended pairwise differences:", tuple(wrong_residual.shape))
+print("matched residuals:", tuple(right_residual.shape))
+```
+
+The first result has shape `(3, 3)`: each prediction was compared with every target. A mean of its squared elements would be a perfectly computable number, but it would optimise the wrong task. Do not rely on an error message to catch this. Before a regression loss, assert that prediction and target shapes match.
+
+```{python}
+pred_vector = prediction.squeeze(1)
+assert pred_vector.shape == y.shape
+print("MSE:", ((pred_vector - y) ** 2).mean().item())
+```
+
+`squeeze(1)` removes only dimension 1, and only when its size is one. An unrestricted `squeeze()` would also remove the batch dimension if you predicted one sample. That can create a bug that appears only in the final, smaller batch of training. Naming the dimension makes your intention testable.
+
+## Dtype, device and conversion
+
+The {{< term dtype >}} determines how numbers are represented. `torch.float32` is a practical starting point for these networks. NumPy arrays and pandas numeric columns are often `float64`; make the conversion explicit rather than depending on defaults. Classification labels used by `CrossEntropyLoss` require integer class indices, whereas the binary loss used later accepts floating-point zeros and ones. Dtype follows the operation's contract, not merely the fact that a variable is a target.
+
+```{python}
+import numpy as np
+
+array = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+features = torch.tensor(array, dtype=torch.float32)
+print(features.dtype, features.device)
+print(features.numpy())
+```
+
+`torch.tensor` copies input data; `torch.from_numpy` can share storage with its NumPy array. If you edit shared memory through one object, the other can change too. For a first model, an explicit copy is often easier to reason about. The [PyTorch tensor tutorial](https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html) documents these conversion and storage behaviours.
+
+A device is where a tensor lives. All operands of the ordinary operations used here must be on compatible devices. This chapter uses CPU throughout: the datasets are small and the examples do not need a GPU. Moving only the model to a GPU while leaving its input on CPU causes an error; moving both is an engineering choice, not an improvement in the scientific experiment.
+
+When converting a prediction back for plotting, you will often see `prediction.detach().cpu().numpy()`. `detach()` separates it from the gradient-tracking calculation, `cpu()` makes it accessible to NumPy, and `numpy()` supplies the array. Those steps are for reporting; do not insert them between the model and its training loss, because gradients need that connection.
+
+## Put preprocessing before the tensor boundary
+
+A network does not remove the need for {{< term feature-scaling >}}. Features measured on very different scales can make optimisation harder. Fit the scaler on the training subset, transform the validation and test subsets with those same statistics, then convert each result to `float32`.
+
+```{python}
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler().fit(X.numpy())
+X_scaled = torch.tensor(scaler.transform(X.numpy()), dtype=torch.float32)
+print(X_scaled)
+```
+
+Here all three illustrative rows play the role of training data. In a real experiment, do the split first. A scaler fit to the complete dataset can leak information even when no target is included. Keep the scaler object for inference: independently scaling a new sample would change the model's input definition.
+
+::: {.pitfall title="A reshape is not a transpose"}
+`reshape` changes the arrangement into a requested shape; it does not know which axis means samples. Transposing a `(3, 2)` table gives its columns as rows. Reshaping it to `(2, 3)` simply reinterprets the ordered values. Check a few actual rows whenever you change shape, especially after loading sequence or image data.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Follow the sample axis"}
+A batch contains 17 molecules with 5 descriptors each. A network has hidden layers of widths 12 and 4, followed by one regression output. Give every intermediate shape. What changes if the final batch has only one molecule?
+
+:::: {.solution}
+The shapes are `(17, 5) → (17, 12) → (17, 4) → (17, 1)`. For one molecule, replace every 17 with 1. The feature widths remain unchanged. To compare with a target vector, use `output.squeeze(1)`, obtaining `(17,)` or `(1,)`; preserve the sample axis even for the single sample.
+::::
+:::
+
+::: {.challenge level=2 title="Catch the pairwise-loss bug"}
+Create targets with shape `(3, 1)` for the predictions in this episode. Compute the MSE without squeezing. Then show that it equals the vector version above.
+
+:::: {.solution}
+```{python}
+y_column = y.unsqueeze(1)
+assert prediction.shape == y_column.shape
+column_mse = ((prediction - y_column) ** 2).mean()
+vector_mse = ((prediction.squeeze(1) - y) ** 2).mean()
+print("same loss:", torch.allclose(column_mse, vector_mse))
+```
+
+Both conventions are valid. The error is mixing them without checking shapes. `unsqueeze(1)` inserts a one-element output axis; it does not duplicate samples or change their order.
+::::
+:::
+
+::: {.challenge level=2 title="Preserve the preprocessing contract"}
+Your colleague sends a new sample with descriptors in reverse order and scales it using the sample's own mean. Explain why a trained network's prediction is unreliable, even if the input still has the expected shape.
+
+:::: {.solution}
+Shape checks catch structural problems but not scientific meaning. Reversed columns send each value to the wrong learned coefficient. Scaling by the sample's own mean also changes the meaning of every value relative to training. Restore the saved feature order, transform with the training-fitted scaler, and only then convert to a tensor. Record units too: a mass expressed in kg/mol instead of g/mol has the correct shape but the wrong scale.
+::::
+:::
+
+## Where this is going
+
+The next episode adds gradients to these tensor operations. In [Chapter 7](../../part-2-cheminformatics/ch07-graph-neural-networks/index.html), samples become graphs with different numbers of atoms; in [Chapter 10](../../part-3-bioinformatics/ch10-ml-on-sequences/index.html), inputs become sequences. The shapes grow more elaborate, but the habit stays the same: state what each axis means, preserve the sample identity, and check the boundary before trusting a loss.

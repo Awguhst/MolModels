@@ -23,7 +23,7 @@ Each page is written to be read by all four audiences at once. *Bridge boxes* sp
 
 ## What is here now
 
-This is iteration 1. **Part I** is complete through Chapter 2: Start here, Scientific Python for data work, and Machine learning fundamentals, with two labs, a chapter checkpoint, a maths refresher and the glossary. Chapters 3–15 are planned and appear as "coming soon" outlines; see the [roadmap](index.html#roadmap) and [ROADMAP.md](https://github.com/Awguhst/MolModels/blob/main/ROADMAP.md) in the repository.
+**Part I** covers Chapters 0–4: setup, scientific Python, machine-learning fundamentals, nonlinear models and deep learning with PyTorch. Four practical labs and chapter checkpoints connect data exploration to preprocessing, cross-validation, hyperparameter tuning, interpretation and reproducible evaluation. The maths refresher, glossary and reproducibility toolkit support the lessons. Chapters 5–15 remain planned outlines; see the [roadmap](index.html#roadmap) and [ROADMAP.md](https://github.com/Awguhst/MolModels/blob/main/ROADMAP.md) in the repository.
 
 ## Design principles
 

@@ -9,12 +9,11 @@ executed when the site is built. Text CC BY 4.0, code MIT.
 
 **Site:** https://molmodels.bio/ (hosted on [Railway](https://railway.com) from this repository; see [Deploying](#deploying-railway--docker)).
 
-## Status (iteration 1)
+## Status
 
 | Part | Chapters | Status |
 |---|---|---|
-| I · Foundations | 0 Start here · 1 Scientific Python · 2 ML fundamentals | **complete**, with Labs 1–2, a checkpoint quiz, Appendix A (partial) and the glossary |
-| I · Foundations | 3 Beyond linear models · 4 Deep learning essentials | planned (stub pages) |
+| I · Foundations | 0 Start here · 1 Scientific Python · 2 ML fundamentals · 3 Beyond linear models · 4 Deep learning essentials | **complete**, with four labs, chapter checkpoints, explicit cross-validation and tuning lessons, maths support, glossary and reproducibility toolkit |
 | II · Cheminformatics | 5–8 | planned |
 | III · Bioinformatics | 9–12 | planned |
 | IV · Generative | 13–15 | planned |
@@ -92,9 +91,9 @@ assets/                     scss/ (design tokens + rules), fonts/, js/, mpl/ (ma
 _extensions/mm/             Quarto extension: callouts, maths, episode footer/key points, glossary shortcodes, title block
 _includes/mm-setup.qmd      hidden setup cell every episode includes (figure theming)
 index.qmd about.qmd cite.qmd
-part-1-foundations/         ch00-start-here/ ch01-scientific-python/ ch02-ml-fundamentals/ (+ stubs ch03, ch04)
+part-1-foundations/         complete ch00–ch04: setup, Python, ML, nonlinear models, PyTorch
 part-2-cheminformatics/ part-3-bioinformatics/ part-4-generative/     stub chapters
-appendices/                 maths-refresher.qmd, glossary.qmd, key-points.qmd, stubs C and D
+appendices/                 maths-refresher.qmd, glossary.qmd, key-points.qmd, reproducibility.qmd, further-reading.qmd
 data/                       penguins.csv + README.md (sources, licences, checksums); esol.csv is downloaded
 glossary.yml                single source for the glossary page and tooltips
 scripts/                    build_course_data.py, post_render.py, fetch_data.py, check_env.py,

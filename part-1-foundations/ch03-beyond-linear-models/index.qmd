@@ -1,30 +1,38 @@
 ---
 title: "Beyond linear models"
 chapter-index: true
-summary: "Trees, ensembles and support vector machines for the cases a straight line cannot handle; unsupervised learning for finding structure without labels; and how to interpret what a model has learned."
+summary: "Build trees, ensembles and support vector machines; explore unlabelled data with PCA and clustering; and explain what a fitted model uses without confusing prediction with causation."
 ---
 
 {{< generated ch03-hero >}}
 
-<p class="mm-soon-banner"><span class="mm-chip">soon</span> This chapter is planned and not yet written. The outline below is the current plan; it may change.</p>
+## What you will be able to do
 
-## What it will cover
-
-::: {.mm-stub-outline}
-- Decision trees and why they overfit; random forests and gradient boosting
-- Support vector machines and the kernel idea
-- Unsupervised learning: principal component analysis and k-means clustering
-- Model interpretation: permutation importance, partial dependence, SHAP-style explanations
-- Choosing between model families with cross-validation
-- Lab 3: a tabular modelling bake-off on the solubility and breast cancer data
+::: {.mm-outcomes-wrap}
+- Read a decision tree, diagnose its instability and control its complexity.
+- Compare ridge, random forests, gradient boosting and support vector regression using the same folds and metric.
+- Tune a whole modelling procedure with nested cross-validation while protecting a final test set.
+- Use PCA to describe variation, and distinguish visual separation from predictive evidence.
+- Cluster scaled observations, check stability and describe what the groups do and do not establish.
+- Interpret permutation importance, partial dependence and individual prediction explanations with their limitations.
 :::
 
-## Planned learning outcomes
+## Schedule
 
-1. Train and tune tree ensembles and SVMs with scikit-learn, and say when each is appropriate.
-2. Use PCA and clustering to explore a dataset without labels and interpret the components.
-3. Explain a fitted model's behaviour to a scientist using permutation importance and partial dependence.
+{{< generated ch03-schedule >}}
 
-## In the meantime
+## Lab
 
-Chapters [0](../ch00-start-here/index.html), [1](../ch01-scientific-python/index.html) and [2](../ch02-ml-fundamentals/index.html) are complete and are the prerequisites for this chapter.
+{{< generated ch03-labs >}}
+
+## Before you start
+
+::: {.prereq}
+Complete [Chapter 2](../ch02-ml-fundamentals/index.html), especially pipelines, cross-validation and hyperparameter tuning. You should be able to explain why fitting a scaler before cross-validation leaks information, and why the best search score is not a final performance estimate. [Lab 2](../ch02-ml-fundamentals/labs/lab-02-first-ml-project.html) is useful preparation.
+:::
+
+The supervised examples reuse the five ESOL descriptors and the 80/20 split from Chapter 2. Model development happens inside the 80%; the lab opens the final 20% only after choosing the complete procedure. PCA uses breast-cancer measurements, and clustering returns to the penguins from Chapter 1. All examples run on a CPU with the existing course environment.
+
+## A route through the chapter
+
+Start with trees and ensembles, then compare their piecewise predictions with the smoother similarity rule of an SVM. PCA and clustering ask a different question: what structure is present when a target is unavailable? Finish with interpretation, then test your understanding in the [checkpoint](checkpoint.html) before undertaking the lab. A model that is harder to explain or slower to fit needs a practical benefit to justify that cost.

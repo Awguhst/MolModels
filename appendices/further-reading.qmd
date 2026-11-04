@@ -1,10 +1,37 @@
 ---
 title: "Further reading"
-subtitle: "Appendix D · coming soon"
+subtitle: "Appendix D · Primary documentation to accompany the Foundations lessons."
 ---
 
-<p class="mm-soon-banner"><span class="mm-chip">soon</span> This appendix is planned and not yet written.</p>
+Use these references when a lesson needs another example or an API detail. Read the course explanation first; documentation often assumes more vocabulary. The installed versions are recorded in [requirements.txt](../requirements.txt), while “stable” documentation may describe a newer release.
 
-It will collect, per chapter, a short annotated list of textbooks, review articles and documentation pages that go deeper than the course, each with a sentence on who it is for. Only resources that the authors have actually read and verified will be listed.
+## Scientific Python
 
-For now, the [Setup](../part-1-foundations/ch00-start-here/02-setup.html) and [self-check](../part-1-foundations/ch00-start-here/03-self-check.html) episodes link to free Python refreshers, and the [data README](https://github.com/Awguhst/MolModels/blob/main/data/README.md) gives the primary references for every dataset.
+- [Python tutorial](https://docs.python.org/3/tutorial/): functions, control flow, containers and exceptions, beside Chapter 0's self-check and episode 1.1.
+- [NumPy fundamentals](https://numpy.org/doc/stable/user/basics.html): indexing, broadcasting, types and copies versus views. Use it to reason about shapes rather than memorising expressions.
+- [pandas user guide](https://pandas.pydata.org/docs/user_guide/index.html): missing data, joins, grouping and reshaping, with detail beyond Chapter 1.
+- [Matplotlib quick-start guide](https://matplotlib.org/stable/users/explain/quick_start.html): the Figure/Axes interface used throughout the course.
+
+## Evaluation before complexity
+
+- [Cross-validation](https://scikit-learn.org/stable/modules/cross_validation.html): assumptions and interfaces for ordinary, stratified, grouped and temporal splits. Pair with episode 2.7.
+- [Hyperparameter search](https://scikit-learn.org/stable/modules/grid_search.html): grid and random search, composite estimators and selection options. Pair with episode 2.8.
+- [Nested versus non-nested CV](https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html): a runnable demonstration of selection optimism.
+- [Common pitfalls](https://scikit-learn.org/stable/common_pitfalls.html): inconsistent preprocessing, leakage and randomness; useful when results look surprisingly good.
+- [Probability calibration](https://scikit-learn.org/stable/modules/calibration.html): reliability diagrams and why probability quality differs from ranking quality.
+
+## Nonlinear models and exploration
+
+- [Decision trees](https://scikit-learn.org/stable/modules/tree.html) and [ensembles](https://scikit-learn.org/stable/modules/ensemble.html): splitting, capacity controls, forests and boosting.
+- [Support vector machines](https://scikit-learn.org/stable/modules/svm.html): kernels, scaling and the meaning of the main settings.
+- [Decomposition](https://scikit-learn.org/stable/modules/decomposition.html) and [clustering](https://scikit-learn.org/stable/modules/clustering.html): PCA, clustering assumptions and evaluation limitations.
+- [Permutation importance](https://scikit-learn.org/stable/modules/permutation_importance.html) and [partial dependence](https://scikit-learn.org/stable/modules/partial_dependence.html): inspection with cautions about correlated features and extrapolation.
+
+## Neural networks and reproducibility
+
+- [PyTorch basics](https://docs.pytorch.org/tutorials/beginner/basics/intro.html): tensors, loaders, networks, autograd, optimisation and saving, in a progression similar to Chapter 4.
+- [Autograd introduction](https://docs.pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html): computation graphs and gradient accumulation beside the hand-worked derivatives.
+- [PyTorch reproducibility](https://docs.pytorch.org/docs/stable/notes/randomness.html): seeds, deterministic operations and cross-platform limitations.
+- [scikit-learn model persistence](https://scikit-learn.org/stable/model_persistence.html): storing complete procedures and their environment requirements.
+
+The [data README](https://github.com/Awguhst/MolModels/blob/main/data/README.md) records dataset provenance and primary references. Revisit it when interpreting error patterns: library documentation cannot tell you which measurements a particular dataset represents.

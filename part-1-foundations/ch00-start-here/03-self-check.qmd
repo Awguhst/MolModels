@@ -32,7 +32,7 @@ This whole page is one long *predict before you run* exercise. The solutions con
 :::
 
 ::: {.bridge audience="math"}
-Two conventions will fight your intuition. First, Python counts from **0**: the first element of a list is `xs[0]`, and the $n$-th is `xs[n-1]`. Second, ranges and slices are **half-open intervals** $[a, b)$: `range(2, 5)` is $\{2, 3, 4\}$ and `xs[2:5]` takes positions 2, 3 and 4. The pay-off is that `len(xs[a:b])` is simply $b - a$, and `xs[:k] + xs[k:]` is always `xs` again, with no $\pm 1$ bookkeeping. Once you see 0-based indices as *offsets from the start* rather than ordinal positions, both conventions feel natural.
+Two conventions will fight your intuition. First, Python counts from **0**: the first element of a list is `xs[0]`, and the $n$-th is `xs[n-1]`. Second, ranges and slices are **half-open intervals** $[a, b)$: `range(2, 5)` is $\{2, 3, 4\}$ and `xs[2:5]` takes positions 2, 3 and 4. For valid bounds $0 \le a \le b \le \mathrm{len}(xs)$, `len(xs[a:b])` is $b - a$, and `xs[:k] + xs[k:]` is always `xs` again, with no $\pm 1$ bookkeeping. Once you see 0-based indices as *offsets from the start* rather than ordinal positions, both conventions feel natural.
 :::
 
 ## The questions
@@ -58,7 +58,7 @@ print(type(mass), type(name), type(mass / 2))
 :::
 
 ::: {.challenge level=1 title="2. Lists and dicts"}
-What does this print, and which line would fail if you swapped `masses` for `elements` in the last `print`?
+What does this print? Then explain why `elements["C"]` and `masses[1]` would fail.
 
 ```python
 elements = ["H", "C", "O"]
@@ -93,7 +93,7 @@ s = "ethanol"
 s[1:4], s[-1], s[:3], s[3:]
 ```
 
-`s[1:4]` starts at index 1 (`t`) and stops *before* index 4, giving three characters. Negative indices count from the end, so `s[-1]` is the last character. An omitted start means "from the beginning" and an omitted end means "to the end"; `s[:3]` and `s[3:]` together rebuild the string with nothing lost or duplicated. Exactly the same rules apply to lists, and in Chapter 1 to NumPy arrays and pandas rows.
+`s[1:4]` starts at index 1 (`t`) and stops *before* index 4, giving three characters. Negative indices count from the end, so `s[-1]` is the last character. An omitted start means "from the beginning" and an omitted end means "to the end"; `s[:3]` and `s[3:]` together rebuild the string with nothing lost or duplicated. The same positional rules apply to lists, NumPy arrays and pandas `iloc`. pandas label-based `loc` slicing includes the end label; episode 1.3 explains the distinction.
 ::::
 :::
 
@@ -276,7 +276,7 @@ print(0.1 + 0.2)
 print(7 / 2, 7 // 2, 7 % 2, -7 // 2)
 ```
 
-Neither 0.1 nor 0.2 can be stored exactly in binary floating point, any more than 1/3 can be written exactly in decimal. The tiny rounding errors in each add up to a number that is not the same float as `0.3`. The rule is: **never compare floats with `==`**; compare with a tolerance instead:
+Neither 0.1 nor 0.2 can be stored exactly in binary floating point, any more than 1/3 can be written exactly in decimal. The tiny rounding errors in each add up to a number that is not the same float as `0.3`. For results of numerical calculations, compare with a tolerance appropriate to the problem rather than expecting exact equality:
 
 ```{python}
 import math
@@ -307,4 +307,4 @@ Whichever you pick, type every example rather than reading it. The questions on 
 
 ## Where this is going
 
-Each question here reappears in Chapter 1 wearing scientific clothes. Slicing becomes selecting rows of a table in [episode 1.3](../ch01-scientific-python/03-pandas-dataframes.html); the loop over `range` becomes a NumPy operation on a whole array at once in [episode 1.2](../ch01-scientific-python/02-numpy-arrays.html); the traceback you read above is the first of many, and reading them well is a larger part of data work than anyone admits. The float comparison matters from Chapter 2 on, where you will compare model metrics that differ in the third decimal and need to know whether that difference is real.
+Each question here reappears in Chapter 1 wearing scientific clothes. Slicing becomes selecting rows of a table in [episode 1.3](../ch01-scientific-python/03-pandas-dataframes.html); the loop over `range` becomes a NumPy operation on a whole array at once in [episode 1.2](../ch01-scientific-python/02-numpy-arrays.html); the traceback you read above is the first of many, and reading them well is a larger part of data work than anyone admits. Float tolerances help check whether numerical calculations agree. Whether a small difference in model scores is scientifically meaningful is a separate question about sampling and evaluation, introduced in Chapter 2.

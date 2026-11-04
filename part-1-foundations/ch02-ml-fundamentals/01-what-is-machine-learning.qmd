@@ -20,7 +20,7 @@ keypoints:
   - "Features go in `X` (one row per sample, one column per feature); labels go in `y`. Almost every tool in this course expects that layout."
   - "Training means choosing the parameters $\\theta$ that make a loss function small on the training data; for regression the loss is usually the mean squared error."
   - "The goal is generalisation, performance on samples the model has never seen. A curve that passes through every training point can be a worse model than one that misses them all slightly."
-  - "Machine learning pays off with large, pattern-rich data and expensive-to-measure targets. It fails on tiny datasets, under distribution shift, with noisy labels and with confounded data."
+  - "Machine learning pays off with large, pattern-rich data and expensive-to-measure targets. Small samples, distribution shift, noisy labels and confounding limit the conclusions and require careful evaluation."
 prerequisites: [ch01-ep05]
 ---
 
@@ -28,7 +28,7 @@ prerequisites: [ch01-ep05]
 
 In [episode 1.5](../ch01-scientific-python/05-eda-solubility.html) you explored 1,128 small molecules with measured aqueous solubility and saw that heavier molecules tend to be less soluble. Now a colleague proposes a 1,129th molecule. Nobody has made it, so nobody has measured it. Can the 1,128 measurements tell you, before anyone spends a week in the lab, roughly how soluble it will be?
 
-That question, *predict a property of something new from examples of things already measured*, is the whole of machine learning in one sentence. This episode gives you the vocabulary to state such questions precisely, a mental picture of what a model is, and a feel for when the answer will be worthless.
+That question, *predict a property of something new from examples of things already measured*, is the supervised-learning task at the heart of this course. This episode gives you the vocabulary to state such questions precisely, a mental picture of what a model is, and a feel for when the answer will be worthless.
 
 ## Learning from examples
 
@@ -150,7 +150,7 @@ $$
 \mathrm{MSE}(\theta) = \frac{1}{n}\sum_{i=1}^{n}\bigl(y_i - f(x_i;\theta)\bigr)^2 .
 $$
 
-For classification a squared difference makes no sense, because "toxic minus non-toxic" is not a number. The simplest loss is the fraction of samples put in the wrong class. In practice models predict a *probability* of each class, and the training loss (the *log loss*) punishes confident wrong answers far more than hesitant ones; [episode 2.5](05-classification.html) builds this up properly.
+Category names do not have meaningful numerical distances. Squared error between a binary label and its predicted probability is meaningful (the Brier score), but subtracting arbitrary category codes is not. The simplest loss is the fraction of samples put in the wrong class. In practice models predict a *probability* of each class, and the training loss (the *log loss*) punishes confident wrong answers far more than hesitant ones; [episode 2.5](05-classification.html) builds this up properly.
 
 The loss is written as a function of $\theta$ on purpose. The data are fixed; the parameters are what you can change; **training is the search for the $\theta$ that makes the loss as small as possible on the training data**. Here are two candidate lines for logS against molecular weight, scored by their MSE.
 

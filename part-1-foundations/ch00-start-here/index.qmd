@@ -37,3 +37,15 @@ The course is written for four kinds of graduate. Everyone reads the same episod
 | **Mathematics** | Everything in the deep-dive boxes, and the linear algebra of Chapter 2. You will want the formal view early; the Maths corner boxes give it. | Chapter 1 for the tooling, and the parts of every chapter that are about data rather than theorems: units, missing values, what a dataset does and does not represent. | None needed. Instead read the reproducibility checklist at the end of [episode 2.6](../ch02-ml-fundamentals/06-pipelines-leakage.html) before Chapter 2, so that seeds and splits make sense from the start. |
 
 Whatever your background, do the three episodes of this chapter in order. [Episode 0.1](01-how-this-course-works.html) takes ten minutes, [episode 0.2](02-setup.html) gives you somewhere to run code, and [episode 0.3](03-self-check.html) tells you whether to start Chapter 1 now or after a short refresher.
+
+
+## Your route through Foundations
+
+| Stage | What to bring forward |
+|---|---|
+| [Chapter 1: scientific Python](../ch01-scientific-python/index.html) | A reproducible notebook, a checked table, and an EDA summary that separates observations from explanations. |
+| [Chapter 2: ML fundamentals](../ch02-ml-fundamentals/index.html) | A baseline, a suitable metric, a leakage-safe pipeline, and a split that represents the intended use. Complete [cross-validation](../ch02-ml-fundamentals/07-cross-validation.html) and [tuning](../ch02-ml-fundamentals/08-hyperparameter-tuning.html) before Lab 2. |
+| [Chapter 3: beyond linear models](../ch03-beyond-linear-models/index.html) | Fair comparisons of trees, ensembles and kernels; careful use of PCA, clustering and model interpretation. |
+| [Chapter 4: deep learning essentials](../ch04-deep-learning-essentials/index.html) | Tensor shapes, gradients, a working training loop and validation-based decisions, with a simple baseline alongside the neural network. |
+
+Allow time to rerun and explain each lab, not only to read the episodes. Before moving on, use the chapter checkpoint to find the ideas you need to revisit. A model's score is only one deliverable: you should also be able to say what its data represent, which decisions used validation data, and which claims the evaluation cannot support.

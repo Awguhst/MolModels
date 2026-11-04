@@ -51,7 +51,7 @@ len(X_tr), len(X_te)
 A straight line cannot follow a sine wave. One way to let a linear model bend is to hand it {{< term polynomial-features >}}: alongside $x$ it also receives $x^2, x^3, \dots, x^d$ and fits one coefficient per power. The degree $d$ controls how much the curve can wiggle. We first centre and scale $x$ to keep the high powers numerically stable, then use `PolynomialFeatures(d, include_bias=False)` to build the powers; `LinearRegression` supplies the intercept. `make_pipeline` chains these steps into one object that fits and predicts (pipelines get their own treatment in [episode 2.6](06-pipelines-leakage.html)).
 
 ::: {.predict}
-Before you run the next cell: as the degree goes from 1 to 12, what happens to the training RMSE? And to the test RMSE? Sketch both curves.
+Before you run the next cell: as the degree goes from 1 to 12, what happens to the training RMSE? And to the validation RMSE? Sketch both curves.
 :::
 
 ```{python}
@@ -68,7 +68,7 @@ for degree in range(1, 13):
         {
             "degree": degree,
             "train RMSE": root_mean_squared_error(y_tr, model.predict(X_tr)),
-            "test RMSE": root_mean_squared_error(y_te, model.predict(X_te)),
+            "validation RMSE": root_mean_squared_error(y_te, model.predict(X_te)),
         }
     )
 curve = pd.DataFrame(rows).set_index("degree")
@@ -77,12 +77,12 @@ curve.round(3).T
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Line plot of RMSE against polynomial degree from 1 to 12. The training RMSE falls from about 0.46 to about 0.12. The test RMSE drops sharply at degree 3 to about 0.23, then fluctuates above that minimum, ending near 0.31 at degree 12."
+#| fig-alt: "Line plot of RMSE against polynomial degree from 1 to 12. The training RMSE falls from about 0.46 to about 0.12. The validation RMSE drops sharply at degree 3 to about 0.23, then fluctuates above that minimum, ending near 0.31 at degree 12."
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
 ax.plot(curve.index, curve["train RMSE"], marker="o", label="training")
-ax.plot(curve.index, curve["test RMSE"], marker="s", label="test")
+ax.plot(curve.index, curve["validation RMSE"], marker="s", label="validation")
 ax.set(xlabel="polynomial degree", ylabel="RMSE (same units as y)", title="Flexibility against error")
 ax.legend()
 plt.show()
@@ -91,18 +91,18 @@ plt.show()
 The two curves tell the whole story of this episode:
 
 - **Training error only goes down here.** A degree-12 polynomial has 13 coefficients and 21 training points. Each higher-degree model can reproduce any lower-degree fit by setting its extra coefficient to zero, so the best least-squares training fit cannot get worse.
-- **Test error has a minimum.** Degrees 1 and 2 are too rigid: that is {{< term underfitting >}}, and both errors are high. Degree 3 has the lowest test error in this split. Higher degrees have larger test errors, with some fluctuations, while training error keeps falling: that is {{< term overfitting >}}. With only nine test points, the curve is not a smooth textbook U.
+- **Validation error has a minimum.** Degrees 1 and 2 are too rigid: that is {{< term underfitting >}}, and both errors are high. Degree 3 has the lowest validation error in this split. Higher degrees have larger validation errors, with some fluctuations, while training error keeps falling: that is {{< term overfitting >}}. With only nine validation points, the curve is not a smooth textbook U.
 
 Look at three of the fits to see *what* the numbers mean.
 
 ```{python}
 #| renderings: [light, dark]
-#| fig-alt: "Scatter of 21 training points and 9 test points on a noisy sine wave, with the true curve dashed. The degree-1 fit is a straight line that misses the wave entirely; the degree-3 fit follows the wave closely; the degree-12 fit passes near every training point but oscillates between them, especially near the edges."
+#| fig-alt: "Scatter of 21 training points and 9 validation points on a noisy sine wave, with the true curve dashed. The degree-1 fit is a straight line that misses the wave entirely; the degree-3 fit follows the wave closely; the degree-12 fit passes near every training point but oscillates between them, especially near the edges."
 grid = np.linspace(0, 1, 300).reshape(-1, 1)
 
 fig, ax = plt.subplots()
 ax.scatter(X_tr, y_tr, label="training points", zorder=3)
-ax.scatter(X_te, y_te, marker="x", label="test points", zorder=3)
+ax.scatter(X_te, y_te, marker="x", label="validation points", zorder=3)
 ax.plot(grid, np.sin(2 * np.pi * grid), linestyle="--", color="0.4", label="true curve")
 for degree in (1, 3, 12):
     model = make_pipeline(StandardScaler(), PolynomialFeatures(degree, include_bias=False), LinearRegression()).fit(X_tr, y_tr)
@@ -112,7 +112,7 @@ ax.legend(ncol=2, fontsize="small")
 plt.show()
 ```
 
-Degree 12 is the student from episode 2.3 who memorised last year's exam. It passes close to every training point, noise included, and between the points it swings to values the true curve never takes. The test points, which it has not seen, land far from its swings.
+Degree 12 is the student from episode 2.3 who memorised last year's exam. It passes close to every training point, noise included, and between the points it swings to values the true curve never takes. The validation points, which it has not seen, land far from its swings.
 
 ::: {.pitfall title="Flexibility is not the number of inputs"}
 The degree-12 model has one input but 13 coefficients. A QSAR model with five descriptors and interaction terms, or a neural network, is likewise far more flexible than its input count suggests. Judge flexibility by the number of free {{< term parameter plural >}} relative to the number of training samples that constrain them.
@@ -125,7 +125,7 @@ The U shape has a name: the {{< term bias-variance >}}. Imagine repeating the ex
 - A rigid model (degree 1) gives nearly the same line every time. Its predictions are stable but systematically wrong, because a line cannot be a sine wave. That systematic error is **bias**.
 - A flexible model (degree 12) gives a different curve every time, because it follows whichever noise it happened to see. Averaged over repetitions it might be about right; any single fit is far from the truth. That instability is **variance**.
 
-Increasing flexibility lowers bias and raises variance. The test error is the sum of both, plus the noise no model can remove, which is why it has a minimum in the middle. Everything that follows is a way of finding that minimum on purpose rather than by luck.
+Increasing flexibility often lowers bias and raises variance. For squared error under the assumptions below, expected prediction error decomposes into squared bias, variance and irreducible noise. Increasing flexibility often trades bias against variance, but the trend and a U-shaped curve are not universal laws. Everything that follows is a way of finding that minimum on purpose rather than by luck.
 
 ::: {.deep-dive title="The bias–variance decomposition"}
 Suppose $y = f(x) + \varepsilon$ with $\mathbb{E}[\varepsilon] = 0$ and $\operatorname{Var}(\varepsilon) = \sigma^2$, and let $\hat{f}$ be the model fitted to a random training set. For a fixed input $x$, the expected squared error over training sets and noise is
@@ -141,11 +141,11 @@ The proof adds and subtracts $\mathbb{E}[\hat{f}(x)]$ inside the square; the cro
 :::
 
 ::: {.bridge audience="chem"}
-A QSAR model with 200 descriptors fitted to 50 compounds *will* overfit, however carefully the descriptors were chosen: with more coefficients than measurements, a linear model reproduces the training activities exactly, noise included, and its prediction for the next compound is close to random. Regularisation is the standard answer, and this episode is the toolkit QSAR practitioners use. A random split flatters such a model, because test compounds are near-copies of training compounds; a {{< term scaffold-split >}} (Chapter 6) moves the whole test curve up and makes it honest.
+A QSAR model with 200 descriptors and 50 compounds is at high risk of fitting noise. If the design has full row rank, an unregularised linear fit can interpolate all training targets; this alone does not prove that its future predictions are random. Correlations, regularisation and the true signal all matter. Regularisation is the standard answer, and this episode is the toolkit QSAR practitioners use. A random split flatters such a model, because test compounds are near-copies of training compounds; a {{< term scaffold-split >}} (Chapter 6) moves the whole test curve up and makes it honest.
 :::
 
 ::: {.bridge audience="bio"}
-Gene-expression studies are the extreme case: 20,000 genes measured in 100 samples, so the number of features $p$ vastly exceeds the number of samples $n$. Any unregularised linear model fits such data perfectly and means nothing. The lasso below is popular there because it returns a short list of genes with non-zero coefficients, which a biologist can follow up.
+Gene-expression studies are the extreme case: 20,000 genes measured in 100 samples, so the number of features $p$ vastly exceeds the number of samples $n$. An unregularised linear model can interpolate such data when the design has sufficient rank; independent evaluation is essential before interpreting its apparent fit. The lasso below is popular there because it returns a short list of genes with non-zero coefficients, which a biologist can follow up.
 :::
 
 ## Two diagnostic curves on real data
@@ -299,7 +299,7 @@ Write both penalties as constraints: minimise the squared error subject to $\sum
 
 ### When regularisation matters: small data
 
-The validation curve above was flat because 900 molecules and five descriptors cannot overfit. Make the problem hard in the way real projects are hard: expand the five descriptors into all products up to degree 3 (55 features) and keep only the first 80 training molecules, a typical size for a medicinal-chemistry series. The scaler now sits *after* the expansion, so that the squared and cubed features are standardised too.
+The validation curve above is relatively flat for this five-descriptor model on this dataset. A low feature count reduces some opportunities to overfit but cannot rule out overfitting or distribution shift. Make the problem hard in the way real projects are hard: expand the five descriptors into all products up to degree 3 (55 features) and keep only the first 80 training molecules, a typical size for a medicinal-chemistry series. The scaler now sits *after* the expansion, so that the squared and cubed features are standardised too.
 
 ```{python}
 small_X, small_y = X_train.iloc[:80], y_train.iloc[:80]
@@ -347,7 +347,7 @@ print("fold RMSEs:", rmse_folds.round(3))
 print(f"cross-validated RMSE: {rmse_folds.mean():.3f} ± {rmse_folds.std():.3f}")
 ```
 
-Three details matter. `KFold` carries `shuffle=True` and `random_state=42`: without shuffling the folds are consecutive blocks of rows, a disaster if the file is sorted by anything. The scores come back negative because of the higher-is-better convention; flip the sign before reporting. And the standard deviation of about 0.1 is the honest uncertainty on the 1.19: two models whose cross-validated RMSEs differ by 0.02 are *not* distinguishable on this data.
+Three details matter. `KFold` carries `shuffle=True` and `random_state=42`: without shuffling the folds are consecutive blocks of rows, a disaster if the file is sorted by anything. The scores come back negative because of the higher-is-better convention; flip the sign before reporting. The standard deviation describes variability across these folds; it is not a confidence interval or a significance test. Small differences deserve paired inspection on shared folds and a scientifically meaningful effect threshold. [Episode 2.7](07-cross-validation.html) explains this distinction and the limits of repeated CV.
 
 ::: {.pitfall title="Cross-validation does not replace the test set"}
 Cross-validation here runs on `X_train` only. Its job is to make decisions (which model, which `alpha`) *without* the test set, whose whole value is that no decision was ever made with it. If you cross-validate on the full dataset and then report "test" numbers from the same rows, the test numbers are contaminated.
@@ -401,7 +401,7 @@ print(f"test RMSE of the chosen ridge model: {test_rmse:.3f}")
 It agrees with the cross-validated estimate within the spread, which is the reassurance you want: the selection procedure did not fool itself. It is also, within noise, the plain linear model's 1.21 from episode 2.3, as it should be.
 
 ::: {.pitfall title="best_score_ is not the test score"}
-`best_score_` is the cross-validated score of the winning candidate. Because it is the *maximum* over the grid it is slightly optimistic, in the way the best of ten lottery tickets looks luckier than a typical one. Report it as "cross-validated" and report the untouched test set separately. The Debug exercise shows how this mistake usually looks.
+`best_score_` is the cross-validated score of the winning candidate. Because it is the *maximum* over the grid it is subject to selection optimism, in the way the best of ten lottery tickets looks luckier than a typical one. Report it as "cross-validated" and report the untouched test set separately. The Debug exercise shows how this mistake usually looks.
 :::
 
 ## Train, validation, test
@@ -416,7 +416,7 @@ The data flow of a complete project, as a picture in words:
 On large datasets people often replace the cross-validation in step 2 with one fixed validation split (train / validation / test, often 60 / 20 / 20), which is cheaper and fine when every part has thousands of rows. On the small datasets common in chemistry and biology, cross-validation is worth its cost.
 
 ::: {.note title="Nested cross-validation"}
-Step 4 checks the *whole procedure*, grid search included. When the data are too small to spare a test set, {{< term nested-cv >}} does the same job: an outer cross-validation loop scores the procedure, and inside each outer fold an inner `GridSearchCV` chooses the hyperparameters. In scikit-learn that is one line, `cross_val_score(GridSearchCV(...), X, y, cv=outer)`. It matters when $n$ is tens, not thousands.
+Step 4 checks the *whole procedure*, grid search included. When the data are too small to spare a test set, {{< term nested-cv >}} does the same job: an outer cross-validation loop scores the procedure, and inside each outer fold an inner `GridSearchCV` chooses the hyperparameters. In scikit-learn that is one line, `cross_val_score(GridSearchCV(...), X, y, cv=outer)`. Its usefulness depends on the amount of selection, available independent data and cost, not a particular sample-count cutoff. [Episode 2.8](08-hyperparameter-tuning.html) implements nested CV and explains what it estimates.
 :::
 
 

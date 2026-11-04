@@ -145,7 +145,7 @@ feature_names = penguin_model[:-1].get_feature_names_out()
 pd.Series(penguin_model[-1].coef_, index=feature_names).round(1)
 ```
 
-`get_feature_names_out()` shows the nine columns that reached the ridge model, prefixed by the transformer that produced them. The coefficients are now interpretable: being male adds about 250 g relative to being female, for the same bill and flipper measurements, and a Biscoe penguin is about 175 g heavier than average. Without the categorical columns the test $R^2$ drops from about 0.83 to 0.78, so encoding words as numbers was worth doing.
+`get_feature_names_out()` shows the nine columns that reached the ridge model, prefixed by the transformer that produced them. The coefficients are now interpretable: a comparison between two categories uses the difference between their coefficients. With all category indicators retained, one coefficient alone is not the male–female contrast or a difference from the overall mean. These are conditional fitted associations, not causal effects. Without the categorical columns the test $R^2$ drops from about 0.83 to 0.78, so encoding words as numbers was worth doing.
 
 ::: {.bridge audience="cs"}
 A pipeline is a composable object: it has the same `fit`/`predict` interface as any single model, so a `GridSearchCV` from [episode 2.4](04-overfitting-regularisation.html) can tune `ridge__alpha` (step name, two underscores, parameter name) *and* `preprocess__num__simpleimputer__strategy` in one search, and the whole thing serialises to one file. The design mirrors function composition: `predict(x) = model(encode(impute(x)))`, with the guarantee that every component was fitted on the same training data.
@@ -201,7 +201,7 @@ def test_rmse(X, y):
 
 doubled_X = pd.concat([Xe, Xe], ignore_index=True)
 doubled_y = pd.concat([ye, ye], ignore_index=True)
-print(f"honest test RMSE:        {test_rmse(Xe, ye):.3f} logS")
+print(f"original random-split RMSE:        {test_rmse(Xe, ye):.3f} logS")
 print(f"with duplicates:         {test_rmse(doubled_X, doubled_y):.3f} logS")
 ```
 
@@ -283,7 +283,7 @@ print(f"scaler fitted on everything: RMSE {root_mean_squared_error(yte, leaky_kn
 print(f"scaler fitted on train only: RMSE {root_mean_squared_error(yte, honest_knn.predict(honest_scaler.transform(Xte))):.4f}")
 ```
 
-The difference is in the third decimal: the test rows nudge the means and standard deviations by a fraction of a percent. Scaling leaks little because it does not look at `y`. Preprocessing that *does* look at `y` is a different story. Here is a dataset of 200 samples with 1,000 features of pure noise and a target of pure noise. Pick the ten features most correlated with the target, using all the data, and then "evaluate" properly.
+The difference is in the third decimal: the test rows nudge the means and standard deviations by a fraction of a percent. The scaling leak is small in this example, but its magnitude is data- and model-dependent; not using `y` does not make full-data preprocessing safe. Preprocessing that *does* look at `y` is a different story. Here is a dataset of 200 samples with 1,000 features of pure noise and a target of pure noise. Pick the ten features most correlated with the target, using all the data, and then "evaluate" properly.
 
 ```{python}
 rng = np.random.default_rng(42)
@@ -319,7 +319,7 @@ A test estimate is unbiased only if the test samples are independent of everythi
 
 The last route is a column that is recorded *after*, or *because of*, the outcome. A thought experiment: you predict whether a tumour is malignant from a hospital database, and one column is "chemotherapy started (yes/no)". It is a near-perfect predictor and completely useless, because it was filled in after the diagnosis you are trying to predict. That is {{< term target-leakage >}}. Other examples: "days until the next appointment" when predicting readmission, a cell-viability readout when predicting toxicity, or, closer to home, the `ESOL predicted log solubility` column in our file, which is the output of a model that was fitted on the measured values. Using it as a feature would launder Delaney's training labels into our features.
 
-Target leakage never shows up in a cross-validation score, which looks wonderful. The only defence is to ask, for every column, *"would this value exist, with this value, at the moment I want to make the prediction?"* If not, drop it.
+Ordinary cross-validation may not reveal target leakage when the invalid feature is present in every fold. The only defence is to ask, for every column, *"would this value exist, with this value, at the moment I want to make the prediction?"* If not, drop it.
 
 ## Saving a pipeline
 
@@ -338,7 +338,7 @@ with tempfile.TemporaryDirectory() as tmp:
     print(f"saved {model_path.stat().st_size / 1024:.1f} kB; predictions identical: {same}")
 ```
 
-Saving the *pipeline* rather than the model alone is the point: the file contains the medians, the category lists and the scaling constants, so a colleague who loads it can feed it raw penguin rows and get the same predictions. A model saved without its preprocessing is a model nobody can use. Two caveats: a joblib file is only guaranteed to load with the same scikit-learn version, and like a pickle it executes code when loaded, so load only files you trust.
+Saving the *pipeline* rather than the model alone is the point: the file contains the medians, the category lists and the scaling constants, so a colleague who loads it can feed it raw penguin rows and get the same predictions. A model saved without its preprocessing is a model nobody can use. Two caveats: loading across scikit-learn versions is unsupported, so record and restore the full software environment, and like a pickle it executes code when loaded, so load only files you trust.
 
 ::: {.tip title="Reproducibility checklist"}
 1. **Seeds everywhere**: `random_state=42` in splits, models and searches; `np.random.default_rng(42)` for your own randomness.
@@ -395,18 +395,18 @@ E. Predicting binding affinity; 30% of the compounds appear twice under differen
 :::: {.solution}
 A defensible ranking, most severe first: **D, A, E, B, C**.
 
-- **D (target leakage).** The feature is recorded after the outcome and partly *caused* by it. No evaluation scheme can reveal this; the model is useless in deployment.
-- **A (target-dependent preprocessing before the split).** Selecting 50 of 2,000 features by correlation with `y` on all rows bakes the test labels into the feature set; on pure noise this produces $R^2$ of 0.2–0.3, and with real signal it inflates the score by a similar margin.
+- **D (target leakage).** The feature is recorded after the outcome and partly *caused* by it. A random split can conceal this; an audit of when the feature becomes available is needed before making a deployment claim.
+- **A (target-dependent preprocessing before the split).** Selecting 50 of 2,000 features by correlation with `y` on all rows bakes the test labels into the feature set; on pure noise this produces $R^2$ of 0.2–0.3, but the size and even direction of the observed change are not fixed for other datasets.
 - **E (exact duplicates).** With 30% duplicated rows, roughly a third of the test set has an identical twin in training. For memorising models (kNN, trees) the score is badly inflated; for a rigid linear model less so, which is why it ranks below A.
 - **B (near-duplicate groups).** The same mechanism as E, but graded: 95% identity is "almost the same sample". Severity depends on how many such pairs exist; the fix is a group split by sequence cluster.
-- **C (scaling before the split).** Conceptually wrong, numerically negligible: the leak is a few decimals of a mean and a standard deviation. Fix it anyway, because the pipeline habit is what prevents A.
+- **C (scaling before the split).** Conceptually wrong and small in this particular demonstration; other data and models may be affected much more. Fix it anyway, because the pipeline habit is what prevents A.
 
-Reasonable people may swap A and E depending on the model; the important boundary is that D and A involve the *labels*, while B, C and E involve only the *inputs*.
+Reasonable people may swap A and E depending on the model; the important boundary is that D and A involve the *labels*, while duplicates and related samples violate independence and may also carry near-identical labels across the split.
 ::::
 :::
 
-::: {.challenge level=3 title="A crude scaffold split for ESOL"}
-Scaffold splits need RDKit (Part II). As a stand-in, bin the ESOL molecules into ten groups by molecular weight with `pd.qcut(esol["Molecular Weight"], 10, labels=False)` and use those bins as `groups` in a `GroupKFold`. Compare the cross-validated RMSE of the scaled kNN regressor under `KFold(5, shuffle=True, random_state=42)` and under `GroupKFold(5)`. Which is larger, and why is this a (very) rough proxy for predicting new chemistry?
+::: {.challenge level=3 title="A molecular-weight block split for ESOL"}
+Scaffold splits need structural identities (Part II). To explore a different kind of distribution shift, bin the ESOL molecules into ten groups by molecular weight with `pd.qcut(esol["Molecular Weight"], 10, labels=False)` and use those bins as `groups` in a `GroupKFold`. Compare the cross-validated RMSE of the scaled kNN regressor under `KFold(5, shuffle=True, random_state=42)` and under `GroupKFold(5)`. Which is larger, and why is this a (very) rough proxy for predicting new chemistry?
 
 :::: {.solution}
 ```{python}
@@ -418,10 +418,10 @@ print(f"random folds:            RMSE {rmse_random.mean():.3f} logS")
 print(f"molecular-weight groups: RMSE {rmse_group.mean():.3f} logS")
 ```
 
-The grouped RMSE is about 0.2 log units higher. Under `GroupKFold` each held-out fold contains a *range of weights* the model never saw, so kNN must extrapolate to molecules unlike its neighbours instead of interpolating between them. That is the situation a real project faces: the next series of compounds is heavier, or has a new ring system, and a random split never asks the model that question. Molecular weight is a crude proxy because two molecules of equal weight can be chemically unrelated; a scaffold split groups by the ring framework, which is closer to what a chemist means by "new chemistry". Expect the gap to be larger still there.
+The grouped RMSE is about 0.2 log units higher. Under `GroupKFold` each held-out fold contains a *range of weights* the model never saw, so kNN must extrapolate to molecules unlike its neighbours instead of interpolating between them. That is the situation a real project faces: the next series of compounds is heavier, or has a new ring system, and a random split never asks the model that question. Molecular weight is a crude proxy because two molecules of equal weight can be chemically unrelated; a scaffold split groups by the ring framework, which is closer to what a chemist means by "new chemistry". A scaffold split tests a different question; its error gap must be measured rather than assumed.
 ::::
 :::
 
 ## Where this is going
 
-Everything you evaluate from now on goes through a pipeline, and every split is chosen by asking "what will the next sample look like?" In Part II the groups become Murcko scaffolds and the pipeline's first step becomes a fingerprint computed with RDKit; in Part III the groups become sequence-identity clusters and the first step an embedding of the protein sequence. The leakage catalogue stays the same, and so does the fix. [Lab 2](labs/lab-02-first-ml-project.html) puts the whole chapter together on the solubility problem, from baseline to saved pipeline; the [chapter checkpoint](checkpoint.html) lets you test yourself first.
+Everything you evaluate from now on should keep learned preprocessing within training, and every split starts with "what will the next sample look like?" [Episode 2.7](07-cross-validation.html) develops random, stratified, grouped and temporal validation; [episode 2.8](08-hyperparameter-tuning.html) turns it into a complete search and evaluation procedure. Later the groups become molecular scaffolds or sequence-identity clusters. [Lab 2](labs/lab-02-first-ml-project.html) assembles the solubility project, and the [chapter checkpoint](checkpoint.html) checks the reasoning behind it.

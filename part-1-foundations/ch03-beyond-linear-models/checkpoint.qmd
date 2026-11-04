@@ -1,0 +1,148 @@
+---
+title: "Chapter 3 checkpoint"
+chapter: 3
+checkpoint-quiz: true
+subtitle: "Ten questions about flexible models, unsupervised learning and interpretation."
+---
+
+Choose an answer before opening its feedback. Aim to explain the reason as well as select the option before starting [Lab 3](labs/lab-03-tabular-comparison.html).
+
+::: {.checkpoint title="A perfectly fitted tree"}
+A deep tree has zero training RMSE and much worse validation RMSE. What is the most useful next step?
+
+- [x] Restrict tree complexity and compare candidates using development folds
+
+  Correct: depth, minimum leaf size or pruning can reduce overfitting without consulting the final test.
+- [ ] Report the training result because it uses more rows
+
+  Training observations influenced fitting; their error does not estimate performance on new rows.
+- [ ] Try test splits until one also gives zero RMSE
+
+  Selecting a split by its result invalidates the evaluation.
+:::
+
+::: {.checkpoint title="What makes a forest useful?"}
+Why can averaging a collection of trees outperform a single tree?
+
+- [ ] Averaging guarantees removal of all systematic error
+
+  Shared biases, omitted features and data leakage remain shared problems.
+- [x] Diverse tree errors can partly cancel, reducing prediction variability
+
+  Correct: resampled rows and feature subsampling encourage diversity; identical trees would add no benefit.
+- [ ] Every tree is trained only on test observations
+
+  All fitting uses training data. Test observations must remain outside model development.
+:::
+
+::: {.checkpoint title="A boosting schedule"}
+You halve the learning rate but keep a small iteration count fixed. What might happen?
+
+- [x] The ensemble may underfit because it has taken smaller total correction steps
+
+  Correct: learning rate and the number of iterations work together and should be assessed jointly.
+- [ ] The result is guaranteed to stay identical
+
+  Changing correction size changes both the path and subsequent trees.
+- [ ] Validation is unnecessary because smaller learning rates cannot overfit
+
+  No learning rate guarantees a useful fit or an honest evaluation.
+:::
+
+::: {.checkpoint title="SVM geometry"}
+Why should standardisation be inside the SVR cross-validation pipeline?
+
+- [ ] To use the final test distribution to define the distances
+
+  Test statistics must not influence the learned transformation.
+- [ ] Because trees and SVMs require identical feature scales for mathematical validity
+
+  Tree threshold ordering usually does not need standardisation; the reason here is distance geometry.
+- [x] To learn comparable feature scales using only each training fold
+
+  Correct: RBF similarity depends on distance, and fitting the scaler outside the folds leaks validation information.
+:::
+
+::: {.checkpoint title="The complete selection procedure"}
+You plan to choose between ridge, forest and SVR and tune each. What must be inside the inner loop of nested CV?
+
+- [x] Both the family choice and its hyperparameter selection
+
+  Correct: the outer fold must remain excluded from every choice the procedure makes.
+- [ ] Only the final model fit after selecting the family from outer scores
+
+  Then outer outcomes influenced selection and do not independently evaluate that new choice.
+- [ ] The final test labels, to improve the search
+
+  The final test is outside all selection and fitting.
+:::
+
+::: {.checkpoint title="Variance is not accuracy"}
+Two principal components retain 75% of input variance. What follows?
+
+- [ ] A classifier using them will be 75% accurate
+
+  Explained input variance and agreement with target labels are different quantities.
+- [x] Those two directions retain 75% of variation under the fitted scaling convention
+
+  Correct: PCA did not optimise the target, so prediction must be evaluated separately.
+- [ ] The omitted components contain only measurement noise
+
+  Low-variance directions can contain useful target information.
+:::
+
+::: {.checkpoint title="Unsupervised leakage"}
+PCA is fitted on every row before a classifier is cross-validated. Is the evaluation leak-free because PCA never saw labels?
+
+- [ ] Yes, only label access can cause leakage
+
+  Input-distribution information can leak through fitted preprocessing too.
+- [x] No; PCA and its scaler must be refitted within each training fold
+
+  Correct: the evaluation should reproduce learning the complete procedure from training data alone.
+- [ ] Yes, if the first two components look sensible
+
+  A plausible plot does not establish independence of the evaluation.
+:::
+
+::: {.checkpoint title="A well-separated cluster"}
+A group has a high silhouette score. What is the justified claim?
+
+- [ ] It is a newly discovered biological category
+
+  Biological interpretation requires independent evidence and experimental context.
+- [ ] Cluster number 0 is more fundamental than cluster number 1
+
+  The identifiers are arbitrary labels.
+- [x] Its assignments are relatively compact and separated under the chosen distance
+
+  Correct: the geometric diagnostic depends on representation, scaling and algorithm.
+:::
+
+::: {.checkpoint title="Correlated descriptors"}
+Two strongly correlated descriptors each have low individual permutation importance. What is a plausible explanation?
+
+- [x] The model can substitute one for the other, hiding their shared predictive information
+
+  Correct: low individual importance does not prove absence of useful information; grouped analyses answer a different question.
+- [ ] Neither descriptor can ever predict the target
+
+  Importance is conditional on this fitted model and the other available features.
+- [ ] Permutation importance proves both have no causal effect
+
+  It measures predictive reliance, not causation.
+:::
+
+::: {.checkpoint title="An explanation versus an intervention"}
+A partial-dependence curve rises with polar surface area. What can you conclude?
+
+- [ ] Increasing the polar surface area of any real molecule will cause the same increase in solubility
+
+  Real structural changes affect multiple properties and may leave the observed domain.
+- [x] The model's average prediction rises under the plotted hypothetical feature replacements
+
+  Correct: that is model behaviour; correlated features and unrealistic combinations limit its interpretation.
+- [ ] The curve is a calibrated prediction interval for future compounds
+
+  A response curve provides neither interval coverage nor calibration.
+:::

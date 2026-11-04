@@ -1,0 +1,148 @@
+---
+title: "Chapter 4 checkpoint"
+chapter: 4
+checkpoint-quiz: true
+subtitle: "Ten questions to check the complete neural-network workflow."
+---
+
+Choose one answer per question. Read the feedback for every option, then revisit the relevant episode if the reason is unclear.
+
+::: {.checkpoint title="1 · Predictions and targets"}
+Predictions have shape `(8, 1)` and regression targets have shape `(8,)`. What should you do before subtracting them?
+
+- [x] Make their shapes identical, preserving the sample axis.
+
+  Correct: otherwise broadcasting can produce an 8-by-8 matrix of pairwise differences.
+- [ ] Multiply both by the batch size.
+
+  This changes values but does not correct the shape mismatch.
+- [ ] Assume subtraction automatically pairs the rows.
+
+  Broadcasting follows shape rules, not the scientific meaning of samples.
+:::
+
+::: {.checkpoint title="2 · Backward and step"}
+What does `loss.backward()` do?
+
+- [x] Calculate gradients of the loss with respect to tracked parameters.
+
+  Correct: an optimiser step then uses these gradients to update the parameters.
+- [ ] Choose the next learning rate from the validation set.
+
+  That is a separate tuning or scheduling decision.
+- [ ] Update all weights to the optimum.
+
+  Backward calculates derivatives; it neither updates parameters nor solves the optimisation problem.
+:::
+
+::: {.checkpoint title="3 · Gradient storage"}
+Why does an ordinary mini-batch loop clear gradients before a new update?
+
+- [x] New gradients otherwise accumulate with previous gradients.
+
+  Correct: accumulation is useful when deliberate, but differs from a fresh gradient per batch.
+- [ ] The training data must be deleted after every batch.
+
+  Clearing gradients does not delete the input dataset.
+- [ ] Clearing gradients resets the learned weights.
+
+  The weights are retained; gradient storage is cleared.
+:::
+
+::: {.checkpoint title="4 · Nonlinearity"}
+Two affine layers are stacked without an activation. What kind of function can their composition represent?
+
+- [x] Another affine function.
+
+  Correct: the matrix products and biases can be combined into one affine transformation.
+- [ ] Every nonlinear function if enough parameters are added.
+
+  Width alone does not make a composition of affine maps nonlinear.
+- [ ] Only a constant function.
+
+  The output can still vary linearly with the input.
+:::
+
+::: {.checkpoint title="5 · Binary loss"}
+What should be supplied to `BCEWithLogitsLoss` for a single binary target?
+
+- [x] Raw logits and floating-point zero/one targets with matching shapes.
+
+  Correct: the loss includes the probability transformation in a stable calculation.
+- [ ] Sigmoid probabilities that have already been rounded to zero or one.
+
+  Hard decisions discard information and violate the raw-logit interface.
+- [ ] Integer class indices for a four-class problem and one output.
+
+  A mutually exclusive four-class problem usually needs four logits and CrossEntropyLoss.
+:::
+
+::: {.checkpoint title="6 · Batch averages"}
+Five batches contain 20 samples each and a final batch contains 3. How should you calculate the epoch mean loss from batch means?
+
+- [x] Weight each batch mean by its number of samples, then divide by 103.
+
+  Correct: every observation receives equal weight.
+- [ ] Average all six batch means equally.
+
+  This overweights the final three samples.
+- [ ] Keep only the final batch's loss.
+
+  That does not summarise the complete training epoch.
+:::
+
+::: {.checkpoint title="7 · Evaluation mode"}
+Which pair is appropriate for validation of a network containing dropout?
+
+- [x] `model.eval()` together with `torch.no_grad()`.
+
+  Correct: one changes module behaviour, the other disables gradient tracking.
+- [ ] Only `torch.no_grad()`, because it disables dropout.
+
+  No-grad does not change dropout's training behaviour.
+- [ ] `model.train()` followed by an optimiser step on the validation loss.
+
+  That fits the validation data and invalidates its held-out role.
+:::
+
+::: {.checkpoint title="8 · Early stopping"}
+The selected validation checkpoint is from epoch 30, while patience expires at epoch 42. Which model should you retain?
+
+- [x] The independent saved copy of epoch-30 weights.
+
+  Correct: restore the checkpoint selected by the stated validation rule.
+- [ ] Epoch 42 because it trained longest.
+
+  That ignores the selection rule and may retain an overfitted model.
+- [ ] Whichever of the two scores better on the final test set.
+
+  This would use the test set to choose an epoch.
+:::
+
+::: {.checkpoint title="9 · Reproducibility"}
+Which statement about a fixed seed is justified?
+
+- [x] It helps repeat a run in the same environment, but does not establish robustness across seeds or environments.
+
+  Correct: save the procedure and software versions, and assess variability separately.
+- [ ] It guarantees identical results on every future device and library version.
+
+  Numerical kernels and implementations can change across environments.
+- [ ] It makes a single test split an exact estimate of future performance.
+
+  Fixing randomness does not eliminate sampling uncertainty or distribution shift.
+:::
+
+::: {.checkpoint title="10 · Choosing the model"}
+A network and ridge regression are close on validation RMSE. What is a defensible next step?
+
+- [x] Apply a declared selection rule that considers performance and complexity, then evaluate the fixed procedure once on test data.
+
+  Correct: a simpler model can be preferable, and the test set estimates the chosen procedure.
+- [ ] Run many network seeds on the test set and report the best one.
+
+  This selects on test noise and gives an optimistic estimate.
+- [ ] Choose the network because more parameters guarantee better generalisation.
+
+  Capacity is not evidence of usefulness on new observations.
+:::

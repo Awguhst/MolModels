@@ -15,7 +15,7 @@ objectives:
   - "Compute and interpret MAE, RMSE and R² on held-out data."
   - "Read a parity plot and a residual plot to find where a model fails."
 keypoints:
-  - "Performance on training data is not evidence. Always report metrics on data the model has never seen."
+  - "Performance on training data is not evidence of generalisation. Always report metrics on data the model has never seen."
   - "Split once, reproducibly, with `train_test_split(..., random_state=42)`, and keep the test set untouched until the end."
   - "A model that cannot beat a `DummyRegressor` (or `DummyClassifier`) has learned nothing useful."
   - "MAE is the typical error in target units; RMSE punishes large errors more; R² says how much variance is explained. Report at least two of them."
@@ -25,7 +25,7 @@ prerequisites: [ch02-ep02]
 
 {{< include /_includes/mm-setup.qmd >}}
 
-In [episode 2.2](02-linear-regression.html) you fitted a linear model that predicts the aqueous solubility of small molecules from a handful of {{< term descriptor plural >}}. The fit looked reasonable. But *looked reasonable* is not a scientific statement, and the number you printed at the end, the $R^2$ on the data you fitted, is not evidence of anything. This episode is about replacing that feeling with a procedure you can defend.
+In [episode 2.2](02-linear-regression.html) you fitted a linear model that predicts the aqueous solubility of small molecules from a handful of {{< term descriptor plural >}}. The fit looked reasonable. But *looked reasonable* is not a scientific statement, and the number you printed at the end, the $R^2$ on the data you fitted, does not establish performance on new molecules. This episode is about replacing that feeling with a procedure you can defend.
 
 The procedure has three parts, and you will use all three in every later chapter of this course, whether the model predicts solubility, protein function or the quality of a docked pose:
 
@@ -46,6 +46,10 @@ This is the same logic as a blinded experiment. If the person scoring the cells 
 The simplest version of this idea is the {{< term train-test-split >}}: shuffle the rows, use most of them (typically 70–80%) to fit the model, and keep the rest as a {{< term test-set >}} that you touch exactly once, at the end.
 
 ## Setting up: the solubility data again
+
+::: {.note title="A shared teaching benchmark"}
+The course reuses this dataset and split to make examples comparable. Earlier EDA and later error inspection mean these pages are demonstrations, not successive independent confirmations on a pristine test set. In your own project, reserve final evaluation data before outcome-driven exploration or model selection. The random split here also permits related molecules across the boundary; episodes 2.6 and 2.7 explain how to test a claim about new chemistry.
+:::
 
 We continue with the ESOL dataset from [episode 1.5](../ch01-scientific-python/05-eda-solubility.html). The target is {{< term logs >}}, the base-10 logarithm of solubility in mol/L, and the features are five descriptors that come with the file. (In Chapter 5 you will compute descriptors like these yourself with RDKit.)
 
@@ -90,7 +94,7 @@ print(f"training molecules: {len(X_train)}   test molecules: {len(X_test)}")
 ```
 
 ::: {.pitfall title="The order of the four outputs"}
-`train_test_split` returns `X_train, X_test, y_train, y_test` in that order: both X parts first, then both y parts. Writing `X_train, y_train, X_test, y_test = ...` is a very common bug that produces no error message, because the shapes still look plausible, and then silently trains the model on the wrong data. Check with `X_train.shape` and `y_train.shape`: the first dimension must match.
+`train_test_split` returns `X_train, X_test, y_train, y_test` in that order: both X parts first, then both y parts. Writing `X_train, y_train, X_test, y_test = ...` is a common bug: unequal split sizes usually cause a shape error at fitting, while some equal-sized cases can silently pair the wrong objects. Check with `X_train.shape` and `y_train.shape`: the first dimension must match.
 :::
 
 Without `random_state`, every run of the notebook would give a different split, different metrics and an irreproducible result. From here on, every random operation in this course fixes a seed.
@@ -121,7 +125,9 @@ Now fit the real model from episode 2.2, a `LinearRegression` on the five descri
 |---|---|---|
 | {{< term mae "MAE" >}} | $\frac{1}{n}\sum_i |y_i - \hat{y}_i|$ | the typical error, in logS units |
 | {{< term rmse "RMSE" >}} | $\sqrt{\frac{1}{n}\sum_i (y_i - \hat{y}_i)^2}$ | like MAE, but large errors count more |
-| {{< term r2 "R²" >}} | $1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2}$ | fraction of the variance explained; 1 is perfect, 0 equals the mean baseline |
+| {{< term r2 "R²" >}} | $1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2}$ | fraction of the variance explained; 1 is perfect, 0 matches the mean of the evaluation targets |
+
+Here $\bar y$ is the mean of the **evaluation** targets. The fitted `DummyRegressor` instead predicts the **training** mean, so its test R² need not be exactly zero. R² can be negative and is not a percentage of individually correct predictions. When the evaluation target is constant, the usual formula has a zero denominator and needs special handling; compare errors directly.
 
 ```{python}
 from sklearn.linear_model import LinearRegression
@@ -167,7 +173,7 @@ $$
 \sqrt{\frac{1}{n}\sum_i e_i^2} \;\ge\; \frac{1}{n}\sum_i |e_i| .
 $$
 
-This follows from the Cauchy–Schwarz inequality (or from Jensen's inequality applied to the convex function $x \mapsto x^2$). Equality holds only when all $|e_i|$ are identical. So the gap between RMSE and MAE is itself informative: a large gap means the error distribution has a heavy tail, that is, a few very badly predicted samples.
+This follows from the Cauchy–Schwarz inequality (or from Jensen's inequality applied to the convex function $x \mapsto x^2$). Equality holds only when all $|e_i|$ are identical. So the gap between RMSE and MAE is itself informative: a large gap means absolute errors vary substantially, often because some predictions are much worse than others; it does not by itself establish a statistically heavy-tailed distribution.
 :::
 
 ## The gap between training and test
@@ -254,7 +260,7 @@ print(f"test RMSE over 10 splits: mean {np.mean(rmses):.3f}, "
       f"min {np.min(rmses):.3f}, max {np.max(rmses):.3f}")
 ```
 
-The spread is a few hundredths of a log unit for this dataset, so one split is adequate here. On small datasets (a few dozen measurements is common in chemistry and biology) the spread can be as large as the effect you are trying to detect, which is why [episode 2.4](04-overfitting-regularisation.html) introduces {{< term cross-validation >}}: it repeats the split systematically so that every sample is tested once.
+The printed range shows sensitivity to this particular collection of random partitions. It does not establish that one split is adequate for every scientific claim, and the best seed must not be selected for reporting. On small datasets (a few dozen measurements is common in chemistry and biology) the spread can be as large as the effect you are trying to detect, which is why [episode 2.4](04-overfitting-regularisation.html) introduces {{< term cross-validation >}}: it repeats the split systematically so that every sample is tested once.
 
 ::: {.discussion}
 A colleague reports "our model achieves R² = 0.93" for predicting a binding affinity from 80 measured compounds. List three questions you would ask before believing that number tells you anything about the next 80 compounds.
@@ -277,7 +283,7 @@ RMSE is larger because squaring gives the biggest error (1.0) more weight than t
 :::
 
 ::: {.challenge level=1 title="Debug this"}
-A labmate's code runs without errors but their model "works perfectly". Find two bugs.
+A labmate claims this code proves their model "works perfectly". Find the unpacking bug and the evaluation mistake; explain whether this version would run.
 
 ```python
 X_train, y_train, X_test, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -314,7 +320,7 @@ pd.DataFrame(
 ).T.round(3)
 ```
 
-Molecular weight alone explains only a modest fraction of the variance: heavier molecules tend to be less soluble, but weight says nothing about polarity. Adding hydrogen-bond donors and polar surface area, both of which favour solubility, is what lifts $R^2$ to about 0.7. In a parity plot of the weight-only model the points form a broad diagonal cloud with far more scatter than the five-feature version, especially for polar molecules that are much more soluble than their size suggests.
+Molecular weight alone explains only a modest fraction of the variance: heavier molecules tend to be less soluble, but weight says nothing about polarity. The five-descriptor model captures additional predictive associations and raises $R^2$ to about 0.7 on this split. This comparison does not isolate any individual descriptor's effect. In a parity plot of the weight-only model the points form a broad diagonal cloud with far more scatter than the five-feature version, especially for polar molecules that are much more soluble than their size suggests.
 
 ```{python}
 #| renderings: [light, dark]

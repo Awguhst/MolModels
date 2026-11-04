@@ -11,7 +11,7 @@ objectives:
   - "Tune hyperparameters with `GridSearchCV` inside a scaled pipeline, using only the training set."
   - "Read a parity plot and a worst-ten table, and turn them into a hypothesis about what the features miss."
   - "Write a short, numbers-backed conclusion of the kind that opens a modelling report."
-prerequisites-text: ["Episodes 2.2–2.6", "Lab 1"]
+prerequisites-text: ["Episodes 2.2–2.8", "Lab 1"]
 summary: "Predict the aqueous solubility of 1,128 small molecules from five descriptors, from a reproducible split and a baseline through cross-validated ridge and kNN pipelines to a parity plot, an error analysis of the worst-predicted molecules and a written conclusion. Optional extension: turn it into a soluble/insoluble classifier with a confusion matrix and ROC curve."
 dataset: "ESOL / Delaney aqueous solubility (downloaded at runtime with checksum; see data/README.md)"
 notebook: lab-02-first-ml-project
@@ -40,7 +40,7 @@ Work alone or in pairs. The whole notebook runs on a laptop CPU in well under a 
 5. **Ridge in a scaled pipeline**, `alpha` tuned by `GridSearchCV` over six values.
 6. **kNN in a scaled pipeline**, `n_neighbors` tuned the same way.
 7. **One tidy results table**: CV RMSE and test MAE / RMSE / R² for all four models. This is the single test evaluation.
-8. **Parity plot** of the best model on the test set.
+8. **Parity plot** of the model selected by training CV, using its fixed test predictions.
 9. **The ten worst-predicted molecules**, with names, SMILES, measured, predicted and residual. Read the SMILES.
 10. **Conclusion**: complete a short template with your numbers and your reading of the errors.
 
@@ -52,9 +52,9 @@ Turn the problem into classification: call a molecule "soluble" if logS > −3 (
 
 ## Reflection questions
 
-1. The CV RMSE and the test RMSE agreed closely for every model. Describe one mistake in the *workflow* that would have made the test RMSE better than the CV RMSE, and explain why that would be a warning sign rather than good news.
-2. kNN beat the linear models comfortably, and kNN is also the model most helped by duplicates and near-duplicates across the split. How would you check whether the test set contains close analogues of training molecules, and what split would tell you how the model does on genuinely new chemistry?
-3. The worst-predicted molecules share chemical features the descriptors cannot represent. Propose two new features (or one new representation) and say, for each, what kind of error you expect it to fix and what it might make worse.
+1. Compare each model's CV RMSE and test RMSE. Describe one mistake in the *workflow* that would have made the test RMSE better than the CV RMSE, and explain why that would be a warning sign rather than good news.
+2. Inspect whether kNN improves on the linear models. Neighbour methods can benefit strongly from duplicates and near-duplicates across the split. How would you check whether the test set contains close analogues of training molecules, and what split would tell you how the model does on genuinely new chemistry?
+3. Inspect the worst-predicted molecules and distinguish observations from proposed explanations. Propose two new features (or one new representation) and say, for each, what kind of error you expect it to fix and what it might make worse.
 
 ::: {.tip title="Working in Colab"}
 The *Open in Colab* button loads the student notebook in a free hosted session; nothing to install. The setup cell detects Colab and installs only what is missing. The data cell tries the local copies first, then the course repository (which does not bundle ESOL and will fall through), then the canonical DeepChem download, so it works in a fresh session with no files. Save a copy to your Google Drive (*File → Save a copy in Drive*) before you start, or your edits vanish when the session ends.

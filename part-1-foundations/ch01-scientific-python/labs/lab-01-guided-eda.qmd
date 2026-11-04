@@ -10,7 +10,7 @@ objectives:
   - "Compare feature distributions between two classes with histograms, KDE curves and box plots."
   - "Read a correlation heatmap and a pairplot to spot redundant features and well-separated classes."
   - "Rank features by how well they separate the classes and write a short, honest summary."
-prerequisites-text: ["Episodes 1.3 (pandas) and 1.4 (visualisation)", "A working environment (episode 0.2) or Google Colab"]
+prerequisites-text: ["Episodes 1.3–1.5 (pandas, visualisation and EDA)", "A working environment (episode 0.2) or Google Colab"]
 summary: "Run the EDA checklist from episode 1.5 on the breast cancer Wisconsin dataset, from shape and class balance to a feature ranking and a written summary, with checks after every task."
 dataset: "Breast cancer Wisconsin (diagnostic), via scikit-learn; no download needed"
 notebook: lab-01-guided-eda
@@ -43,14 +43,20 @@ The data are the **breast cancer Wisconsin (diagnostic)** set: 569 tumours image
 5. **Box plots.** Three box plots by diagnosis, and the median `mean radius` of each class.
 6. **Correlation heatmap.** The 10 × 10 Pearson correlation matrix of the `mean` features, annotated.
 7. **Pairplot.** Four features, coloured by diagnosis, corner only.
-8. **Which features separate the classes best?** The standardised mean difference for all 30 features, ranked, with a point-biserial correlation as a cross-check.
+8. **Which features separate the classes best?** The absolute standardised mean difference, using sample-size-weighted pooled standard deviation, for all 30 features, ranked, with a point-biserial correlation as a cross-check.
 9. **A short written summary.** Five bullets: size and balance, scales, redundancy, signal, caution.
+
+## What the analysis can establish
+
+This lab describes associations in the supplied sample. The ranking uses all labels, so it is not an independently validated feature-selection rule or evidence of clinical usefulness. If you use EDA to choose features in a new project, reserve a test set before doing so and repeat learned selection within the training folds. Preserve subject and batch identifiers when available: repeated or related observations must not masquerade as independent cases.
+
+Record the data source, observation unit, library versions and any exclusions in your notebook. Use the supplied measurement scales unless the source documents physical units. A complete run from a restarted kernel checks that the notebook records the analysis rather than relying on hidden state.
 
 ## What to hand in
 
 Your completed notebook with every check cell showing ✅, the Task 9 summary in your own words, and written answers to these reflection questions:
 
-1. The dataset is 63% benign. If a model predicted "benign" for every tumour, what would its accuracy be, and what would be wrong with reporting that number? Which single number from this lab would you quote instead?
+1. The dataset is 63% benign. If a model predicted "benign" for every tumour, what would its accuracy be, and what would be misleading about reporting it alone? How many of the 212 malignant cases would that rule detect?
 2. Radius, perimeter and area correlate at 0.99 or above. Would you remove two of the three before training a model? What might you lose, and what might you gain?
 3. The standardised mean difference in Task 8 only sees the *means* of each class. Describe a feature that could separate the classes well yet score a low $d$, and which plot from this lab would reveal it.
 

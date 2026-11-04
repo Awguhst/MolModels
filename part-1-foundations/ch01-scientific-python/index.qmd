@@ -25,10 +25,14 @@ summary: "The tools every later chapter assumes: NumPy arrays for fast numerical
 
 {{< generated ch01-labs >}}
 
+## Check your understanding
+
+The [ten-question checkpoint](checkpoint.html) checks shapes, indexing, data quality, plotting and the limits of exploratory analysis. Revisit any missed idea before starting Chapter 2.
+
 ## Before you start
 
 ::: {.prereq}
-You need a working Python environment and the habit of running code in a notebook. If you have not done so, work through [Chapter 0](../ch00-start-here/index.html) and make sure you pass its [self-check](../ch00-start-here/03-self-check.html): it confirms that NumPy, pandas, matplotlib and scikit-learn import correctly and that `data/penguins.csv` is where this chapter expects it.
+You need a working Python environment and the habit of running code in a notebook. If you have not done so, work through [Chapter 0](../ch00-start-here/index.html) and run the checks in [Setting up Python](../ch00-start-here/02-setup.html). The [self-check](../ch00-start-here/03-self-check.html) tests basic Python fluency. For copied episode cells, work from the repository root so `data/penguins.csv` resolves correctly.
 :::
 
 ::: {.bridge audience="cs"}

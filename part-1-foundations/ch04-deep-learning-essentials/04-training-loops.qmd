@@ -1,0 +1,224 @@
+---
+title: "A complete training loop"
+chapter: 4
+episode: 4
+teaching: 45
+exercises: 25
+level: beginner
+questions:
+  - "What happens inside an epoch of mini-batch training?"
+  - "Why do evaluation mode and no_grad solve different problems?"
+objectives:
+  - "Prepare train, validation and test subsets without leaking scaling statistics."
+  - "Train a classifier using TensorDataset, DataLoader and an explicit loop."
+  - "Record comparable training and validation losses after each epoch."
+keypoints:
+  - "A mini-batch is a subset used for an update; an epoch is a pass through the training data."
+  - "Call train during fitting and eval during evaluation, and disable gradients during evaluation."
+  - "Weight batch losses by batch size when calculating an epoch average."
+  - "Validation guides development; the test set stays untouched until the procedure is fixed."
+prerequisites: [ch04-ep03, ch02-ep07]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+The breast-cancer Wisconsin dataset lets you practise a complete classification workflow on a small numerical table. Each row contains measurements derived from an image of a cell sample. We will fit a network to its supplied labels and compare its training and validation losses. This is an educational benchmark, not a clinically validated diagnostic system.
+
+The important new skill is controlling the sequence of operations. Libraries can hide that sequence behind `.fit()`, but writing it explicitly makes it easier to catch leakage, incorrect losses and stale gradients. Every numerical result below comes from a reproducible CPU run; no acceleration is necessary for this dataset.
+
+```{python}
+#| echo: false
+#| output: false
+import torch
+torch.set_num_threads(1)
+```
+
+## Split before learning any preprocessing
+
+Use a final 20% test set, then split the remaining development data into fitting and validation subsets. Taking 25% of the development subset for validation gives approximately 60% training, 20% validation and 20% test overall. Stratification keeps the label proportions similar; it does not solve grouping, duplicated subjects or distribution shift in a real study.
+
+```{python}
+import torch
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+data = load_breast_cancer(as_frame=True)
+X = data.data
+y = (data.target == 0).astype(int)  # 1 means malignant in this exercise
+X_dev, X_test, y_dev, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(
+    X_dev, y_dev, test_size=0.25, stratify=y_dev, random_state=42)
+print("train / validation / test:", len(X_train), len(X_val), len(X_test))
+```
+
+State the meaning of the positive class before calculating recall or drawing a confusion matrix. Here the built-in target is recoded so class 1 denotes malignant. This makes later interpretations explicit instead of relying on an undocumented integer convention.
+
+```{python}
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler().fit(X_train)
+Xtr = torch.tensor(scaler.transform(X_train), dtype=torch.float32)
+Xva = torch.tensor(scaler.transform(X_val), dtype=torch.float32)
+ytr = torch.tensor(y_train.to_numpy(), dtype=torch.float32)
+yva = torch.tensor(y_val.to_numpy(), dtype=torch.float32)
+print("training tensors:", tuple(Xtr.shape), tuple(ytr.shape))
+```
+
+Only the fitting subset determines the scaler's means and variances. We do not transform or inspect test predictions in this lesson. The held-out test split exists to make its role concrete; it is not another curve to watch while choosing the network.
+
+::: {.bridge audience="cs"}
+Treat the split as a data-access contract. The optimiser receives training batches. The development loop may read validation metrics. The final reporting step may read test predictions only after the procedure has been fixed. Naming variables clearly makes a violation easier to spot in code review than passing one generic `X` through every function.
+:::
+
+## Mini-batches and epochs
+
+A {{< term mini-batch >}} is a group of training examples used to compute one gradient update. An {{< term epoch >}} is one pass through the training data. With 341 training samples and a batch size of 32, an epoch contains 11 updates: ten full batches and one smaller batch. Count the actual split printed above rather than assuming every dataset divides evenly.
+
+`TensorDataset` keeps features and targets together. `DataLoader` supplies matching batches, optionally shuffling their order. Shuffling is useful for these approximately exchangeable rows; it is not permission to destroy a time-series forecasting design.
+
+Do not confuse shuffling the training batches with constructing the evaluation split. If repeated measurements from one patient or experiment belong together, keep those groups separated when making the train/validation/test split first. You can then shuffle the allowed training observations without moving any group into validation. Likewise, averaging a loss over rows gives every row equal weight; if some subjects have many more rows than others, that may not match the scientific quantity you want to optimise. Identify the experimental unit before choosing either sampling or scoring.
+
+```{python}
+from torch.utils.data import DataLoader, TensorDataset
+
+generator = torch.Generator().manual_seed(42)
+train_loader = DataLoader(
+    TensorDataset(Xtr, ytr), batch_size=32, shuffle=True,
+    generator=generator, num_workers=0)
+xb, yb = next(iter(train_loader))
+print("one batch:", tuple(xb.shape), tuple(yb.shape))
+print("updates per epoch:", len(train_loader))
+```
+
+The explicit generator controls the shuffled order. `num_workers=0` keeps loading simple and portable for this tiny in-memory dataset. The code asks for one batch to inspect it; because that consumes randomness, a fresh run should execute the same inspection when reproducing the exact training trajectory. Reproducibility means preserving the sequence of operations as well as the seed.
+
+::: {.predict}
+Will a batch size of 64 give more or fewer parameter updates per epoch than a batch size of 32? If the dataset length is not a multiple of the batch size, should the last batch count as much as a full batch when averaging loss?
+:::
+
+Fewer updates occur at batch size 64. A final small batch represents fewer observations, so its mean loss should receive proportionally less weight in a dataset-wide average. Batch size changes the optimisation trajectory; it is a hyperparameter, not just a memory setting.
+
+## The model, loss and optimiser
+
+Use one hidden layer with 16 units and one binary logit. `AdamW` adjusts updates using estimates based on past gradients and applies a separate weight-decay operation when requested. Here we set decay to zero to isolate the training loop; the next episode introduces regularisation.
+
+```{python}
+from torch import nn
+
+torch.manual_seed(42)
+model = nn.Sequential(nn.Linear(Xtr.shape[1], 16), nn.ReLU(), nn.Linear(16, 1))
+loss_fn = nn.BCEWithLogitsLoss()
+optimiser = torch.optim.AdamW(model.parameters(), lr=0.003, weight_decay=0.0)
+print("trainable parameters:", sum(p.numel() for p in model.parameters()))
+```
+
+The optimiser owns the parameters of this model instance. If you create a new model for a new experiment, create a new optimiser too: its internal history belongs to the old fit. Initialisation and shuffled batch order can affect the result even with the same architecture and learning rate.
+
+The learning rate here is a starting value for an instructional example, not a universally optimal setting. Tune it using development data and a bounded search. The same discipline applies to width, depth, batch size, regularisation and maximum epoch count.
+
+## One training epoch
+
+```{python}
+def train_epoch(model, loader, optimiser, loss_fn):
+    model.train()
+    loss_sum = 0.0
+    count = 0
+    for features, targets in loader:
+        optimiser.zero_grad(set_to_none=True)
+        logits = model(features).squeeze(1)
+        loss = loss_fn(logits, targets)
+        loss.backward()
+        optimiser.step()
+        loss_sum += loss.item() * len(targets)
+        count += len(targets)
+    return loss_sum / count
+
+print("training function ready")
+```
+
+Each batch follows the five-step cycle from autograd: clear, predict, calculate loss, differentiate, update. Multiplying each batch mean by its sample count and dividing the accumulated sum by the total sample count gives the correct average over observations. Averaging the batch means equally would overweight the smaller final batch.
+
+This function's returned loss combines losses computed at different parameter states during the epoch. It is useful for monitoring optimisation, but it is not exactly the loss of the final epoch model on all training examples. For a directly comparable training/validation graph, evaluate the final epoch model on both subsets in evaluation mode.
+
+## Evaluate without changing the model
+
+```{python}
+def evaluate_loss(model, features, targets, loss_fn):
+    model.eval()
+    with torch.no_grad():
+        logits = model(features).squeeze(1)
+        value = loss_fn(logits, targets).item()
+    return value
+
+print("initial validation loss:", evaluate_loss(model, Xva, yva, loss_fn))
+```
+
+`model.eval()` changes the behaviour of modules such as dropout and batch normalisation. It does **not** switch off autograd. `torch.no_grad()` avoids tracking gradients, but it does **not** switch dropout into evaluation mode. Use both for ordinary validation and prediction. A model containing only linear layers and ReLU behaves the same in the two modes, but writing the correct pattern now prevents a later silent bug. See [PyTorch Module](https://docs.pytorch.org/docs/2.9/generated/torch.nn.Module.html) for the mode interface.
+
+The next call to `train_epoch` restores training mode. No validation loss is backpropagated, no optimiser step happens during validation, and the scaler remains unchanged. If any of those operations occurs, the validation subset is no longer performing its intended role.
+
+```{python}
+history = []
+for epoch in range(60):
+    batch_loss = train_epoch(model, train_loader, optimiser, loss_fn)
+    train_loss = evaluate_loss(model, Xtr, ytr, loss_fn)
+    val_loss = evaluate_loss(model, Xva, yva, loss_fn)
+    history.append((train_loss, val_loss))
+print("final train / validation loss:", history[-1])
+```
+
+## Read the loss curves as evidence
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Training and validation binary cross-entropy plotted after each of 60 epochs, both evaluated with the epoch's final weights."
+import numpy as np
+import matplotlib.pyplot as plt
+
+curves = np.asarray(history)
+fig, ax = plt.subplots()
+ax.plot(np.arange(1, len(curves) + 1), curves[:, 0], label="training (eval mode)")
+ax.plot(np.arange(1, len(curves) + 1), curves[:, 1], label="validation")
+ax.set(xlabel="epoch", ylabel="binary cross-entropy (dimensionless)")
+ax.legend()
+plt.show()
+```
+
+Falling training loss with worsening validation loss suggests overfitting to the training data or repeated development choices. Both losses staying high can indicate underfitting, poor scaling, an unsuitable learning rate or a coding mistake. Large jumps or non-finite losses justify checking input values, target encoding and step size before adding more capacity.
+
+Validation loss may be below training loss on a particular split. The subsets differ in difficulty, and small datasets are noisy. With dropout, an in-training loss can also be higher because units are randomly disabled during training. Do not diagnose leakage from the ordering of two curves alone; inspect the workflow and compare like with like.
+
+::: {.pitfall title="Monitoring the test set turns it into validation"}
+Adding a test curve here is tempting. Once you use it to decide how many epochs to train or which network to keep, it is no longer an untouched test estimate. Use the validation curve to develop the procedure, then lock the choices and evaluate on the test set once. Repeated reuse of a public benchmark also limits claims of novelty and generalisation.
+:::
+
+## Exercises
+
+::: {.challenge level=1 title="Count the updates"}
+There are 103 training examples and the batch size is 20, with `drop_last=False`. How many updates occur in one epoch? Explain the weights needed to average the batch mean losses.
+
+:::: {.solution}
+There are six updates: five batches of 20 and one of 3. Multiply the first five mean losses by 20 and the last by 3, sum, then divide by 103. An unweighted mean of the six means would give the final three examples the same total influence as each group of 20.
+::::
+:::
+
+::: {.challenge level=2 title="Two switches, two jobs"}
+A model containing dropout uses `torch.no_grad()` for validation but never calls `model.eval()`. Another model calls `eval()` but records gradients during validation. What is wrong in each case?
+
+:::: {.solution}
+The first model still randomly drops activations, so its validation behaviour differs from normal inference and the score gains unnecessary randomness. The second uses the correct inference behaviour but builds gradient graphs it does not need, consuming resources; `eval()` does not freeze parameters or disable autograd. Use both `model.eval()` and `torch.no_grad()`, and call `model.train()` again for fitting.
+::::
+:::
+
+::: {.challenge level=3 title="Design the debugging order"}
+Your training loss becomes NaN in the first epoch. Give four checks in an order that avoids spending an hour tuning the wrong problem.
+
+:::: {.solution}
+Check that the input and target tensors are finite; verify shapes and the binary target's zero/one encoding; confirm that the loss receives logits rather than probabilities; then try a smaller learning rate on a single small batch and inspect gradients. Also verify that features were scaled with training statistics. Do not repeatedly consult test performance to decide whether the fix worked.
+::::
+:::
+
+## Where this is going
+
+[Episode 4.5](05-validation-regularisation.html) adds early stopping, dropout and a reproducible comparison with logistic regression. Later graph and sequence models will reuse the same training/evaluation separation even when their batches contain more complicated structures. The loop is part of the scientific protocol: understand which data each step is allowed to read.

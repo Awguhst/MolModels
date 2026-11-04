@@ -281,7 +281,7 @@ On this test set, a threshold of 0.1 still misses one malignant tumour; 0.05 cat
 
 ## When the class you want is rare
 
-The breast cancer data is nearly balanced, 37% malignant. Scientific data usually is not. In a high-throughput screen a few compounds in a thousand are active; in a patient cohort most people do not have the disease. This is {{< term class-imbalance >}}, and it breaks accuracy completely.
+The breast cancer data is nearly balanced, 37% malignant. Scientific data usually is not. In a high-throughput screen a few compounds in a thousand are active; in a patient cohort most people do not have the disease. This is {{< term class-imbalance >}}, and it can make accuracy a poor primary summary.
 
 ::: {.bridge audience="chem"}
 In a typical primary screen about 1% of compounds, often fewer, show activity. A model that predicts "inactive" for every compound is therefore 99% accurate and finds nothing. What a medicinal chemist wants is **recall of the actives** at a manageable number of false positives, because every predicted active will be bought or synthesised and tested. The precision–recall curve and the number of actives found in the top-ranked $N$ compounds are the metrics that match that workflow; accuracy and even ROC-AUC are not.
@@ -325,14 +325,20 @@ pd.DataFrame([
 
 Three things to notice:
 
-- The **do-nothing baseline** has 99% accuracy and finds zero actives. Accuracy is meaningless here.
+- The **do-nothing baseline** has 99% accuracy and finds zero actives. Accuracy alone does not establish usefulness for finding actives here.
 - The **ordinary model** is slightly *more* accurate and finds only a handful of actives: at the 0.5 threshold it almost never dares to call anything active, because being wrong about a rare class is cheap in the loss.
 - `class_weight="balanced"` tells the model to weight each active as heavily as the 99 inactives it is outnumbered by. Recall jumps, accuracy falls, and the false alarms multiply. For a screen that is often the right trade: those false alarms are the compounds you will test next.
 
 Reporting the precision–recall curve rather than the ROC curve, stratifying every split, and choosing the threshold from the cost of a false alarm are the three habits that make a model on rare events honest.
 
-::: {.note title="A note on calibration"}
-A probability of 0.8 should mean "about 80 of 100 such tumours are malignant". When that holds the model is well {{< term calibration "calibrated" >}}. Good ranking (high AUC) does not guarantee it: kNN with small $k$ outputs only a few distinct probabilities, and class weighting deliberately distorts them. scikit-learn's `CalibrationDisplay.from_estimator` draws the check; `CalibratedClassifierCV` repairs it. Calibration matters whenever you will act on the probability itself, for example when ranking compounds to buy under a budget.
+::: {.note title="Calibration, probability quality and decisions"}
+A probability of 0.8 should mean "about 80 of 100 such tumours are malignant". When that holds the model is well {{< term calibration "calibrated" >}}. Good ranking (high AUC) does not guarantee it: kNN with small $k$ outputs only a few distinct probabilities, and class weighting deliberately distorts them. scikit-learn's `CalibrationDisplay.from_estimator` draws the check; `CalibratedClassifierCV` can improve it when fitted with appropriately held-out or cross-validated training predictions; improvement is not guaranteed. Calibration matters whenever you will act on the probability itself, for example when estimating expected hits or making decisions from probability-dependent costs. Ranking alone does not require calibrated probabilities.
+
+Fit any calibration procedure using development data, with predictions from models that did not train on the corresponding calibration rows. A reliability diagram groups predicted probabilities and compares them with observed event frequencies; small bins can be very noisy. Brier score and log loss assess probability predictions, but neither isolates calibration alone: they also reflect discrimination. Do not use final test outcomes to select a calibration method.
+
+For imbalanced tasks, **average precision (AP)** summarises a precision–recall curve by weighting precision with increases in recall; it is not generally identical to trapezoidal area under that curve. Always state the positive class. Multiclass tasks need an averaging choice too: macro averages give each class equal weight, while prevalence-weighted averages can obscure weak performance on rare classes. Report per-class results when those failures matter.
+
+Weighting or resampling changes the training objective or distribution, not the population you will evaluate on. Apply any resampling only within training folds, preserve the intended class prevalence in validation/test data, and reassess calibration before treating weighted-model scores as real-world probabilities. The [scikit-learn calibration guide](https://scikit-learn.org/stable/modules/calibration.html) gives worked examples.
 :::
 
 ::: {.discussion}
@@ -412,7 +418,7 @@ rows.append({"model": "logistic regression", "mean AUC": scores.mean(), "std": s
 pd.DataFrame(rows).round(3)
 ```
 
-Logistic regression is at least as good as the best kNN and more stable across folds, which is typical for a dataset of this size with informative, roughly linear features. $k = 1$ is clearly worst even though its training accuracy was perfect: cross-validation exposes what the training score hid. The standard deviations tell you how much the ranking can move between folds; differences smaller than about one standard deviation are not worth arguing about. `StratifiedKFold` keeps the malignant fraction equal in every fold, which matters for AUC on small folds.
+Logistic regression is at least as good as the best kNN and more stable across folds, which is typical for a dataset of this size with informative, roughly linear features. $k = 1$ is clearly worst even though its training accuracy was perfect: cross-validation exposes what the training score hid. The fold standard deviations describe variability, not uncertainty in a paired model difference. Inspect the shared-fold differences and their practical importance; overlapping spreads do not prove a tie. `StratifiedKFold` keeps the malignant fraction approximately equal in every fold, which matters for AUC on small folds.
 ::::
 :::
 

@@ -1,0 +1,152 @@
+---
+title: "Chapter 1 checkpoint"
+chapter: 1
+checkpoint-quiz: true
+subtitle: "Ten questions about arrays, tables and trustworthy exploration."
+---
+
+Choose an answer before opening its feedback. The aim is to explain the reasoning, not memorise method names. If an answer surprises you, revisit the linked episode and rerun its example before continuing to [Chapter 2](../ch02-ml-fundamentals/index.html).
+
+::: {.checkpoint title="1. Units before arithmetic"}
+You divide a mass in mg by a molar mass in g/mol, then by a volume in litres. What is the resulting concentration unit?
+
+- [ ] mol/L
+
+  The mass was in milligrams rather than grams. Ignoring that factor would make the numerical concentration wrong by 1,000.
+- [x] mmol/L
+
+  Correct: mg divided by g/mol gives mmol, then dividing by litres gives mmol/L. The function in [episode 1.1](01-python-refresher.html) documents this convention.
+- [ ] g/L
+
+  Dividing by molar mass converts a mass amount into a molar amount; the numerator is no longer a mass.
+:::
+
+::: {.checkpoint title="2. Which axis?"}
+`X.shape` is `(120, 5)`: 120 molecules and five descriptors. What does `X.mean(axis=0)` return?
+
+- [x] Five means, one per descriptor
+
+  Correct: axis 0 is reduced, leaving the five columns. The shape is `(5,)`, which can broadcast against `(120, 5)` to centre columns. See [episode 1.2](02-numpy-arrays.html).
+- [ ] 120 means, one per molecule
+
+  That is `X.mean(axis=1)`, which reduces the feature axis. Averaging unlike descriptor units may not have a scientific interpretation.
+- [ ] A single mean of all 600 values
+
+  That is what `X.mean()` does without an axis; it also mixes unlike descriptor units.
+:::
+
+::: {.checkpoint title="3. A slice changes the original"}
+After `part = X[:10]`, assigning `part[0, 0] = 0` also changes `X`. Why?
+
+- [ ] NumPy has lost track of the variable names
+
+  Names are working normally. Two arrays can refer to shared underlying data.
+- [x] A basic slice is a view of the same data
+
+  Correct. Use `part = X[:10].copy()` when you want independent data. This rule concerns basic slicing; boolean and integer-array selection have different copying behaviour.
+- [ ] Every NumPy selection always makes a copy
+
+  If this were a copy, writing to it would not change `X`. Basic slices normally share data for efficiency.
+:::
+
+::: {.checkpoint title="4. Labels and positions"}
+A filtered DataFrame has row labels `[10, 25, 40]`. Which expression selects its second row by position?
+
+- [ ] `df.loc[1]`
+
+  `loc` asks for the row labelled 1, which is absent. It does not count from the top.
+- [x] `df.iloc[1]`
+
+  Correct: positions start at zero, so position 1 is the second row, labelled 25 here. [Episode 1.3](03-pandas-dataframes.html) distinguishes labels from positions.
+- [ ] `df.iloc[25]`
+
+  This asks for the 26th row by position, outside a three-row table. `df.loc[25]` would select the desired label.
+:::
+
+::: {.checkpoint title="5. A merge with unchanged row count"}
+A left join returns the same number of rows as its left input. Does that prove every input row matched the lookup table?
+
+- [ ] Yes, every unmatched row would have disappeared
+
+  A left join retains unmatched left rows and fills right-hand columns with missing values. An inner join would discard them.
+- [x] No; inspect the match indicator and validate the lookup key
+
+  Correct: `indicator=True` records matches, and `validate="many_to_one"` checks that the right-side key is unique. An unchanged row count alone does not prove complete matching.
+- [ ] No; use an inner join to hide the unmatched rows
+
+  Hiding unmatched rows changes the analysed sample without explaining the problem. Investigate the keys and document any exclusions.
+:::
+
+::: {.checkpoint title="6. Missing is not zero"}
+Five percent of assay readings are absent, especially among poorly soluble compounds. What is the best first action?
+
+- [ ] Replace every missing reading with zero
+
+  Zero is a measurement with a meaning. Using it as a placeholder changes the distribution and can create a false relationship.
+- [ ] Delete the rows because five percent is small
+
+  A small loss can still be selective. Here missingness is related to a scientific property, so deletion may change the population being described.
+- [x] Investigate and document the missingness before choosing a rule
+
+  Correct: examine available metadata and the intended analysis. If an imputation method is later used for prediction, fit it only on the relevant training data.
+:::
+
+::: {.checkpoint title="7. What do error bars mean?"}
+A plot labels its error bars as standard deviation across independently sampled birds. What do they describe?
+
+- [x] The spread of individual bird measurements
+
+  Correct: standard deviation describes variability in measurements. It is different from uncertainty in an estimated mean; [episode 1.4](04-visualisation.html) explains why error bars need explicit labels.
+- [ ] A 95% confidence interval for the population mean
+
+  A standard deviation is not automatically a confidence interval. Coverage requires an interval construction and assumptions about the sampling process.
+- [ ] The error rate of a classifier
+
+  No predictions are being evaluated here. These bars summarise the observations themselves.
+:::
+
+::: {.checkpoint title="8. Reading a logarithmic target"}
+Two compounds have logS values of −3 and −5. How do their recorded molar solubilities compare?
+
+- [ ] The first is two times as soluble
+
+  A difference of two on a base-10 logarithmic scale means two powers of ten, not a factor of two.
+- [x] The first is 100 times as soluble
+
+  Correct: the ratio is `10**(-3) / 10**(-5) = 100`. [Episode 1.5](05-eda-solubility.html) interprets differences in logS as ratios of solubility.
+- [ ] The second is 100 times as soluble
+
+  The more negative logS denotes the smaller positive concentration, so the direction is reversed.
+:::
+
+::: {.checkpoint title="9. Exploration and evaluation"}
+You rank features using the labels of every row, keep the top five, and only then reserve 20% as a test set. What is the problem?
+
+- [ ] There is no problem because the model has not been fitted yet
+
+  Feature selection is already a modelling decision. The future test labels influenced it before the model fit.
+- [x] Test information has already influenced the selected features
+
+  Correct: reserve test data before target-guided decisions. During cross-validation, fit feature selection inside each training fold. The whole-table EDA in Chapter 1 teaches exploration; it does not create independent confirmation of a model designed from those plots.
+- [ ] The problem is solved by choosing seed 42
+
+  A fixed seed makes the split repeatable; it does not remove information that has already influenced a decision.
+:::
+
+::: {.checkpoint title="10. From pattern to explanation"}
+Molecular weight and logS are negatively correlated in this dataset. Which conclusion is supported by that observation alone?
+
+- [ ] Adding any atom will necessarily lower solubility
+
+  That is a causal claim about a structural intervention. The correlation does not control what atom, functional group or other property changes.
+- [ ] Every heavier molecule is less soluble than every lighter molecule
+
+  A population trend does not determine every pair of observations. The scatter plot has substantial overlap.
+- [x] Higher molecular weight is associated with lower logS in this sample
+
+  Correct: this states the measured association and its scope. Predictive usefulness must be evaluated on suitable held-out data, and a causal explanation requires more than correlation.
+:::
+
+## Ready to move on
+
+You are ready when you can explain a row's identity and units, inspect a table without silently changing its meaning, and distinguish a pattern worth investigating from an independently tested conclusion. [Lab 1](labs/lab-01-guided-eda.html) puts these habits into practice; [Chapter 2](../ch02-ml-fundamentals/index.html) turns them into an evaluation workflow.

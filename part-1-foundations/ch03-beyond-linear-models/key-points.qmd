@@ -1,0 +1,7 @@
+---
+title: "Chapter 3 key points"
+chapter: 3
+subtitle: "The main ideas from every episode."
+---
+
+{{< generated ch03-keypoints >}}

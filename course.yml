@@ -36,11 +36,11 @@ appendices:
   - letter: C
     title: "Reproducibility toolkit"
     file: appendices/reproducibility.qmd
-    stub: true
+    stub: false
   - letter: D
     title: "Further reading"
     file: appendices/further-reading.qmd
-    stub: true
+    stub: false
 
 # "Resources" block at the bottom of the sidebar
 resources:

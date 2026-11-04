@@ -1,0 +1,249 @@
+---
+title: "Cross-validation that matches the scientific question"
+chapter: 2
+episode: 7
+teaching: 40
+exercises: 25
+level: beginner
+questions:
+  - "Which cross-validation splitter should I use for my data?"
+  - "What do the mean and spread of fold scores actually tell me?"
+  - "How do I compare two models without choosing a lucky split?"
+objectives:
+  - "Separate training, validation and final evaluation roles."
+  - "Choose random, stratified, grouped or chronological validation to match future use."
+  - "Compare a baseline and a pipeline on identical folds with cross_validate."
+  - "Distinguish fold variability from a confidence interval and prediction uncertainty."
+keypoints:
+  - "Split by the unit that must be new at prediction time: a row, patient, molecule family or future period."
+  - "Every learned transformation must be refitted inside each training fold."
+  - "Use the same held-out folds and metric when comparing candidate models."
+  - "Fold standard deviation describes variability across these folds; it is not a confidence interval."
+  - "Out-of-fold predictions support diagnostics, but their pooled metric need not equal the mean fold metric."
+  - "Cross-validation cannot repair unrepresentative sampling or a split that leaks related observations."
+prerequisites: [ch02-ep06]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A solubility model will be used on compounds that have not yet been synthesised. A blood-test model will be used on patients who were not in the study. Both projects can produce an impressive random-split score and still fail at their intended job. The missing question is *what, exactly, has to be new?* Choosing a validation design is part of defining the scientific experiment, before it is a choice of Python class.
+
+[Episode 2.4](04-overfitting-regularisation.html) introduced {{< term cross-validation >}} as a way to choose regularisation. Here you will make that workflow explicit, choose a splitter for several scientific settings, and learn what its scores do and do not establish. Keep the pipeline from [episode 2.6](06-pipelines-leakage.html): the whole procedure, including preprocessing, is what you validate.
+
+## Three roles, not necessarily three permanent files
+
+The {{< term training-set >}} determines fitted parameters: coefficients, medians, scaling constants and, later, tree splits. A {{< term validation-set >}} informs decisions such as the regularisation strength or model family. A {{< term test-set >}} evaluates the resulting fixed procedure after those decisions. These are roles in an experiment, not properties of a filename.
+
+In five-fold CV on the development data, each row takes a turn in validation while the other four folds train a fresh copy of the pipeline. A different fitted model predicts each validation fold. After choosing a configuration, you refit it on all the development data before final testing; you do not keep whichever fold model happened to score best.
+
+| Stage | Data available to fitting | What you may decide |
+|---|---|---|
+| Define the experiment | Dataset documentation and the scientific question | Target, prediction time, split unit, metric and budget |
+| Develop the model | Training folds only; validation folds for scoring | Preprocessing, features, model and hyperparameters |
+| Final evaluation | Fit on all development rows; predict untouched test rows | Report performance and limitations |
+
+An initial data-integrity audit can check column names, units, identifiers and impossible values. Outcome-driven exploration and choosing predictors should use development data. If you inspect test errors and use them to redesign the model, those rows have become development data; the next final claim needs a fresh evaluation.
+
+::: {.bridge audience="bio"}
+Six tubes from one donor are six measurements, but they are not six independent donors. If your claim concerns an unseen person, all tubes from a donor must stay together. The same reasoning applies to microscope fields from one specimen and technical replicates from one assay plate. Count independent experimental units before choosing the number of folds.
+:::
+
+## A reproducible comparison on identical folds
+
+Use the ESOL descriptors and 80/20 split from earlier lessons. This random split is a teaching benchmark for similar samples from the same collection. The duplicate audit in episode 2.6 and structural similarity limit its interpretation; it is not evidence for performance on unseen chemical scaffolds.
+
+```{python}
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import KFold, train_test_split, cross_validate
+
+url = "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/delaney-processed.csv"
+path = Path("data/esol.csv")
+esol = pd.read_csv(path if path.exists() else url)
+features = ["Molecular Weight", "Number of H-Bond Donors", "Number of Rings",
+            "Number of Rotatable Bonds", "Polar Surface Area"]
+X, y = esol[features], esol["measured log solubility in mols per litre"]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+print(f"Development: {len(X_train)}; reserved test: {len(X_test)}")
+```
+
+`KFold` makes approximately equal folds; they may differ by one row. Materialising the split indices as a list makes the comparison easy to audit: every model receives exactly the same training and validation indices, referring to positions in `X_train`.
+
+```{python}
+from sklearn.dummy import DummyRegressor
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+cv = KFold(n_splits=5, shuffle=True, random_state=42)
+folds = list(cv.split(X_train, y_train))
+models = {"mean baseline": DummyRegressor(),
+          "scaled ridge": make_pipeline(StandardScaler(), Ridge(alpha=1.0))}
+[(len(train), len(valid)) for train, valid in folds]
+```
+
+::: {.predict}
+Each ridge fit uses only four fifths of the development rows. Will its training RMSE usually be smaller than its validation RMSE? Will the mean baseline also have different scores on different folds? Explain your prediction before running the comparison.
+:::
+
+```{python}
+fold_results = {}
+training_results = {}
+for name, model in models.items():
+    scores = cross_validate(
+        model, X_train, y_train, cv=folds,
+        scoring={"rmse": "neg_root_mean_squared_error", "mae": "neg_mean_absolute_error"},
+        return_train_score=True, error_score="raise",
+    )
+    fold_results[name] = -scores["test_rmse"]
+    training_results[name] = -scores["train_rmse"]
+fold_table = pd.DataFrame(fold_results, index=pd.Index(range(1, 6), name="fold"))
+fold_table.round(3)
+```
+
+The API calls the held-out scores `test_rmse`, but here they are **validation** scores inside development data. The separately reserved `X_test` has not been used. The negative signs implement scikit-learn's larger-is-better scoring convention; negate error scores once to return to RMSE units, log₁₀(mol/L).
+
+The baseline learns a different training mean in each fold. Ridge also learns new coefficients and new scaling statistics each time. Passing an already fitted estimator to `cross_validate` would not reuse those fitted values: the procedure clones and refits the estimator for each split.
+
+```{python}
+summary = pd.DataFrame({"mean RMSE": fold_table.mean(),
+                        "mean training RMSE": {name: values.mean() for name, values in training_results.items()},
+                        "fold SD": fold_table.std(ddof=1)})
+summary.round(3)
+```
+
+```{python}
+#| renderings: [light, dark]
+#| fig-alt: "Baseline and ridge validation RMSE at each of five shared folds; connecting lines make within-fold comparisons visible."
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+for name in fold_table:
+    ax.plot(fold_table.index, fold_table[name], marker="o", label=name)
+ax.set(xlabel="validation fold", ylabel="RMSE (log10 mol/L)", xticks=range(1, 6))
+ax.legend()
+plt.show()
+```
+
+Look for consistency across folds, not just a winning average. Ridge improves on the mean predictor on these shared folds: descriptors contain useful predictive information for this benchmark. A small difference between two stronger models would deserve more caution. Shared folds allow a paired comparison: subtract their errors within each fold before summarising the differences.
+
+## How uncertain is the result?
+
+The fold standard deviation describes how scores vary across these particular validation subsets. It combines differences in fitted models with differences in validation cases. It is **not** a 95% confidence interval, an uncertainty band for each molecule, or proof that a difference is statistically significant. Nor does overlap of two standard deviations prove two procedures equivalent.
+
+Fold training sets overlap heavily, so fold scores are dependent. Treating them as five independent experiments and reporting mean ± 1.96 × SD / √5 is generally unjustified. Repeated CV can reveal sensitivity to partitioning, but repeating splits does not create new independent molecules or patients. Record the design, sample counts, individual scores and mean; distinguish observed variability from a formal inferential claim.
+
+There is also a difference between *uncertainty about an average error* and *uncertainty about a particular prediction*. A model may have stable average RMSE while making very unreliable predictions for an unusual molecule. Prediction intervals and applicability domains require additional methods, developed in Chapter 6. No fold summary establishes reliability under an untested {{< term distribution-shift >}}.
+
+::: {.pitfall title="Never search for the nicest random seed"}
+The seed records a split; it is not a hyperparameter to optimise. Trying many seeds and publishing only the best score selects an easy evaluation set. If you repeat partitions, state that plan in advance and report all repeats, including disappointing ones.
+:::
+
+## Choose the splitter from the deployment question
+
+| Intended prediction | Suitable starting point | What it protects |
+|---|---|---|
+| New independent rows from the same population | Shuffled `KFold` | Coverage of the development sample |
+| New independent rows with categorical labels | `StratifiedKFold` | Approximate class proportions in each fold |
+| New patients, compounds or experimental batches | `GroupKFold` | No group occurs on both sides |
+| New groups with imbalanced classes | `StratifiedGroupKFold` where feasible | Group separation plus approximate class balance |
+| Future observations | `TimeSeriesSplit` or explicit time blocks | Training precedes validation |
+
+Stratification helps ensure a rare class is represented, but does not make correlated rows independent. There must be enough examples of each class for your intended folds, and enough independent groups for grouped evaluation. If a validation fold contains one class only, ROC-AUC is undefined; redesign the evaluation rather than replacing the missing score with zero.
+
+Here is a classification split on the built-in breast-cancer teaching dataset. The class names are displayed so you do not confuse the encoded value 1 with "malignant": scikit-learn uses 0 for malignant and 1 for benign in this dataset.
+
+```{python}
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import StratifiedKFold
+
+cancer = load_breast_cancer()
+stratified = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+print(dict(enumerate(cancer.target_names)))
+print([np.bincount(cancer.target[valid]).tolist()
+       for _, valid in stratified.split(cancer.data, cancer.target)])
+```
+
+This small cell demonstrates a splitter, not a separate model performance claim. For a real experiment, first reserve the final test set and apply the splitter within development data, as above.
+
+### Groups: check the constraint directly
+
+Consider 12 donors with three measurements each. `groups` describes experimental identity and is passed to the splitter; it should not become a predictor that lets a model memorise donor names.
+
+```{python}
+from sklearn.model_selection import GroupKFold
+
+donor = np.repeat(np.arange(12), 3)
+X_demo = np.arange(36).reshape(-1, 1)  # positions, not biological features
+grouped = GroupKFold(n_splits=3)
+for train, valid in grouped.split(X_demo, groups=donor):
+    overlap = set(donor[train]) & set(donor[valid])
+    assert not overlap
+    print(f"train donors: {len(set(donor[train]))}; validation donors: {len(set(donor[valid]))}")
+```
+
+The final test split must respect the same constraint. Grouped inner CV followed by a randomly split test set answers two different questions. If groups also share higher-level structure, such as patients within hospitals, decide which level must be unseen. More demanding group splits can leave little data per fold; that limitation is scientifically meaningful, not a reason to mix the groups again.
+
+### Time: the future must stay in front
+
+A model deployed next month cannot train on measurements collected after that month. Sort by observation time, preserve that order, and use growing training windows followed by later validation windows. A gap can separate training from validation when labels overlap in time or measurements near the boundary are dependent.
+
+```{python}
+from sklearn.model_selection import TimeSeriesSplit
+
+ordered_rows = np.arange(24).reshape(-1, 1)
+temporal = TimeSeriesSplit(n_splits=3, test_size=4, gap=2)
+[(train[-1], valid[0], valid[-1]) for train, valid in temporal.split(ordered_rows)]
+```
+
+Each tuple shows the last training position and the first and last validation positions. The gap is measured in rows, not days. Irregularly timed observations need explicit date boundaries when you want equal-duration evaluation windows. A time split also needs features that would actually have been available at prediction time: a future laboratory result leaks even if the rows are ordered correctly.
+
+## Out-of-fold predictions: useful, with boundaries
+
+`cross_val_predict` returns one prediction per row, obtained while that row was held out. These predictions help draw residual plots or choose a classification threshold on development data. They are not predictions from the final all-data model, and using them for a decision makes them part of model selection.
+
+```{python}
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import root_mean_squared_error
+
+oof = cross_val_predict(models["scaled ridge"], X_train, y_train, cv=folds)
+print(f"Pooled out-of-fold RMSE: {root_mean_squared_error(y_train, oof):.3f}")
+print(f"Mean fold RMSE: {fold_table['scaled ridge'].mean():.3f}")
+```
+
+The numbers can differ: pooled RMSE takes one square root after averaging squared errors over rows; mean fold RMSE averages several square roots, often with equal fold weights. Neither is a numerical bug. State which aggregation you report. For grouped data, also decide whether the scientific target is average error per measurement or average error per patient: unequal group sizes can make these very different.
+
+## Exercises
+
+::: {.challenge level=1 title="Choose the unit"}
+You have 100 patients, each with four scans, and want to predict disease in new patients at the same hospital. Choose a splitter and explain why stratification alone is insufficient. What changes if the claim is about a new hospital?
+
+:::: {.solution}
+Keep each patient's scans together with `GroupKFold`, or use `StratifiedGroupKFold` if class balance can be maintained without breaking groups. Stratification alone can put another scan of the same person in training. For a new hospital, hold out entire hospitals; patient separation is necessary but does not test transfer between hospitals.
+::::
+:::
+
+::: {.challenge level=2 title="Read a paired comparison"}
+Model A has fold RMSEs [1.0, 1.3, 1.1, 1.4, 1.2]; model B has [0.9, 1.2, 1.0, 1.3, 1.1] on the same folds. What is the mean difference? Does overlapping fold variability prove a tie?
+
+:::: {.solution}
+B improves by 0.1 in every fold, so mean(A − B) is 0.1. The overlapping spread of individual model scores does not prove a tie: much of it reflects the shared easy and hard folds. The consistent paired difference is useful evidence, but correlated folds and one dataset still do not justify a universal superiority claim or a naive independent-sample test.
+::::
+:::
+
+::: {.challenge level=2 title="Debug this validation workflow"}
+A colleague scales every row, chooses the best model with five-fold CV, and reports the same winning CV score as final test performance. Identify two problems and describe a repair.
+
+:::: {.solution}
+The scaler saw validation rows; put it inside a pipeline. The winning CV score also selected the model, so it is optimistic as a final evaluation. Reserve an independent test set before fitting and searching, or place the entire search inside outer CV. The [next episode](08-hyperparameter-tuning.html) implements both designs. Any feature selection must be inside the same training-only procedure.
+::::
+:::
+
+## Where this is going
+
+The [next lesson](08-hyperparameter-tuning.html) uses these splitters to tune models and assess the tuning procedure itself. [Chapter 3](../ch03-beyond-linear-models/index.html) compares richer model families using the same rules. Later, molecular scaffolds and sequence-identity groups become the units held out; the principle stays the same: validation should resemble the scientific use you claim.
+
+For the splitter interfaces and their assumptions, consult the [scikit-learn cross-validation guide](https://scikit-learn.org/stable/modules/cross_validation.html).

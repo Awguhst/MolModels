@@ -154,7 +154,8 @@ local function card(dir, item, href)
   end
   local arrow = dir == "prev" and icons.arrowl or icons.arrowr
   local label = dir == "prev" and "Previous" or "Next"
-  local num = item.label and (esc(item.label) .. " ") or ""
+  -- JSON null is a truthy userdata value in Pandoc; only numbered pages have labels.
+  local num = type(item.label) == "string" and item.label ~= "" and (esc(item.label) .. " ") or ""
   return '<a class="mm-pager-' .. dir .. '" href="' .. esc(href) .. '" rel="' .. dir .. '"><span class="mm-pager-dir">'
     .. (dir == "prev" and (arrow .. label) or (label .. arrow)) .. '</span><span class="mm-pager-title">' .. num .. esc(item.title) .. "</span></a>"
 end

@@ -15,6 +15,8 @@ summary: "What a model is, how to fit one, and above all how to find out honestl
 - Diagnose overfitting with learning and validation curves, and control it with ridge, lasso and cross-validated hyperparameter search.
 - Build and judge classifiers with confusion matrices, precision, recall, F1, ROC and precision–recall curves, including imbalanced classes.
 - Assemble leak-free pipelines with scaling, imputation and encoding, and recognise the leakage patterns that plague scientific datasets.
+- Choose random, stratified, grouped or temporal cross-validation to match the intended prediction, and interpret fold variability honestly.
+- Budget a grid or random search, compare complete model families with nested CV, and document the final refit and evaluation.
 :::
 
 ## Schedule
@@ -24,6 +26,8 @@ summary: "What a model is, how to fit one, and above all how to find out honestl
 ## Lab
 
 {{< generated ch02-labs >}}
+
+Episodes 2.4–2.6 introduce the components; [2.7](07-cross-validation.html) and [2.8](08-hyperparameter-tuning.html) consolidate them into the complete model-selection workflow. Finish with the [checkpoint](checkpoint.html) and revisit the [key points](key-points.html) before starting Chapter 3.
 
 ## Before you start
 

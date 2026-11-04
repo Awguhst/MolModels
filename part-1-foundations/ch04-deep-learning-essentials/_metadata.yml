@@ -3,4 +3,4 @@ chapter-id: ch04
 chapter-title: "Deep learning essentials with PyTorch"
 chapter-short: "Deep learning"
 chapter-href: index.html
-stub: true
+stub: false

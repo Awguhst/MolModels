@@ -1,14 +1,24 @@
 ---
 title: "Part I · Foundations: ML & data science"
-subtitle: "Everything the rest of the course stands on: scientific Python, honest machine learning, and the first steps into deep learning. Chapters 0–2 are complete; 3 and 4 are planned."
+subtitle: "From scientific Python to honest model selection, nonlinear models and neural networks. Five complete chapters, four practical labs, and a shared evaluation workflow."
 ---
 
 <div class="mm-cards">
 <div class="mm-card"><h3><a href="ch00-start-here/index.html">0 · Start here</a></h3><p>How the course is organised, how to read a page, and how to get a working Python environment in the browser or on your own machine. A short self-check tells you whether to begin at Chapter 1 or take a Python refresher first.</p></div>
 <div class="mm-card"><h3><a href="ch01-scientific-python/index.html">1 · Scientific Python for data work</a></h3><p>The tools every later chapter assumes: NumPy arrays for fast numerical work, pandas DataFrames for tables of measurements, and matplotlib and seaborn for figures you can trust. You will practise on real data, from Antarctic penguins to a medical imaging dataset, and finish with a full exploratory analysis of the aqueous solubility of small molecules, the question Chapter 2 then tries to predict.</p></div>
 <div class="mm-card"><h3><a href="ch02-ml-fundamentals/index.html">2 · Machine learning fundamentals</a></h3><p>What a model is, how to fit one, and above all how to find out honestly whether it works. You will build regression and classification models with scikit-learn on real chemistry and medical data, and learn the evaluation habits that separate a useful model from a misleading one.</p></div>
-<div class="mm-card"><h3><a href="ch03-beyond-linear-models/index.html">3 · Beyond linear models</a> <span class="mm-chip">soon</span></h3><p>Trees, ensembles and support vector machines for the cases a straight line cannot handle; unsupervised learning for finding structure without labels; and how to interpret what a model has learned.</p></div>
-<div class="mm-card"><h3><a href="ch04-deep-learning-essentials/index.html">4 · Deep learning essentials with PyTorch</a> <span class="mm-chip">soon</span></h3><p>Tensors, automatic differentiation and the training loop, built up from the gradient descent you wrote in Chapter 2, then multilayer perceptrons on tabular scientific data.</p></div>
+<div class="mm-card"><h3><a href="ch03-beyond-linear-models/index.html">3 · Beyond linear models</a></h3><p>Decision trees, random forests, gradient boosting and support vector machines; PCA and clustering for exploring structure; and interpretation that distinguishes predictive associations from causes. Lab 3 compares complete modelling procedures with nested cross-validation.</p></div>
+<div class="mm-card"><h3><a href="ch04-deep-learning-essentials/index.html">4 · Deep learning essentials with PyTorch</a></h3><p>Tensors, automatic differentiation, neural networks and a complete minibatch training loop. Learn to match outputs to losses, monitor validation, restore an early-stopped model and compare it fairly with a simpler baseline. All examples run on a CPU.</p></div>
 </div>
 
-See the full [roadmap](../index.html#roadmap) for how the Parts connect.
+## A path through the foundations
+
+Start with [setup and the self-check](ch00-start-here/index.html), then work through the chapters in order. Each episode pairs runnable examples with predictions, exercises and worked solutions. Each practical chapter ends with a lab and checkpoint; use its key-points page when revising.
+
+If you already use Python, begin with the [solubility EDA](ch01-scientific-python/05-eda-solubility.html) and its data-quality cautions. If you already fit models, check the [cross-validation](ch02-ml-fundamentals/07-cross-validation.html) and [hyperparameter tuning](ch02-ml-fundamentals/08-hyperparameter-tuning.html) lessons before moving to Chapter 3. They establish the rules used by every later comparison.
+
+## What you should be able to deliver
+
+By the end, you can turn a scientific question into a reproducible modelling report: define the prediction target and independent sampling unit, audit and explore the data, establish a baseline, fit preprocessing within validation, tune a finite set of candidates, and evaluate a fixed procedure on held-out data. You can explain its errors, uncertainty and limits without turning a good score into a causal or deployment claim.
+
+Keep the [maths refresher](../appendices/maths-refresher.html), [glossary](../appendices/glossary.html), [reproducibility toolkit](../appendices/reproducibility.html) and [further reading](../appendices/further-reading.html) nearby. The full [roadmap](../index.html#roadmap) shows where these foundations lead into chemistry and biology.

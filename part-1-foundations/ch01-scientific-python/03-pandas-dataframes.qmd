@@ -104,7 +104,7 @@ penguins.iloc[0:3, 0:2]
 Right now, labels and positions coincide, so `loc[169]` and `iloc[169]` return the same penguin. Filter the table and they stop agreeing, which is why it matters to say which one you mean. One more difference: `loc` slices are *inclusive* of the end label (`loc[0:2]` is three rows), because labels have no natural "one past the end", while `iloc` slices follow the Python rule.
 
 ::: {.bridge audience="cs"}
-If you have met these structures before: a DataFrame is a dict of equal-length typed columns, not a list of row records, which is why column operations are cheap and row-by-row loops are the wrong tool. A `groupby` is `SELECT ... GROUP BY`; `merge` is a `JOIN`; a boolean mask is a `WHERE`. The index is a primary key that is allowed to be non-unique and survives filtering, hence `loc` (by key) versus `iloc` (by offset). Column selection `df["col"]` works like a dict lookup, so `df.col` attribute access, which you will see in the wild, is just sugar that breaks on column names with spaces.
+If you have met these structures before: a DataFrame is a dict of equal-length typed columns, not a list of row records, which is why column operations are cheap and row-by-row loops are the wrong tool. A `groupby` is `SELECT ... GROUP BY`; `merge` is a `JOIN`; a boolean mask is a `WHERE`. The index is a set of row labels that can be non-unique and survives filtering; unlike a database primary key, it does not guarantee uniqueness, hence `loc` (by key) versus `iloc` (by offset). Column selection `df["col"]` works like a dict lookup, so `df.col` attribute access, which you will see in the wild, is just sugar that breaks on column names with spaces.
 :::
 
 ## Filtering rows with masks
@@ -130,6 +130,18 @@ penguins[penguins["island"].isin(["Dream", "Torgersen"])]["species"].value_count
 ```
 
 Notice that `gentoo`'s index starts at 152, not 0: the labels came along. `gentoo.iloc[0]` is the first Gentoo; `gentoo.loc[0]` is a `KeyError`, because no row is labelled 0 any more. If you want fresh positions, call `gentoo.reset_index(drop=True)`.
+
+## Labels align arithmetic
+
+A pandas Series carries row labels through sorting and filtering. Arithmetic aligns those labels, rather than pairing the first displayed value with the first displayed value. That protects a correctly labelled table and surprises you when you meant positional arithmetic:
+
+```{python}
+left = pd.Series([10, 20], index=["sample_A", "sample_B"])
+right = pd.Series([1, 2], index=["sample_B", "sample_A"])
+left + right
+```
+
+The result is 12 for A and 21 for B. Converting to NumPy with `.to_numpy()` discards these labels, so do it only after checking row order. Always keep the same sample identity and ordering in features and targets; a shuffled target column still contains valid numbers, but now describes the wrong samples.
 
 ## Adding columns
 
@@ -187,12 +199,13 @@ names = pd.DataFrame({
     "species": ["Adelie", "Chinstrap", "Gentoo"],
     "scientific_name": ["Pygoscelis adeliae", "Pygoscelis antarcticus", "Pygoscelis papua"],
 })
-merged = penguins.merge(names, on="species", how="left")
+merged = penguins.merge(names, on="species", how="left",
+                        validate="many_to_one", indicator=True)
 print(penguins.shape, "->", merged.shape)
 merged[["species", "scientific_name", "island"]].drop_duplicates().head()
 ```
 
-`how="left"` keeps every row of the left table and fills `NaN` where the right table has no match; `how="inner"` keeps only matched rows. The row count is the thing to check every time you merge: 344 in, 344 out means every penguin matched exactly one name. If the lookup table had listed a species twice, the merge would have duplicated those penguins, and nothing would have warned you. Chapter 5 merges thousands of measured compounds with computed descriptors on a molecule identifier; the habit of printing the shape before and after starts here.
+`how="left"` keeps every row of the left table and fills `NaN` where the right table has no match; `how="inner"` keeps only matched rows. The row count is the thing to check every time you merge: 344 in, 344 out rules out row multiplication here, but does **not** prove every row matched: an unmatched left row remains with missing right-hand values. `validate="many_to_one"` rejects duplicate keys in the lookup table, and `merged["_merge"].value_counts()` reveals unmatched rows. These checks are part of the [pandas merge API](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.merge.html). Chapter 5 merges thousands of measured compounds with computed descriptors on a molecule identifier; the habit of printing the shape before and after starts here.
 
 ## Reshaping: `melt` and `pivot_table`
 
@@ -200,8 +213,8 @@ The penguin table is *wide*: four measurements sit in four columns. For some tas
 
 ```{python}
 measurements = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]
-long = penguins.melt(
-    id_vars=["species", "island", "sex", "year"],
+long = penguins.rename_axis("penguin_id").reset_index().melt(
+    id_vars=["penguin_id", "species", "island", "sex", "year"],
     value_vars=measurements,
     var_name="measurement",
     value_name="value",
@@ -210,7 +223,7 @@ print(long.shape)
 long.head(3)
 ```
 
-344 penguins × 4 measurements = 1376 rows. The `id_vars` are repeated on every row so nothing is lost; `measurement` says which column the number came from. Going the other way, `pivot_table` summarises a long or wide table into a grid, with one key on the rows, one on the columns and an aggregation in the cells.
+344 penguins × 4 measurements = 1376 rows. The explicit `penguin_id` preserves which measurements belong to one bird; species, island, sex and year alone do not uniquely identify it. The `id_vars` repeat on each row; `measurement` says which column the number came from. Going the other way, `pivot_table` summarises a long or wide table into a grid, with one key on the rows, one on the columns and an aggregation in the cells.
 
 ::: {.predict}
 A table of mean body mass with species as rows and islands as columns has nine cells. How many will be empty? Think about whether every species was measured on every island.
@@ -247,7 +260,9 @@ complete = penguins.dropna(subset=measurements)
 complete.shape
 ```
 
-Never fill gaps with 0 or −999: a model cannot tell a placeholder from a measurement, and the mean of a column with a few −999s is nonsense.
+Do not use 0 or −999 as arbitrary stand-ins for missing measurements: a model cannot tell a placeholder from a measurement, and the mean of a column with a few −999s is nonsense.
+
+Missingness can also change *who* remains in the analysis. If heavy birds are harder to measure, dropping missing masses changes the observed population. Report the number of rows removed and compare available metadata between retained and removed groups; a small fraction missing does not by itself prove there is no bias. `isna()` recognises the missing markers used by different dtypes; equality tests such as `value == np.nan` do not reliably identify missing entries. See the [pandas missing-data guide](https://pandas.pydata.org/docs/user_guide/missing_data.html).
 
 ## Categorical columns
 
@@ -258,7 +273,7 @@ penguins["species"] = penguins["species"].astype("category")
 penguins["species"].dtype, list(penguins["species"].cat.categories)
 ```
 
-The benefits are memory (a few hundred bytes instead of tens of kilobytes for this column), a fixed category order for plots and tables, and an explicit statement that this column is a label, not free text. The cost is one extra keyword: when grouping by a categorical, pass `observed=True` so that pandas reports only combinations that actually occur rather than every possible one.
+For a low-cardinality column, the benefits can include lower memory use, a fixed category order for plots and tables, and an explicit statement that this column is a label, not free text. When grouping by categoricals, write `observed=True` explicitly to ask for combinations present in the data. This documents the choice even when it matches your pandas version’s default.
 
 ```{python}
 penguins.groupby("species", observed=True).size()
@@ -272,7 +287,7 @@ The penguin table obeys three rules that make all of the above work without spec
 2. **Each column is one variable** (one measurement or one design factor).
 3. **Each table is one kind of thing** (penguins here; a separate table for species names).
 
-Untidy tables are everywhere in science: a spreadsheet with one column per year, a plate layout where the position of a cell encodes the sample, a sheet with the sample name in a merged header row. They look fine to a human and are nearly unusable by code. `melt` is the usual repair for "variables in column headers"; `pivot_table` is how you produce a wide summary for a reader *after* the analysis, not before. Keep the long, tidy table as the source of truth and derive everything else from it.
+Untidy tables are everywhere in science: a spreadsheet with one column per year, a plate layout where the position of a cell encodes the sample, a sheet with the sample name in a merged header row. They look fine to a human and are nearly unusable by code. `melt` is the usual repair for "variables in column headers"; `pivot_table` is how you produce a wide summary for a reader *after* the analysis, not before. Tidy does not always mean long: one row per penguin and separate columns for distinct measurements is already tidy. Choose the observation represented by a row, preserve its identifier, and reshape for the analysis without confusing repeated measurements with independent samples.
 
 
 ## Exercises

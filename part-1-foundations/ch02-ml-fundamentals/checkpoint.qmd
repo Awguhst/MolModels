@@ -21,18 +21,18 @@ You have 5,000 compounds, each with a measured IC₅₀ against a kinase, and yo
   It would be classification if the target were a category such as "active / inactive". IC₅₀ is a continuous number, so this is regression. (You could turn it into classification by thresholding, but that throws information away.)
 :::
 
-::: {.checkpoint title="What does the loss do?"}
-In linear regression, what role does the mean squared error loss play during fitting?
+::: {.checkpoint title="Which validation split?"}
+You have four scans from each patient and want to predict outcomes for new patients. Which design matches that claim?
 
-- [x] It measures how far the current predictions are from the labels; fitting means choosing the parameters that make it as small as possible
+- [x] Keep each patient's scans together in development CV and in the final test split
 
-  Correct: the loss turns "how wrong is the model?" into a single number of the parameters, and fitting (by the normal equation or by gradient descent) is the search for the parameters that minimise it on the training data.
-- [ ] It is reported as the final test metric and nothing else
+  Correct: patient identity is the independent unit. Grouped validation prevents another scan of a held-out patient from entering training. StratifiedGroupKFold can also help preserve class proportions when feasible.
+- [ ] Stratify random rows by outcome and allow patients on both sides
 
-  The loss is the quantity *optimised* during training. You may also report it (or its square root, RMSE) on the test set, but its defining role is to guide the fit.
-- [ ] It counts how many predictions are exactly right
+  Stratification approximately preserves class proportions but does not enforce patient independence. The model may recognise the patient from another scan.
+- [ ] Choose the random seed giving the highest score
 
-  Exact matches are essentially never achieved with a continuous target. MSE averages the *squared distance* between predictions and labels, so every prediction contributes, not just the exact hits.
+  This selects an easy evaluation set. Seeds record randomness; they must not be optimised for the reported result.
 :::
 
 ::: {.checkpoint title="A baseline that worries you"}
@@ -66,12 +66,12 @@ Two solubility models have the same MAE of 0.8 logS, but model A has RMSE 0.9 an
 ::: {.checkpoint title="A negative R²"}
 A regression model has R² = −0.3 on the test set. What does that mean?
 
-- [x] The model's predictions are worse than always predicting the mean of the target
+- [x] The model's squared error exceeds that of predicting the mean of the test targets
 
   Correct: R² compares the model's squared error with that of the constant mean prediction. R² = 0 means "as good as the mean"; a negative value means the model does worse, which happens with a badly overfitted or badly mis-specified model evaluated on new data.
 - [ ] A bug: R² is a squared quantity, so it cannot be negative
 
-  Despite the name, R² is defined as 1 minus a ratio of squared errors, and that ratio can exceed 1 on held-out data. On the *training* data of an ordinary least-squares fit it cannot be negative; on the test set it can.
+  Despite the name, R² is defined as 1 minus a ratio of squared errors, and that ratio can exceed 1 on held-out data. On the *training* data of an ordinary least-squares fit with an intercept, it cannot be negative (apart from numerical issues); on the test set it can.
 - [ ] The model explains 30% of the variance, with the sign indicating a negative correlation
 
   R² is not a correlation and carries no direction. 0.3 would mean 30% of the variance explained; −0.3 means the model is worse than the mean baseline.
@@ -91,32 +91,32 @@ You fit a model and evaluate it both on its training data and on a held-out test
   A small difference either way is normal sampling noise, and a test error slightly *below* the training error is not a problem. If it were far below, you would suspect leakage, not overfitting.
 :::
 
-::: {.checkpoint title="Ridge versus lasso"}
-You have 200 descriptors and suspect only a dozen matter. You want a model whose coefficients tell you which ones. Which penalty should you reach for, and why?
+::: {.checkpoint title="Budget the search"}
+You have several positive hyperparameters spanning orders of magnitude and a budget of 20 candidate configurations. Which approach fits that plan?
 
-- [x] Lasso (L1), because it drives many coefficients exactly to zero and so performs feature selection
+- [x] RandomizedSearchCV with 20 trials, appropriate distributions and training-only validation
 
-  Correct: the L1 penalty on the sum of absolute coefficients has corners that make exact zeros the optimum for weak features. The surviving non-zero coefficients are your selected descriptors. Scale the features first, or the penalty is unfair across units.
-- [ ] Ridge (L2), because it sets unimportant coefficients to zero
+  Correct: n_iter fixes the candidate budget. Logarithmic distributions suit many positive scale parameters. Each configuration still requires one fit per fold, plus the final refit; keep preprocessing in the pipeline.
+- [ ] An exhaustive grid containing 20 values for each parameter
 
-  Ridge *shrinks* all coefficients towards zero but almost never makes any of them exactly zero. It is excellent for stabilising a model with correlated features, but it will not hand you a short list.
-- [ ] Neither: a penalty only makes the fit worse on the training data
+  Grid size grows multiplicatively: three such parameters make 8,000 configurations, before counting folds.
+- [ ] Try configurations on the test set until 20 look promising
 
-  A penalty does raise training error slightly, by design: it trades a little bias for a lot less variance, and usually *lowers* the test error. That trade is the point of regularisation.
+  That uses final outcomes for selection. The test set must remain independent of the search.
 :::
 
-::: {.checkpoint title="Why cross-validate?"}
-Compared with a single train/test split, what does 5-fold cross-validation give you?
+::: {.checkpoint title="Which score evaluates the search?"}
+You used five-fold CV to choose a model family and its settings. Which statement is correct?
 
-- [x] A less noisy estimate of generalisation error, using every sample once as a test sample, and a sound way to choose hyperparameters without touching the test set
+- [x] Evaluate the fixed selection on untouched test data, or put the complete family-and-setting search inside outer CV
 
-  Correct: each fold is a different train/validation split, so the average score is less dependent on which molecules happened to land in the held-out set. It also gives a spread across folds. Hyperparameter choices made this way leave the final test set untouched for the one evaluation at the end.
-- [ ] A model trained on five times as much data
+  Correct: best_score_ helped select the winner. Nested CV repeats the full selection within each outer training fold. Report outer scores as assessment of that procedure, and final refit separately.
+- [ ] Report best_score_ as an independent test score, with fold SD as a 95% confidence interval
 
-  Each fold trains on 80% of the training data, not on more data than you have. The benefit is a better *estimate*, not a bigger model.
-- [ ] Permission to skip the test set, since cross-validation already measures generalisation
+  The winning CV score is subject to selection optimism. Fold SD describes variation across correlated folds, not a confidence interval or uncertainty for one prediction.
+- [ ] Pick the best outer-fold model and publish its outer score
 
-  Cross-validation scores are used to *choose* between models and settings, which makes them slightly optimistic for the winner. A separate, untouched test set is still needed for the final number.
+  That selects on outer evaluation outcomes. Refit the declared selection procedure on all development data instead of cherry-picking an outer model.
 :::
 
 ::: {.checkpoint title="Precision or recall in a screen?"}
@@ -138,7 +138,7 @@ Which of these workflows gives a test score that overstates how the model will d
 
 - [x] Fitting a `StandardScaler` and selecting the 20 features most correlated with the target on the full dataset, then splitting and evaluating
 
-  Correct: both steps are fitted before the split, so they have seen the test rows. The scaler leak is small, but selecting features by their correlation with the *target* on all rows bakes the test labels into the feature set. On pure noise this produces a positive test R². Fit every preprocessing step inside a pipeline, on training data only.
+  Correct: both steps are fitted before the split, so they have seen the test rows. The scaler leak may be small in this example, but selecting features by their correlation with the *target* on all rows bakes the test labels into the feature set. On pure noise this produces a positive test R². Fit every preprocessing step inside a pipeline, on training data only.
 - [ ] Fitting a pipeline of `StandardScaler` and `Ridge` on the training set and calling `.score` on the test set
 
   This is the correct workflow: the pipeline is one estimator, so `fit` learns the scaler from the training rows only and `.score` merely applies it to the test rows. Inside `GridSearchCV` the same guarantee holds fold by fold.
@@ -147,4 +147,4 @@ Which of these workflows gives a test score that overstates how the model will d
   Removing duplicates *before* the split is the fix, not the leak. Duplicates that straddle the split would let the model be tested on molecules it has memorised.
 :::
 
-That is the whole chapter in ten questions. If a couple of them caught you out, the feedback names the episode to reread. When you are ready, [Lab 2](labs/lab-02-first-ml-project.html) puts everything together on the solubility problem in one notebook. Chapter 3, beyond linear models (trees, ensembles and a first look at neural networks), is coming soon.
+That is the whole chapter in ten questions. If a couple of them caught you out, the feedback names the episode to reread. When you are ready, [Lab 2](labs/lab-02-first-ml-project.html) puts everything together on the solubility problem in one notebook. Then continue to [Chapter 3](../ch03-beyond-linear-models/index.html) for trees, ensembles, kernels and unsupervised learning; neural networks follow in Chapter 4.

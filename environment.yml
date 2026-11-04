@@ -25,12 +25,14 @@ dependencies:
   - jsonschema=4.26.0
   - pip
   - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cpu
+      - torch==2.9.1+cpu; sys_platform == "linux" or sys_platform == "win32"
+      - torch==2.9.1; sys_platform == "darwin"
       - nbmake==1.5.5
       - playwright==1.64.1     # accessibility + screenshot checks (then run: playwright install chromium)
   # --- Part II–IV (do NOT install yet; added by later iterations) ---
   # - rdkit
   # - openbabel
   # - vina
-  # - pytorch
   # - biopython
   # - scanpy

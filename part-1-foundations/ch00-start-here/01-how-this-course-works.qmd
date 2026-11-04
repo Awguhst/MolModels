@@ -14,7 +14,7 @@ objectives:
   - "Recognise each kind of callout box and know what it asks you to do."
   - "Use the sidebar, the theme switch, glossary tooltips and search."
 keypoints:
-  - "Four Parts, sixteen chapters; episode 2.3 is the third episode of Chapter 2. Chapters 0–2 are available now; the rest are marked *soon*."
+  - "Four Parts, sixteen chapters; episode 2.3 is the third episode of Chapter 2. Part I, Chapters 0–4, is complete; Parts II–IV are marked *soon*."
   - "Read the Overview card first and the Key points card last; they are the contract for the page."
   - "Predict boxes and checkpoints work only if you commit to an answer before looking."
   - "Exercises are graded ★ (check), ★★ (apply), ★★★ (stretch). Do all the ★ ones, and at least one ★★ per episode."
@@ -29,7 +29,9 @@ By the end of this course you will build a model that predicts whether a molecul
 
 The course has four Parts. Part I (Foundations) teaches scientific Python and the core of machine learning on small, well-understood datasets. Part II (Cheminformatics) turns molecules into numbers and models them. Part III (Bioinformatics) does the same for sequences and expression data. Part IV (Generative) covers models that propose new molecules. Together they contain sixteen chapters, numbered 0 to 15, each a handful of episodes plus a lab.
 
-Episodes are numbered *chapter.episode*: **2.3** is the third episode of Chapter 2, and that is how the text refers to them. Chapters 0, 1 and 2 are built now. The later chapters appear in the sidebar and on the roadmap marked *soon*, dimmed, with a page describing what is planned.
+Episodes are numbered *chapter.episode*: **2.3** is the third episode of Chapter 2, and that is how the text refers to them. All five chapters of Part I are available: setup, scientific Python, machine learning fundamentals, beyond linear models, and deep learning essentials. Parts II–IV appear in the sidebar and on the roadmap marked *soon*, with pages describing what is planned.
+
+Part I builds one complete modelling workflow. You inspect data in Chapter 1, learn baselines and honest evaluation in Chapter 2, compare nonlinear and unsupervised methods in Chapter 3, and train a small neural network in Chapter 4. [Cross-validation](../ch02-ml-fundamentals/07-cross-validation.html) and [hyperparameter tuning](../ch02-ml-fundamentals/08-hyperparameter-tuning.html) are part of the core route: complete them before comparing models in the later labs.
 
 ::: {.bridge audience="cs"}
 The repository mirrors the site: one directory per chapter, one file per episode (`NN-slug.qmd`), and a `labs/` folder with the notebooks. Every page's footer has *Edit this page*, which opens that file on GitHub, and *Report a problem*, which opens an issue with the page already named.
@@ -142,7 +144,7 @@ Without using search:
 Switch the theme to *Light*, then open the same page in a private or incognito window of the same browser. Which theme does it open in? Explain what that tells you about where the choice is stored, and why the site cannot know which pages you have read.
 
 :::: {.solution}
-The private window opens in the default dark theme. Your choice lives in the browser's local storage for this site, which a private window does not share with your normal session and which no server ever sees. That is the only thing the site stores: it has no account, sets no cookies and sends nothing anywhere, so it has no way to know which pages you have read, and it does not try to. Two machines mean two independent theme settings, which is the price of keeping no accounts.
+The private window uses its own browser storage, so it does not inherit the theme choice from your normal window. The course stores that preference locally and has no learner account or saved reading-progress record. Two browsers therefore have independent theme settings. Local storage is separate from the ordinary page requests sent to the hosting server; the absence of a progress feature does not imply that web requests never reach a server.
 ::::
 :::
 

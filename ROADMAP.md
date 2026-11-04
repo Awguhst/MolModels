@@ -5,40 +5,19 @@ Each Part has an accent colour (violet, amber, green, coral) used in the navigat
 
 ## Part I · Foundations: ML & data science (violet)
 
-| # | Chapter | Status |
+Part I is complete: 27 episodes across Chapters 0–4, four CPU-friendly labs, checkpoints for Chapters 1–4, key-point summaries and supporting appendices.
+
+| # | Chapter | Built content |
 |---|---|---|
-| 0 | Start here: how the course works, setup, self-check | built |
-| 1 | Scientific Python for data work: NumPy, pandas, plotting, EDA (Lab 1: guided EDA, breast cancer Wisconsin) | built |
-| 2 | Machine learning fundamentals with scikit-learn (Lab 2: predict ESOL solubility end to end; checkpoint quiz) | built |
-| 3 | Beyond linear models: trees, ensembles, SVMs, PCA, clustering, model interpretation | planned |
-| 4 | Deep learning essentials with PyTorch: tensors, autograd, MLPs, training loops | planned |
+| 0 | Start here | Course paths, environment setup, scientific-data habits and readiness self-check |
+| 1 | Scientific Python | Python, NumPy, pandas, visualisation, solubility EDA; Lab 1: guided breast-cancer data exploration |
+| 2 | ML fundamentals | Regression, metrics, regularisation, classification, pipelines and leakage; dedicated cross-validation and hyperparameter-tuning lessons; Lab 2: solubility prediction |
+| 3 | Beyond linear models | Trees, forests and boosting, SVMs, PCA, clustering and interpretation; Lab 3: nested model-family comparison |
+| 4 | Deep learning essentials | Tensors, autograd, MLPs and losses, minibatch training, validation and regularisation; Lab 4: a CPU neural-network experiment |
 
-### Proposed outline for Chapter 3 (next iteration)
+The shared workflow defines the prediction question, independent sample unit, baseline and metric before selection. Preprocessing is fitted inside training folds. Searches use development data; grouped and temporal designs match intended use; nested CV evaluates an entire selection procedure. Fold variability is distinguished from confidence intervals and individual prediction uncertainty. Error analysis motivates hypotheses without claiming causation.
 
-Working title: **Beyond linear models**. Reuses ESOL (regression) and breast cancer Wisconsin (classification) so that every
-new model is compared against the Chapter 2 baselines on identical splits. Suggested episodes (teaching + exercise minutes):
-
-1. **Decision trees** (30 + 15). How a tree splits; `DecisionTreeRegressor`/`Classifier`; depth as the overfitting knob with a
-   validation curve; reading a tree with `plot_tree`; why single trees are unstable. Bridge: chemists read trees as decision rules.
-2. **Random forests and gradient boosting** (40 + 20). Bagging and feature subsampling; out-of-bag estimates; `RandomForestRegressor`
-   vs `HistGradientBoostingRegressor`; learning rate and number of trees; honest comparison with ridge from Lab 2 using the same
-   `KFold(random_state=42)`; the chapter's "Debug this" (fitting with `n_estimators=1` and reporting OOB score).
-3. **Support vector machines and kernels** (35 + 20). Margin intuition; `SVC`/`SVR`; the RBF kernel as similarity; `C` and `gamma`
-   with a 2-D validation heatmap; why scaling is mandatory; a bridge to Tanimoto kernels on fingerprints (Part II).
-4. **Unsupervised learning: PCA** (35 + 20). Variance, components and loadings on the 30 breast-cancer features; scree plot;
-   PCA for visualisation vs for preprocessing; the leakage trap of fitting PCA on all data. Maths deep-dive: eigen-decomposition.
-5. **Unsupervised learning: clustering** (30 + 20). k-means and the elbow/silhouette; hierarchical clustering with a dendrogram;
-   clustering penguins and ESOL descriptors; what clusters do and do not mean. Bridge to single-cell clustering (Chapter 11).
-6. **Interpreting models** (35 + 20). Permutation importance (on test data, with `GroupKFold` caveats); partial dependence and ICE
-   plots; SHAP-style additive explanations explained without the library; interpretability vs causality. Bridge: what a chemist
-   can and cannot conclude from "PSA is the most important descriptor".
-- **Lab 3: tabular bake-off** (90 min). Ridge vs random forest vs gradient boosting vs SVR on ESOL with nested CV; PCA + logistic
-  regression vs random forest on breast cancer; a permutation-importance figure; a one-paragraph recommendation.
-- **Checkpoint quiz** (10 questions).
-
-New glossary terms: decision tree, ensemble, bagging, boosting, out-of-bag, kernel, margin, principal component, loading,
-explained variance, k-means, silhouette, dendrogram, permutation importance, partial dependence.
-New library needs: none beyond scikit-learn (SHAP is explained, not installed).
+Chapter 3 reuses existing datasets and scikit-learn; Chapter 4 adds pinned CPU PyTorch 2.9.1. No GPU, paid API or new dataset is required. All labs ship student and solution notebooks, with student versions generated from tagged solution cells.
 
 ## Part II · Cheminformatics (amber)
 
@@ -49,7 +28,7 @@ New library needs: none beyond scikit-learn (SHAP is explained, not installed).
 | 7 | Graph neural networks for molecules | graph featurisation, message passing, a minimal GNN in PyTorch Geometric, fair comparison with fingerprints |
 | 8 | Structure-based design | PDB files, binding sites, AutoDock Vina docking, pose interpretation, ML rescoring; Lab: dock a small library |
 
-Adds to `environment.yml`: rdkit, openbabel, vina, pytorch (CPU), torch-geometric.
+Adds to `environment.yml`: rdkit, openbabel, vina, torch-geometric (PyTorch is already installed for Part I).
 
 ## Part III · Bioinformatics (green)
 
@@ -76,10 +55,10 @@ Adds: selfies, pytorch.
 
 | | Appendix | Status |
 |---|---|---|
-| A | Maths refresher (vectors/matrices, dot products, gradients, mean/variance/distributions, logarithms) | built for Ch 1–2; extend with eigenvalues (Ch 3), probability (Ch 5+), information theory (Ch 10) |
+| A | Maths refresher (vectors/matrices, dot products, gradients, mean/variance/distributions, logarithms) | built for Foundations, including eigenvectors/SVD for PCA and classification losses; extend for later specialist topics |
 | B | Glossary | built; grows with every chapter |
-| C | Reproducibility toolkit | planned |
-| D | Further reading | planned |
+| C | Reproducibility toolkit | built: provenance, environments, splits, saved procedures and report template |
+| D | Further reading | built for Foundations with annotated primary documentation |
 
 ## Cross-cutting work for later iterations
 

@@ -1,0 +1,204 @@
+---
+title: "Ensembles: forests and gradient boosting"
+chapter: 3
+episode: 2
+teaching: 40
+exercises: 20
+level: intermediate
+questions:
+  - "Why can combining imperfect trees improve prediction?"
+  - "How do random forests and boosting differ?"
+objectives:
+  - "Explain bagging, feature subsampling and sequential error correction."
+  - "Compare a forest and gradient boosting with a scaled ridge baseline."
+  - "Distinguish out-of-bag diagnostics from an independent final evaluation."
+keypoints:
+  - "Random forests average diverse trees; boosting adds trees sequentially to reduce a loss."
+  - "Compare models on identical folds, features and metrics before attributing a gain to the algorithm."
+  - "More forest trees reduce simulation noise; they do not repair leakage or an unsuitable split."
+  - "Learning rate and boosting iterations work together and must be chosen within development data."
+prerequisites: [ch03-ep01]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A single tree can turn a small change in the solubility table into a different set of questions. An {{< term ensemble >}} combines predictions from several fitted models. This helps when their errors are sufficiently different: one tree's overestimate may partly offset another's underestimate. Averaging 100 copies of exactly the same tree would provide no such benefit.
+
+There are two useful ways to make the collection. A random forest trains many trees on perturbed data and averages them. Gradient boosting builds a sequence in which each new tree addresses what the current collection still gets wrong. Both can capture nonlinear descriptor relationships; neither makes the evaluation rules from Chapter 2 optional.
+
+## Reuse the same scientific experiment
+
+The target, descriptor columns, development rows and folds should be the same when comparing algorithms. Otherwise a change in error might come from different information or easier molecules rather than a better model. We again reserve the 20% test partition and use only the remaining rows for development.
+
+```{python}
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import KFold, cross_validate, train_test_split
+
+url = "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/delaney-processed.csv"
+path = Path("data/esol.csv")
+esol = pd.read_csv(path if path.exists() else url)
+features = ["Molecular Weight", "Number of H-Bond Donors", "Number of Rings",
+            "Number of Rotatable Bonds", "Polar Surface Area"]
+X = esol[features]
+y = esol["measured log solubility in mols per litre"]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+cv = KFold(n_splits=5, shuffle=True, random_state=42)
+X_train.shape
+```
+
+## Bagging: vary the sample, average the answer
+
+{{< term bagging >}} means bootstrap aggregation. A bootstrap sample draws rows **with replacement** from the training set: some appear several times, others not at all. Fit a tree to each such sample, predict with every tree, then average the numeric predictions. The resampling makes the trees different; averaging can reduce the variance of their predictions.
+
+A {{< term random-forest >}} adds another source of diversity by considering a subset of features at each split. If every tree always chooses the same strong descriptor at its root, their errors may remain highly correlated. Restricting the candidate features gives other useful predictors a chance. How many features to consider is itself a hyperparameter; more randomness is not automatically better.
+
+::: {.bridge audience="bio"}
+Imagine several groups independently analysing slightly different subsets of an experiment. An average of their predictions may be less sensitive to one unusual observation. But if every group shares a batch effect or a mislabelled outcome, agreement will not remove that common error. Ensemble diversity helps with some model variability, not with shared bias in the experiment.
+:::
+
+```{python}
+from sklearn.ensemble import RandomForestRegressor
+
+forest = RandomForestRegressor(n_estimators=150, min_samples_leaf=3,
+                               max_features=0.8, random_state=42, n_jobs=1)
+forest.fit(X_train, y_train)
+print(f"Trees fitted: {len(forest.estimators_)}")
+print(f"Mean tree depth: {np.mean([t.get_depth() for t in forest.estimators_]):.1f}")
+```
+
+The forest still contains complex trees, even when its averaged predictions behave more smoothly. Increasing `n_estimators` usually makes the average less sensitive to which random trees were drawn, at a cost in memory and computation. It is not the same regularisation knob as limiting each tree's depth or requiring larger leaves.
+
+## Boosting: add a small correction
+
+For squared-error regression, start with a constant prediction such as the training mean. Compute residuals, fit a small tree to those residuals, and add a fraction of its predictions. Repeat using the new residuals. {{< term boosting >}} therefore produces an additive model whose trees depend on the earlier steps.
+
+The {{< term learning-rate >}}, often written $\eta$, controls the size of each correction:
+
+$$F_m(x) = F_{m-1}(x) + \eta h_m(x).$$
+
+Here $h_m$ is the new tree and $F_m$ is the ensemble after iteration $m$. With other loss functions, gradient boosting fits the relevant negative gradients rather than the ordinary residuals. The “gradient” in its name connects this process to minimising a loss in Chapter 2.
+
+`HistGradientBoostingRegressor` groups continuous feature values into bins to speed the search for splits. We use a modest leaf budget and iteration count suitable for this small table. `early_stopping=False` makes the number of iterations explicit in this teaching comparison; an early-stopping validation subset, when used, must come from the training fold. The [ensemble documentation](https://scikit-learn.org/stable/modules/ensemble.html) explains these algorithm and API choices.
+
+```{python}
+from sklearn.ensemble import HistGradientBoostingRegressor
+
+boosting = HistGradientBoostingRegressor(
+    max_iter=100, learning_rate=0.08, max_leaf_nodes=15,
+    min_samples_leaf=15, early_stopping=False, random_state=42
+)
+boosting.fit(X_train, y_train)
+print(f"Boosting iterations: {boosting.n_iter_}")
+```
+
+A small learning rate often needs more iterations to reach a useful fit. Holding the iteration count fixed while reducing the learning rate can simply underfit. Conversely, a long sequence of overly flexible corrections can pursue noise. Tune the combination on development folds, and consider the time budget as part of the selection rule.
+
+## A fair first comparison
+
+Before an expensive search, compare a few declared configurations with a dummy baseline and ridge. Ridge is scaled inside its pipeline; trees do not need that scaling. We use precisely the same CV object for each fit and report errors in the original logS units.
+
+::: {.predict}
+Will the forest and boosting necessarily beat ridge? Name one feature–target relationship under which ridge could win, despite being less flexible.
+:::
+
+```{python}
+from sklearn.dummy import DummyRegressor
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+models = {"mean baseline": DummyRegressor(),
+          "ridge": make_pipeline(StandardScaler(), Ridge(alpha=10)),
+          "random forest": forest, "gradient boosting": boosting}
+results = []
+for name, model in models.items():
+    scores = cross_validate(model, X_train, y_train, cv=cv,
+                            scoring="neg_root_mean_squared_error")
+    errors = -scores["test_score"]
+    results.append({"model": name, "CV RMSE": errors.mean(),
+                    "fold SD": errors.std(ddof=1),
+                    "fit seconds": scores["fit_time"].mean()})
+comparison = pd.DataFrame(results).set_index("model")
+comparison.round(3)
+```
+
+Interpret the table in stages. First ask whether the models beat the mean baseline. Then compare ridge with the nonlinear alternatives. Finally, weigh the error difference against the variation between folds and the computational cost. The fold standard deviation is a descriptive measure of split sensitivity, **not** a confidence interval: the training folds overlap and are not independent experiments.
+
+A small difference in mean CV error can reverse under another reasonable partition. Do not claim that an algorithm is universally superior because one configuration ranks first here. These results apply to five descriptors, these molecules, this split design and this metric. Part II changes the molecular representation and split design, which may change the ranking.
+
+## Out-of-bag estimates: useful, with boundaries
+
+For a bootstrap forest, a particular training row is absent from some trees' samples. Its {{< term out-of-bag >}} prediction uses only those trees. This gives a convenient diagnostic without setting aside an additional validation partition. By default the regressor's `oob_score_` is $R^2$, so do not compare that value directly with the RMSE column above.
+
+```{python}
+from sklearn.base import clone
+from sklearn.metrics import root_mean_squared_error
+
+oob_forest = clone(forest).set_params(oob_score=True).fit(X_train, y_train)
+oob_rmse = root_mean_squared_error(y_train, oob_forest.oob_prediction_)
+print(f"Out-of-bag R2: {oob_forest.oob_score_:.3f}")
+print(f"Out-of-bag RMSE: {oob_rmse:.3f} log10(mol/L)")
+```
+
+The OOB prediction for a row excludes that row from the contributing trees, but may still include its close analogues or measurements from the same patient. OOB is not a replacement for group-aware evaluation. If you repeatedly use OOB scores to select settings, those scores also become part of the model-selection process and need an independent final assessment.
+
+::: {.pitfall title="Tree disagreement is not a calibrated uncertainty interval"}
+The spread of predictions across trees shows one kind of model variability. The trees share data, modelling assumptions and systematic errors. Their quantiles do not automatically provide a stated probability of containing a future measurement. Calibrated prediction intervals require a separate method and validation of its assumptions.
+:::
+
+## Use the bias–variance picture as a diagnosis
+
+Suppose a single deep tree changes its predictions substantially when a few development rows change. Averaging independently perturbed trees can reduce that variability. If their errors were completely independent, averaging would be especially effective; shared training information makes them correlated, so the gain is limited. Feature subsampling trades some individual-tree strength for diversity. A forest with consistently wrong predictions in one chemical region may need better features or a different representation, not simply more trees.
+
+Boosting approaches the problem differently. A shallow starting model may miss a repeatable nonlinear pattern, and successive corrections can reduce that systematic underfit. Continuing to add corrections eventually risks fitting accidental detail. The familiar training-versus-validation diagnostic therefore remains useful, but it now concerns the length and flexibility of a sequence as well as the complexity of each tree.
+
+These are tendencies, not a rule that forests “only reduce variance” or boosting “only reduces bias”. Both have complexity controls, both can underfit, and both can generalise poorly. If training and validation error are both large, investigate the representation, model restrictions and measurement noise. If training error is small but validation error is much larger, examine complexity and whether validation rows come from a different distribution. Those two causes call for different responses.
+
+For the solubility example, a useful next experiment is to compare residuals across a predeclared molecular-size grouping on development folds. If all candidate families fail on the same region, another grid search may be less valuable than checking the data and missing chemistry. When only the flexible models show an excessive training gap, stronger regularisation or more relevant training examples may be the more direct intervention.
+
+## Choose a search budget deliberately
+
+For a forest, start with leaf size and feature subsampling; use enough trees that rankings are not dominated by random simulation noise. For boosting, start with learning rate, iteration count and leaf complexity. A smaller, well-motivated search can be more informative than thousands of combinations that repeatedly reuse the same limited validation evidence.
+
+The [hyperparameter-tuning lesson](../ch02-ml-fundamentals/08-hyperparameter-tuning.html) explains grid and random search. In [Lab 3](labs/lab-03-tabular-comparison.html), the search includes the **model family itself**. An outer CV loop then evaluates that entire choice. Selecting the family after inspecting outer scores would introduce a new selection step that the original outer estimate did not cover.
+
+## Exercises
+
+::: {.challenge level=1 title="Which ensemble?"}
+One procedure fits 100 trees independently on resampled rows and averages them. Another fits each tree to a correction left by the current prediction. Identify the procedures and explain which can train its trees independently.
+
+:::: {.solution}
+The first is bagging (a random forest also samples candidate features). Its trees can be trained independently. The second is boosting; later corrections depend on earlier predictions, so its boosting steps are sequential.
+::::
+:::
+
+::: {.challenge level=2 title="Compare a slower correction schedule"}
+Compare `(learning_rate, max_iter)` pairs `(0.1, 80)` and `(0.05, 160)` on the existing development folds. Does halving the step and doubling the iterations guarantee identical predictions?
+
+:::: {.solution}
+```{python}
+for rate, iterations in [(0.1, 80), (0.05, 160)]:
+    model = clone(boosting).set_params(learning_rate=rate, max_iter=iterations)
+    scores = cross_validate(model, X_train, y_train, cv=cv,
+                            scoring="neg_root_mean_squared_error")
+    print(rate, iterations, round(-scores["test_score"].mean(), 3))
+```
+No. Every correction is fitted to the residual state reached by earlier steps. Different step sizes can lead to different subsequent trees. This is a comparison of two candidate schedules, not an algebraic equivalence.
+::::
+:::
+
+::: {.challenge level=3 title="An ensemble that agrees and fails"}
+A forest predicts all compounds from a new assay batch poorly, yet its trees agree closely. Give a plausible explanation and a more relevant evaluation design.
+
+:::: {.solution}
+All trees may share a batch-specific relationship learned from the old assay, or lack a variable that changes in the new batch. Agreement does not detect this common error. Hold out whole batches during development, using a group-aware split, and if possible validate prospectively on a later independent batch.
+::::
+:::
+
+## Where this is going
+
+[Support vector machines](03-support-vector-machines.html) replace branching rules with a similarity-based prediction. The final lab compares both approaches using the same scientific question. In later QSAR work, forests and boosting remain useful tabular baselines before introducing neural networks: greater architectural complexity needs evidence of a practical improvement.

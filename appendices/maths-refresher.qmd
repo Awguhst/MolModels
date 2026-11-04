@@ -1,6 +1,6 @@
 ---
 title: "Maths refresher"
-subtitle: "The linear algebra, calculus, probability, statistics and logarithms that Chapters 1 and 2 lean on, stated properly and then run in NumPy."
+subtitle: "The linear algebra, calculus, probability, statistics and logarithms behind Foundations, including PCA and neural-network losses."
 ---
 
 {{< include /_includes/mm-setup.qmd >}}
@@ -1165,6 +1165,95 @@ vals.mean(), np.median(vals), vals.var(), vals.std(), pd.Series(vals).std()
 ```
 
 `vals.std()` gives 2 and `pd.Series(vals).std()` gives 2.14: the same data, two defaults.
+::::
+:::
+
+## Eigenvectors, singular values and PCA {#pca-maths}
+
+*Used in* [Chapter 3](../part-1-foundations/ch03-beyond-linear-models/index.html) to turn correlated measurements into orthogonal summary coordinates.
+
+A covariance matrix describes how variables vary together. An **eigenvector** of a square matrix $C$ is a non-zero vector $v$ whose direction is preserved by the transformation: $Cv = \lambda v$. The scalar $\lambda$ is its eigenvalue. For a symmetric covariance matrix, eigenvectors can be chosen orthonormal and eigenvalues are non-negative, apart from tiny floating-point errors.
+
+If $Z$ is an $n \times p$ matrix with centred columns, the sample covariance matrix is $C = Z^\top Z/(n-1)$. A unit direction $v$ gives projected coordinates $Zv$ with sample variance $v^\top Cv$. Maximising this variance gives the eigenvector with the largest eigenvalue. Subsequent principal directions maximise remaining variance while being orthogonal to the previous directions.
+
+::: {.deep-dive title="Why the largest eigenvalue wins"}
+Write a unit direction in an orthonormal eigenbasis as $v=\sum_j a_j v_j$, where $\sum_j a_j^2=1$. Then $v^\top Cv=\sum_j a_j^2\lambda_j$, a weighted average of the eigenvalues. It cannot exceed the largest eigenvalue, and reaches it by choosing a corresponding eigenvector. The same argument applies in the orthogonal complement for later components. Equal eigenvalues can make the corresponding directions non-unique.
+:::
+
+Here are three synthetic correlated measurements. This is a geometry demonstration; for predictive modelling, centring, scaling and PCA must be fitted using training data only.
+
+```{python}
+rng_pca = np.random.default_rng(42)
+latent = rng_pca.normal(size=80)
+measurements = np.column_stack([
+    latent + rng_pca.normal(0, 0.2, 80),
+    2 * latent + rng_pca.normal(0, 0.2, 80),
+    rng_pca.normal(size=80),
+])
+Z = (measurements - measurements.mean(axis=0)) / measurements.std(axis=0, ddof=1)
+covariance = Z.T @ Z / (len(Z) - 1)
+eigenvalues, directions = np.linalg.eigh(covariance)
+order = np.argsort(eigenvalues)[::-1]
+eigenvalues, directions = eigenvalues[order], directions[:, order]
+print("Explained variance fractions:", np.round(eigenvalues / eigenvalues.sum(), 3))
+```
+
+The first direction summarises the shared variation of the first two measurements. Its eigenvalue is variance in the transformed coordinates, not variance explained in a prediction target: PCA has not used any target. Standardising changes the scientific question from “which direction has greatest variance in the original units?” to one that gives each feature comparable initial variance.
+
+The **singular value decomposition** gives a related factorisation $Z=U\Sigma V^\top$. Columns of $V$ are principal directions; squared singular values divided by $n-1$ are covariance eigenvalues. SVD can work directly with $Z$ rather than explicitly forming $Z^\top Z$, which is useful for numerical stability and large matrices.
+
+```{python}
+U, singular_values, Vt = np.linalg.svd(Z, full_matrices=False)
+print("SVD and covariance agree:",
+      np.allclose(singular_values**2 / (len(Z) - 1), eigenvalues))
+scores_two = Z @ Vt[:2].T
+reconstruction_two = scores_two @ Vt[:2]
+print("Two-component reconstruction MSE:", np.mean((Z - reconstruction_two)**2).round(4))
+```
+
+Keeping the first two directions gives the best rank-two reconstruction in squared-error terms for this centred matrix. It need not preserve the information most useful for classification. Component signs are arbitrary: reversing both a direction and its scores gives the same reconstruction, so a mirrored PCA plot is not a scientific contradiction.
+
+::: {.challenge level=1 title="Variance is not prediction"}
+A PCA transformation retains 95% of feature variance. Does that guarantee 95% classification accuracy?
+
+:::: {.solution}
+No. Explained variance describes the spread of inputs captured by the projection. A low-variance feature could contain nearly all information about the label. Choose the number of components for prediction inside validation, with PCA fitted within each training fold.
+::::
+:::
+
+## Chain rule and classification losses {#neural-losses}
+
+*Used in* [Chapter 4](../part-1-foundations/ch04-deep-learning-essentials/index.html) to connect automatic differentiation to the training objective.
+
+For a composition $L(h(w))$, the chain rule multiplies local derivatives: $dL/dw=(dL/dh)(dh/dw)$. When a parameter affects a loss through several branches, their contributions add. Backpropagation applies this rule from the scalar loss back through the network, reusing intermediate calculations. An optimiser then updates the parameters; computing gradients and changing weights are separate steps.
+
+For example, if $h=wx+b$ and $L=(h-y)^2$, then $\partial L/\partial w=2(h-y)x$ and $\partial L/\partial b=2(h-y)$. PyTorch's `backward()` accumulates these contributions into gradient buffers, which is why an ordinary training loop clears old gradients before computing the next update.
+
+A binary classifier outputs a **logit** $z$, transformed to probability by $p=1/(1+e^{-z})$. For a target $y\in\{0,1\}$, binary cross-entropy is
+
+$$
+L=-[y\log p+(1-y)\log(1-p)].
+$$
+
+Predicting 0.99 for an event that does not happen incurs a much larger loss than predicting 0.6. This is a probability loss, not an error count at a chosen threshold. Its derivative with respect to the logit simplifies to $p-y$, connecting the probability error to the gradient update.
+
+For mutually exclusive classes, softmax converts logits into probabilities $p_j=e^{z_j}/\sum_k e^{z_k}$. Subtracting the maximum logit before exponentiating leaves probabilities unchanged and improves numerical stability. For a class index $c$, cross-entropy is $-\log p_c$.
+
+```{python}
+logits = np.array([2.0, 0.5, -1.0])
+exp_shifted = np.exp(logits - logits.max())
+probabilities = exp_shifted / exp_shifted.sum()
+print("Class probabilities:", probabilities.round(3))
+print("Loss when the target class is 0:", round(-np.log(probabilities[0]), 3))
+```
+
+The probabilities sum to one; the largest logit gets the greatest probability. In training, use stable combined loss implementations: PyTorch's `BCEWithLogitsLoss` and ordinary class-index `CrossEntropyLoss` take raw logits. Applying sigmoid or softmax first changes their intended input. Regression instead usually uses an unconstrained numeric output and a loss such as MSE, with matching prediction and target shapes.
+
+::: {.challenge level=1 title="Why not accuracy as a training loss?"}
+A model's probability moves from 0.51 to 0.90 for a true positive, with decision threshold 0.5. What happens to accuracy and binary cross-entropy for that sample?
+
+:::: {.solution}
+Accuracy stays the same: both decisions are correct. Cross-entropy falls from $-\log(0.51)$ to $-\log(0.90)$. Its smooth dependence on the logit provides gradient information even when the discrete prediction does not change.
 ::::
 :::
 

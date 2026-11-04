@@ -29,7 +29,7 @@ prerequisites: [ch00-ep03]
 
 {{< include /_includes/mm-setup.qmd >}}
 
-Suppose you have just weighed out three compounds, dissolved each in 250 mL of buffer and want to know the molar concentration of every solution. On paper that is one division per sample. In a lab with hundreds of samples, a plate reader and a deadline, it is a small program. This episode collects the handful of Python features that such programs are built from, nothing more. If you can already write a loop and a function you will find most of it familiar; the point is to agree on the idioms this course uses before NumPy and pandas arrive in the next two episodes.
+Suppose you have just weighed out three samples of the same compound, dissolved each in 250 mL of buffer and want to know the molar concentration of every solution. On paper that is one division per sample. In a lab with hundreds of samples, a plate reader and a deadline, it is a small program. This episode collects the handful of Python features that such programs are built from, nothing more. If you can already write a loop and a function you will find most of it familiar; the point is to agree on the idioms this course uses before NumPy and pandas arrive in the next two episodes.
 
 ::: {.prereq}
 You should have completed the [Chapter 0 self-check](../ch00-start-here/03-self-check.html), so that the notebook you are reading this in can run the cells below. Programmers with Python experience can skim to the sections on f-strings, `pathlib` and tracebacks.
@@ -50,7 +50,7 @@ type(molar_mass), type(n_samples), type(sample), type(is_control)
 
 There is also `None`, Python's way of saying "no value here": a measurement that was not taken, a result not yet computed. You will meet its tabular cousin, `NaN`, in [episode 1.3](03-pandas-dataframes.html).
 
-Python converts between types only when you ask it to. Dividing two integers gives a float (`7 / 2` is `3.5`), but adding a string to a number is an error, and `"3.5"` read from a file is text until you call `float("3.5")` on it. Most of the puzzling errors in data work come from a value that has the wrong type, so when in doubt, ask `type(x)`.
+Python automatically promotes some compatible numeric types, but it does not infer what text means. Dividing two integers gives a float (`7 / 2` is `3.5`), but adding a string to a number is an error, and `"3.5"` read from a file is text until you call `float("3.5")` on it. Most of the puzzling errors in data work come from a value that has the wrong type, so when in doubt, ask `type(x)`.
 
 ## Lists and dictionaries
 
@@ -72,7 +72,7 @@ atomic_mass["O"]
 ```
 
 ::: {.bridge audience="chem"}
-A dictionary is the periodic table reduced to the one column you need. `atomic_mass["O"]` is exactly what you do when you glance at the table on the lab wall: find the symbol, read off the mass. The same shape fits any lookup you do by name: `pKa[acid]`, `extinction_coefficient[dye]`, `density[solvent]`. In [episode 1.3](03-pandas-dataframes.html) you will see that a pandas Series is a dictionary that also knows how to do arithmetic.
+A dictionary is the periodic table reduced to the one column you need. `atomic_mass["O"]` is exactly what you do when you glance at the table on the lab wall: find the symbol, read off the mass. The same shape fits any lookup you do by name: `pKa[acid]`, `extinction_coefficient[dye]`, `density[solvent]`. In [episode 1.3](03-pandas-dataframes.html) you will see that a pandas Series combines labels with array arithmetic; unlike a dictionary, its labels need not be unique.
 :::
 
 Which to use? If you would naturally say "the third one", use a list. If you would say "the one called oxygen", use a dict. Adding to each looks different: `masses_mg.append(11.0)` extends a list; `atomic_mass["S"] = 32.06` adds a key to a dict.
@@ -92,7 +92,7 @@ time_points_min[1:4], time_points_min[:2], time_points_min[4:]
 ```
 
 ::: {.bridge audience="math"}
-Python indexes from 0 and slices are *half-open intervals*: `items[a:b]` is the set of positions $\{i : a \le i < b\}$, so it holds exactly $b - a$ items and `items[:k]` followed by `items[k:]` partitions the list without overlap. The convention looks odd for a day and then becomes the one you want, because lengths and differences of indices agree. Mathematicians who write $x_1, \dots, x_n$ should remember that NumPy and pandas inherit the same convention: the first row is row 0.
+Python indexes from 0 and slices are *half-open intervals*: `items[a:b]` is the set of positions $\{i : a \le i < b\}$, so, when $0 \le a \le b \le \mathrm{len}(items)$, it holds $b - a$ items and `items[:k]` followed by `items[k:]` partitions the list without overlap. The convention looks odd for a day and then becomes the one you want, because lengths and differences of indices agree. Mathematicians who write $x_1, \dots, x_n$ should remember that NumPy and pandas inherit the same convention: the first row is row 0.
 :::
 
 Strings slice the same way, which is handy for sample codes: `"PLATE07_B03"[-3:]` is `"B03"`.
@@ -124,9 +124,11 @@ Read it as "the value `mass / molar_mass / volume_L`, for each `mass` in `masses
 To walk two lists in step, use `zip`; to count as you go, use `enumerate`:
 
 ```{python}
-for i, (name, conc) in enumerate(zip(samples, concentrations)):
+for i, (name, conc) in enumerate(zip(samples, concentrations, strict=True)):
     print(i, name, conc)
 ```
+
+`strict=True` makes unequal list lengths an error instead of silently dropping unmatched samples. Pairing values by position is safe only while their order agrees; named identifiers will become important when we merge tables.
 
 Those numbers have far too many digits. Fixing that is what f-strings are for, two sections from now.
 
@@ -156,13 +158,29 @@ Three habits, each cheap now and valuable later:
 Never use a list or dict as a default value (`def f(results=[])`): the same list is shared between *every* call, so results from one call leak into the next. Use `results=None` and create the list inside the function.
 :::
 
+## Checking assumptions before calculating
+
+Python checks whether an operation is legal, not whether the experiment makes sense. Dividing by a negative volume runs but produces a physically meaningless concentration. State the domain of a function as well as its units, and reject invalid inputs explicitly:
+
+```{python}
+def checked_concentration(mass_mg, molar_mass, volume_L):
+    """Return mmol/L for non-negative mass and positive molar mass and volume."""
+    if mass_mg < 0 or molar_mass <= 0 or volume_L <= 0:
+        raise ValueError("Mass must be non-negative; molar mass and volume must be positive.")
+    return mass_mg / molar_mass / volume_L
+
+checked_concentration(12.4, 18.015, 0.250)
+```
+
+This helper is still small: it assumes finite numeric inputs. A documented assumption is better than a mysterious number. Test one easy case by hand before running a calculation on hundreds of samples, and preserve the original measurements so a corrected conversion can be rerun.
+
 ## f-strings and format specifications
 
 An {{< term f-string >}} is a string with an `f` in front; anything inside braces is evaluated and inserted. After the expression, a colon introduces a *format specification* that says how to print it:
 
 | spec | meaning | example |
 |---|---|---|
-| `:.2f` | fixed point, 2 decimals | `2.753` |
+| `:.2f` | fixed point, 2 decimals | `2.75` |
 | `:.3g` | 3 significant figures | `2.75` |
 | `:>8` | right-align in 8 characters | `    0.28` |
 | `:<10` | left-align in 10 characters | `buffer_A  ` |
@@ -191,7 +209,7 @@ Twelve characters wide, right-aligned, one decimal, with a comma. If you guessed
 
 ## Files and paths with pathlib
 
-Data lives in files, and file paths are where notebooks break when they move between machines: Windows uses backslashes, macOS and Linux use forward slashes, and `"data" + "/" + "penguins.csv"` is fragile on both. {{< term pathlib >}} fixes this with a `Path` object that you join with `/`:
+Data lives in files, and file paths are where notebooks break when they move between machines: Windows uses backslashes, macOS and Linux use forward slashes, and handwritten path strings become difficult to maintain. {{< term pathlib >}} fixes this with a `Path` object that you join with `/`:
 
 ```{python}
 from pathlib import Path
@@ -211,7 +229,7 @@ sorted(p.name for p in data_dir.iterdir())
 `iterdir()` yields every entry; `glob("*.csv")` yields only those matching a pattern. Both give `Path` objects, so you can chain straight into `.exists()`, `.stat().st_size` or `pd.read_csv(p)`.
 
 ::: {.note title="Where does a relative path start?"}
-`Path("data")` is relative to the *current working directory* of the Python process, usually the folder the notebook was launched from. In this course every notebook runs from the repository root, so `data/penguins.csv` always works. If `exists()` returns `False` when you are sure the file is there, print `Path.cwd()` and you will usually see why.
+`Path("data")` is relative to the *current working directory* of the Python process, usually the folder the notebook was launched from. Rendered episode cells run from the repository root. A notebook you open yourself may start in its own folder instead; the lab loading cells try several locations. For copied episode code, launch from the repository root or set the data path explicitly. If `exists()` returns `False` when you are sure the file is there, print `Path.cwd()` and you will usually see why.
 :::
 
 ## Imports and modules
@@ -289,7 +307,7 @@ Write a function `print_table(names, values, unit, decimals=2)` that prints a he
 def print_table(names, values, unit, decimals=2):
     """Print `names` and `values` as two aligned columns, with `unit` in the header."""
     print(f"{'sample':<12}{unit:>10}")
-    for name, value in zip(names, values):
+    for name, value in zip(names, values, strict=True):
         print(f"{name:<12}{value:>10.{decimals}f}")
 
 
@@ -324,7 +342,7 @@ inventory()
 inventory("no_such_dir")
 ```
 
-`glob("*.csv")` returns only matching files, so `README.md` is skipped. The `with` block closes the file when you leave it, even if an error occurs. The line count is one more than the number of rows, because the first line is the header: `penguins.csv` has 345 lines for 344 penguins. Checking `exists()` first turns a cryptic error into a message that names the directory *and* the working directory, which is almost always what a confused user needs to see.
+`glob("*.csv")` returns only matching files, so `README.md` is skipped. The `with` block closes the file when you leave it, even if an error occurs. For these simple files, the line count is one more than the number of data rows, because the first line is the header: `penguins.csv` has 345 lines for 344 penguins. Checking `exists()` first turns a cryptic error into a message that names the directory *and* the working directory, which is almost always what a confused user needs to see.
 ::::
 :::
 

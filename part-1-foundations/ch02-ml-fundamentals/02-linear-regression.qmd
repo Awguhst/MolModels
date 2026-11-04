@@ -20,7 +20,7 @@ keypoints:
   - "A linear model predicts $\\hat{y} = X\\theta$; fitting means choosing $\\theta$ to minimise the mean squared error on the training data."
   - "The normal equation gives the exact least-squares solution in one line: solve $(X^\\top X)\\theta = X^\\top y$ with `np.linalg.solve`, never with an explicit inverse."
   - "Gradient descent reaches the same answer step by step: compute the gradient, move against it, repeat. The learning rate decides whether it converges, crawls or explodes."
-  - "Standardise features before gradient descent. The normal equation does not care about scale; gradient descent does."
+  - "Standardise features before gradient descent. Poor scaling affects numerical conditioning too; use a suitable least-squares solver."
   - "scikit-learn wraps all of this in the estimator API: `fit`, `predict`, `score`, `coef_`, `intercept_`. Every model in this course uses the same names."
   - "Coefficients are not effects. They depend on the units of the feature and on which other, correlated features are in the model."
   - "Everything in this episode is fitted and scored on the same data. Whether the model is any good is the question of episode 2.3."
@@ -94,7 +94,7 @@ X[:3]
 
 Why the column of ones? Row $i$ of $X\theta$ is $1\cdot\theta_0 + x_i\theta_1$, exactly the line. The trick lets the intercept be treated like any other parameter, and it is why "a linear model" and "a matrix product" are the same thing for the rest of this course.
 
-The MSE is a bowl-shaped function of $\theta$ (a quadratic that opens upwards), so it has exactly one minimum, at the point where every partial derivative is zero. Setting the derivatives to zero and rearranging (the deep dive below does it) gives the {{< term normal-equation >}}:
+The MSE is a convex quadratic in $\theta$. Here the design matrix has independent columns, so its minimum is unique. With redundant columns, multiple parameter vectors can give the same minimum. Setting the derivatives to zero and rearranging (the deep dive below does it) gives the {{< term normal-equation >}}:
 
 $$
 (X^\top X)\,\theta = X^\top y .
@@ -108,10 +108,10 @@ print(f"intercept {theta_ne[0]:.5f}   slope {theta_ne[1]:.5f} logS per g/mol")
 print(f"loss at the minimum: {mse(theta_ne, x, y):.4f}")
 ```
 
-The slope says that each extra 100 g/mol of molecular weight costs about 1.3 log units of solubility, a factor of twenty, if nothing else changes. The loss, 2.59, is barely below the guess from episode 2.1 (which was, in fact, a rounded version of this answer).
+The fitted line predicts about 1.3 fewer log units of solubility for a 100 g/mol increase in molecular weight, roughly a factor of twenty on the concentration scale. This is an association across molecules, not an experiment that changes weight while holding chemistry fixed. The loss, 2.59, is barely below the guess from episode 2.1 (which was, in fact, a rounded version of this answer).
 
 ::: {.tip title="solve, not inv"}
-You will see $\theta = (X^\top X)^{-1} X^\top y$ in textbooks, and the literal translation `np.linalg.inv(X.T @ X) @ X.T @ y` is tempting. Do not. Computing an explicit inverse and then multiplying costs more and loses precision; `np.linalg.solve` factorises the matrix and solves the system directly, which is both faster and more accurate, especially when the columns of $X$ are nearly collinear (as they will be with real descriptors). The inverse is a thing you write; `solve` is the thing you compute.
+You will see $\theta = (X^\top X)^{-1} X^\top y$ in textbooks, and the literal translation `np.linalg.inv(X.T @ X) @ X.T @ y` is tempting. Do not. Computing an explicit inverse and then multiplying costs more and loses precision; `np.linalg.solve` factorises the matrix and solves the system directly, which is both faster and more accurate, especially when the columns of $X$ are nearly collinear (as they will be with real descriptors). Even this normal-equation solve is mainly a teaching device: forming $X^\top X$ squares the condition number and can amplify numerical problems. For practical least squares use `np.linalg.lstsq(X, y, rcond=None)` or `LinearRegression`, which use more suitable solvers and can handle rank-deficient designs.
 :::
 
 ```{python}
@@ -224,7 +224,7 @@ print(f"normal equation:                  intercept {theta_ne[0]:.5f}  slope {th
 ```
 
 ::: {.note title="When would you ever use this?"}
-For a linear model with a few thousand rows, never; the normal equation is exact and instant. Gradient descent earns its place when there is no closed form (almost every model after this one), when the data are too large to hold $X^\top X$ in memory, or when the data arrive in a stream. Chapter 4 trains neural networks with precisely the loop above, with a longer `gradient` line.
+For this small dense problem, a direct least-squares solver is simpler and efficient. Gradient descent earns its place for differentiable models without a convenient closed-form solution, when the data are too large to hold $X^\top X$ in memory, or when the data arrive in a stream. Chapter 4 trains neural networks with precisely the loop above, with a longer `gradient` line.
 :::
 
 ### Choosing the learning rate
@@ -430,7 +430,7 @@ print(f"coefficient on MW: {model6.coef_[0]:.5f}   on MW²: {model6.coef_[-1]:.2
 
 The training $R^2$ rises from 0.683 to about 0.707, and the coefficients say the fitted curve in molecular weight bends slightly upwards (negative linear term, small positive quadratic term), so the solubility penalty per g/mol eases off for the heaviest molecules.
 
-Why this is not evidence: adding any column to $X$ can never increase the minimum of the training loss, because the model with that coefficient set to zero is still available, so the training $R^2$ rises for *every* added feature, informative or not. Episode 2.1's degree-15 polynomial is the extreme case. Whether the squared term helps with *new* molecules is a question only held-out data can answer, and [episode 2.3](03-evaluating-models.html) is where you get to ask it. Note also that MW and MW² are highly correlated, so the two coefficients should be read together, as a curve, not separately.
+Why this is not evidence: adding any column to $X$ can never increase the minimum of the training loss, because the model with that coefficient set to zero is still available, so training $R^2$ can increase or stay unchanged, even for an uninformative added feature. Episode 2.1's degree-15 polynomial is the extreme case. Whether the squared term helps with *new* molecules is a question only held-out data can answer, and [episode 2.3](03-evaluating-models.html) is where you get to ask it. Note also that MW and MW² are highly correlated, so the two coefficients should be read together, as a curve, not separately.
 ::::
 :::
 

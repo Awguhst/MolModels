@@ -33,7 +33,7 @@ Two libraries do almost all of the work. **matplotlib** draws: it owns the canva
 
 ## Anatomy of a matplotlib figure
 
-Load the penguins and the two libraries. The hidden setup cell at the top of each episode applies the course's plotting style, so your figures will look like these if you copy the code.
+Load the penguins and the two libraries. The hidden setup cell at the top of each episode applies the course's plotting style, so the site uses a consistent theme. Copied cells still run with your local matplotlib style; colour and typography may differ.
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -172,7 +172,7 @@ Read the box plot for the numbers: the Gentoo median is about 1,300 g above the 
 ::: {.note title="Which plot, when"}
 | You want to see | Use |
 |---|---|
-| the shape of one variable | `histplot` (add `kde=True` with more than about 50 points) |
+| the shape of one variable | `histplot`; add a KDE for continuous data when its smoothing is useful and inspect bandwidth sensitivity |
 | one variable across a few groups | `boxplot` for the summary, `violinplot` for the shape, both if space allows |
 | how two variables relate | `scatterplot` (with `hue` for a third, categorical variable) |
 | a trend over an ordered axis (time, dose) | `ax.plot` with lines joining the points |
@@ -209,7 +209,7 @@ plt.rcParams["figure.constrained_layout.use"] = True
 
 Look along the bottom row and down the first column. Flipper length and body mass separate Gentoo from the rest; bill length is the measurement that separates Adelie from Chinstrap. That is exactly the kind of observation that decides which features go into a classifier in Chapter 2, and you got it from one picture.
 
-A pairplot shows the relationships; a {{< term correlation >}} matrix puts a number on each. The Pearson correlation runs from −1 (one variable falls exactly as the other rises) through 0 (no linear relationship) to +1. `df.corr()` computes it for every pair of numeric columns, and `sns.heatmap` colours the resulting table. Drop `year` first: it is a number, but the correlation between a measurement and the year it was taken is not something you want in the picture.
+A pairplot shows the relationships; a {{< term correlation >}} matrix puts a number on each. The Pearson correlation runs from −1 (one variable falls exactly as the other rises) through 0 (no linear relationship) to +1. `df.corr()` computes it for every pair of numeric columns, and `sns.heatmap` colours the resulting table. Restrict this heatmap to the four body measurements. Year is a different scientific question: it can be useful for checking shifts across collection seasons and is explored separately below.
 
 ```{python}
 #| renderings: [light, dark]
@@ -227,13 +227,21 @@ The strongest pair is flipper length and body mass (0.87), which you already saw
 With 344 points, markers rarely hide one another. With 10,000 molecules or 50,000 cells, a scatter plot becomes a solid blob and the densest region, which is usually the one you care about, is invisible. Three fixes, in order of effort: lower the opacity (`alpha=0.2`), shrink the markers (`s=8`), or replace the scatter plot with a two-dimensional histogram (`ax.hexbin(x, y, gridsize=40)` or `sns.histplot(x=..., y=...)`). When a plot looks like a blob, the fix is never a bigger figure.
 :::
 
+## Spread, uncertainty and the observation unit
+
+A wide distribution means individual measurements differ. It does not directly tell you how uncertain the *mean* is. Standard deviation describes spread among observations; a standard error describes the sampling variability of an estimator under a stated sampling model; a confidence interval describes a procedure with a specified long-run coverage. Whenever you draw error bars, label which quantity they show and give the sample size.
+
+The independent unit matters. Ten readings from one bird are not ten independently sampled birds. Treating them that way can make an uncertainty interval too narrow. In repeated-measurement studies, keep bird, patient, molecule and batch identifiers so analysis and later train–test splits can respect the grouping.
+
+These plots describe the birds in this dataset. They do not establish that longer flippers *cause* greater body mass, nor that the species proportions represent every Antarctic population. A sample can be large and systematically unrepresentative. Before carrying a pattern into a prediction or scientific claim, ask how the observations were collected and which population the claim concerns.
+
 ## Figure hygiene
 
 A figure that goes into a thesis, a paper or a report to a project team has to survive without you standing next to it. The rules are short.
 
 1. **Units on every axis.** `flipper length (mm)`, `body mass (g)`, `logS (log10 mol/L)`. If a quantity has no unit, say what it is: `number of penguins`.
 2. **A title or a caption, not both.** In a notebook, a title on the Axes. In a paper, a caption below the figure and no title on the Axes.
-3. **Colour that everyone can read.** Around 8% of men and 0.5% of women have red–green colour vision deficiency, so never make red versus green carry the meaning. The course style uses a {{< term colour-blind-safe >}} palette by default. In your own work, `sns.set_palette("colorblind")` or `sns.color_palette("colorblind")` gives you one for categories; for an ordered quantity (a dose, a count, a probability) use a sequential colourmap such as `viridis`, which is also safe and reads correctly in greyscale.
+3. **Colour that everyone can read.** Do not rely on red versus green to carry the meaning; add distinguishable marker shapes or direct labels when colour alone is insufficient. The course style uses a {{< term colour-blind-safe >}} palette by default. In your own work, `sns.set_palette("colorblind")` or `sns.color_palette("colorblind")` gives you one for categories; for an ordered quantity (a dose, a count, a probability) use a sequential colourmap such as `viridis`, which is also safe and reads correctly in greyscale.
 4. **A legend that names what the colours mean**, placed where it hides no data.
 5. **Save at a resolution the medium needs.** The PNG a notebook shows is a screen-resolution preview. For a document, write the file explicitly:
 
@@ -390,4 +398,4 @@ plt.show()
 
 ## Where this is going
 
-The next episode, [1.5](05-eda-solubility.html), turns these plots on a chemical dataset: the histogram becomes the distribution of measured solubility, the scatter plots become solubility against molecular weight and polar surface area, and the heatmap tells you which descriptors are worth feeding to a model. From Chapter 2 on, two further figures join the set, the parity plot and the residual plot of [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html), both built with the same `fig, ax = plt.subplots()` pattern. In Part II the points become molecules and the clusters become chemical series, and the overplotting pitfall becomes a daily concern.
+The next episode, [1.5](05-eda-solubility.html), turns these plots on a chemical dataset: the histogram becomes the distribution of measured solubility, the scatter plots become solubility against molecular weight and polar surface area, and the heatmap suggests relationships to investigate with a model. From Chapter 2 on, two further figures join the set, the parity plot and the residual plot of [episode 2.3](../ch02-ml-fundamentals/03-evaluating-models.html), both built with the same `fig, ax = plt.subplots()` pattern. In Part II the points become molecules and the clusters become chemical series, and the overplotting pitfall becomes a daily concern.

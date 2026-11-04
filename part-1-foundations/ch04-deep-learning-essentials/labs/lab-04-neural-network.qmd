@@ -1,0 +1,64 @@
+---
+title: "A neural network for solubility"
+chapter: 4
+lab: 4
+duration: "90–120 min"
+minutes: 120
+level: intermediate
+objectives:
+  - "Prepare a reproducible train/validation/test split and training-fitted preprocessing."
+  - "Train two small MLP candidates with mini-batches and early stopping on CPU."
+  - "Compare the selected MLP with a tuned ridge baseline using validation RMSE."
+  - "Write a final test report without revising the selected model."
+prerequisites-text: ["Episodes 4.1–4.5", "Lab 2", "Cross-validation and tuning in episodes 2.7–2.8"]
+summary: "Return to ESOL with an explicit PyTorch training loop, two bounded neural-network candidates, copied early-stopping checkpoints and a ridge baseline. Choose on validation data, then inspect a final test comparison and parity plot."
+dataset: "ESOL / Delaney aqueous solubility; downloaded with checksum verification (see data/README.md)"
+notebook: lab-04-neural-network
+---
+
+A network is useful only if its extra flexibility improves a well-defined prediction task. This lab returns to the same five ESOL descriptors used in Lab 2 and asks whether a small MLP earns its place beside ridge regression. You will implement the loop, check its shapes, select a checkpoint using validation loss and write a final evaluation that keeps the test set out of every modelling decision.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/part-1-foundations/ch04-deep-learning-essentials/labs/lab-04-neural-network.ipynb">Open in Colab</a>
+<a class="mm-btn" href="lab-04-neural-network.ipynb" download>Download .ipynb</a>
+<a class="mm-btn" href="lab-04-neural-network-solutions.html">View solutions</a>
+</div>
+
+## The experiment
+
+Set aside 20% of the molecules for final testing, then reserve 25% of the remaining development rows for validation. Training and validation together are 80% of the data; the network updates see only the training subset. Scale descriptors using training statistics. Keep the target as measured logS in log₁₀(mol/L), so the square root of MSE remains directly interpretable.
+
+Tune ridge's `alpha` by cross-validation **within the training subset**, including scaling inside its pipeline. Train two prespecified MLP configurations with the same data, seed, batch size and epoch budget. Select the best MLP by validation RMSE, then choose between it and ridge on that same validation metric. This is a development choice, so the winning validation score is not an unbiased performance estimate.
+
+The final table reports the prespecified ridge and selected-MLP comparison on the test set. The headline model and its parity plot remain the ones chosen before those test scores were computed. If the test ordering reverses, report that fact and the uncertainty; do not silently switch the selected model.
+
+## Tasks
+
+1. Define the five descriptors and measured target; check missing values and row alignment.
+2. Create and verify disjoint training, validation and test indices.
+3. Fit a mean baseline and tune a scaled ridge pipeline on training folds.
+4. Fit the neural-network scaler on training rows and create `float32` tensors.
+5. Write the network constructor, mini-batch training step and evaluation function.
+6. Implement early stopping using an independent copied state dictionary.
+7. Fit the two declared candidates and select using validation RMSE.
+8. Freeze the model choice, evaluate once on the test set and plot the selected model's predictions.
+9. Write a result paragraph containing the split, metric, baseline comparison and limitations.
+
+The student notebook contains task prompts, `# TODO` cells and assertions. The solutions notebook is fully executable on CPU; no GPU, account or paid API is required for local execution. The first remote run may need to download packages and the small ESOL CSV. Allow roughly 75 minutes for implementation, 20 for checking the results and 25 for discussion or an extension.
+
+## What to submit
+
+Submit the validation selection table, the final test table, the chosen checkpoint's learning curve, the selected model's parity plot and a short report. Include the feature order, random seed, architecture, optimiser settings, batch size, patience, selected epoch and package versions so another learner can reconstruct the experiment.
+
+## Reflection
+
+- Did the network improve sufficiently over ridge to justify the extra training and tuning steps? Support the answer with the printed values, without assuming a particular winner.
+- Why does choosing the lowest validation score among many candidates make that score optimistic? What would nested CV estimate that this single split does not?
+- Which results would change if near-duplicate molecules occurred across the random split? Design a scaffold- or group-based follow-up before claiming transfer to new chemistry.
+- How would you compare variation across initialisation seeds with variation across data splits? Why are those different sources of uncertainty?
+
+## Optional extension
+
+Keep the test labels unopened in a fresh experiment. Compare three prespecified seeds for each candidate using development data only, then examine the spread in validation RMSE and selected epoch. Alternatively, adapt the final layer and loss to a binary solubility label and state the decision threshold's scientific meaning. Do not present that threshold as a universal definition of solubility.
+
+Finish with the [Chapter 4 checkpoint](../checkpoint.html). The next step is [molecules as data](../../../part-2-cheminformatics/ch05-molecules-as-data/index.html): improving the representation and the split may matter more than increasing network size.

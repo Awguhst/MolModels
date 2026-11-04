@@ -92,6 +92,14 @@ def test_internal_links_resolve():
     assert not broken, "broken internal links:\n" + "\n".join(broken[:50])
 
 
+def test_pager_titles_do_not_render_json_null():
+    """Unnumbered chapter, checkpoint and key-points links must have readable titles."""
+    for page in pages():
+        html = page.read_text(encoding="utf8")
+        titles = re.findall(r'<span class="mm-pager-title">(.*?)</span>', html, re.S)
+        assert all("userdata:" not in title for title in titles), page.relative_to(SITE)
+
+
 def test_no_runtime_cdn():
     offenders = []
     for page in pages():

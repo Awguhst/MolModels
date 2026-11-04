@@ -22,11 +22,11 @@ keypoints:
   - "An array holds one data type in a fixed shape; that is what makes whole-array arithmetic fast and lets `shape` tell you what you are holding."
   - "`a[i, j]` picks an element, `a[:, j]` a column, `a[i]` a row; slices are views, so writing to a slice changes the original."
   - "A boolean mask `a[a > 0]` selects elements; combine conditions with `&` and `|` in parentheses, never `and`/`or`."
-  - "Vectorised code is tens to hundreds of times faster than the equivalent loop, and usually shorter and clearer."
+  - "Vectorised operations often run much faster than Python loops; benchmark your workload and check the results agree."
   - "Broadcasting stretches the smaller array along missing or length-1 axes; `X - X.mean(axis=0)` centres every column."
   - "`axis=0` collapses rows (one result per column); `axis=1` collapses columns (one result per row)."
-  - "Create one `rng = np.random.default_rng(42)` and draw everything from it; a fixed seed makes results reproducible."
-  - "Features live in `X`, shape (n_samples, n_features); targets in `y`, shape (n_samples,). Every estimator in the course expects this."
+  - "Create one `rng = np.random.default_rng(42)` and draw everything from it; a fixed seed, unchanged call order and recorded library versions make runs repeatable."
+  - "Features live in `X`, shape (n_samples, n_features); targets in `y`, shape (n_samples,). This is the single-target tabular layout used in Chapters 1–3; tensors in Chapter 4 generalise it."
 prerequisites: [ch01-ep01]
 ---
 
@@ -139,7 +139,7 @@ print(f"loop:  {t1 - t0:.3f} s    array: {t2 - t1:.4f} s    "
       f"speed-up: about {(t1 - t0) / (t2 - t1):.0f}x")
 ```
 
-The exact number depends on your machine (and on whatever else it is doing), but the array version is reliably tens to hundreds of times faster. This is {{< term vectorisation >}}: instead of Python visiting each element, checking its type and performing one operation, NumPy hands the whole block of 64-bit floats to a compiled loop. The code is also shorter and says *what* you compute rather than *how* to iterate, which is why the rest of this course almost never loops over data.
+The exact speed-up depends on your machine, array size and timing noise. Repeat a benchmark before drawing a performance conclusion, and check `np.allclose(conc_loop, conc_array)` before accepting the faster implementation. This is {{< term vectorisation >}}: instead of Python visiting each element, checking its type and performing one operation, NumPy hands the whole block of 64-bit floats to a compiled loop. The code is also shorter and says *what* you compute rather than *how* to iterate, which is why the rest of this course almost never loops over data.
 
 The rule of thumb: if you are writing `for` over the elements of an array, stop and look for the array expression. Comparisons, arithmetic, `np.log10`, `np.exp`, `np.sqrt` and friends all apply element-wise.
 
@@ -147,7 +147,7 @@ The rule of thumb: if you are writing `for` over the elements of an array, stop 
 
 Arithmetic between two arrays of the *same* shape is element-wise. Arithmetic between arrays of *different* shapes works when NumPy can stretch one to match the other, a rule called {{< term broadcasting >}}. The most useful case is subtracting one row from every row of a matrix.
 
-Take the descriptors of four molecules, three {{< term feature plural >}} each: molecular weight in g/mol, number of rings, and polar surface area in Å². Column means come from `axis=0`:
+Take an illustrative table of approximate descriptors of four molecules, three {{< term feature plural >}} each: molecular weight in g/mol, number of rings, and polar surface area in Å². Column means come from `axis=0`:
 
 ```{python}
 X = np.array([
@@ -219,7 +219,7 @@ print("integers:", rng.integers(1, 7, size=6))                       # dice: 1..
 print("choice  :", rng.choice(["Adelie", "Chinstrap", "Gentoo"], size=4))
 ```
 
-The seed, 42 by convention, fixes the entire sequence. Re-create the generator with the same seed and you get the same numbers in the same order; so does your colleague, and so does this website when it is rebuilt. That is what makes "I shuffled the data and got RMSE 0.93" a statement someone else can check. Draw everything from the one generator rather than creating a new one per cell, and avoid the older global-state functions (`np.random.rand` and the module-level seed) that you will see in old tutorials: any cell or library can reset that shared state behind your back.
+A seed fixes the starting state of a generator. Re-create it with the same seed, implementation and sequence of calls to repeat the draws. A seed alone does not guarantee identical output across library versions or platforms; record the environment too, as described in [NumPy’s compatibility policy](https://numpy.org/doc/stable/reference/random/compatibility.html). That is what makes "I shuffled the data and got RMSE 0.93" a statement someone else can check. Draw everything from the one generator rather than creating a new one per cell, and avoid the older global-state functions (`np.random.rand` and the module-level seed) that you will see in old tutorials: any cell or library can reset that shared state behind your back.
 
 A thousand replicate measurements of a 100 µM standard, with 5% instrument noise, look like this:
 
@@ -261,20 +261,20 @@ print(f"stock 1: {v[0]:.3f} L   stock 2: {v[1]:.3f} L   water: {1 - v.sum():.3f}
 print("check A @ v =", A @ v)
 ```
 
-About 327 mL of stock 1, 367 mL of stock 2 and water to a litre. `A @ v` reproduces the target amounts, which is the test that you solved the right system. With ten solutes and ten stocks the code is identical; only the shapes change. Never invert a matrix to solve a system (`np.linalg.inv(A) @ b`): `solve` is faster and numerically safer, and in Chapter 2 the same function fits a linear regression through the {{< term normal-equation >}}.
+About 327 mL of stock 1, 367 mL of stock 2 and water to a litre. `A @ v` reproduces the target amounts, which is the test that you solved the right system. With ten solutes and ten stocks the code is identical; only the shapes change. Never invert a matrix to solve a system (`np.linalg.inv(A) @ b`): `solve` is faster and numerically safer, and in Chapter 2 you will relate linear systems to the {{< term normal-equation >}}. Regression in practice uses a least-squares solver such as `np.linalg.lstsq`; forming the normal equations can amplify numerical error.
 
 ## The X / y convention
 
 ::: {.note title="X is (n_samples, n_features); y is (n_samples,)"}
-Every dataset in this course, and every scikit-learn estimator, uses one layout, the {{< term xy-convention >}}:
+For the single-target tabular supervised tasks in this chapter, we use one layout, the {{< term xy-convention >}}:
 
 - `X` is a 2-D array with **one row per sample** (a molecule, a penguin, a patient) and **one column per feature** (a descriptor, a measurement). Its shape is `(n_samples, n_features)`.
 - `y` is a 1-D array with **one target per sample**, the {{< term label >}} you want to predict. Its shape is `(n_samples,)`, and its length equals the number of rows of `X`.
 
-The four-molecule descriptor matrix above is already an `X`. Add the quantity you want to predict, say measured solubility as logS in log₁₀(mol/L), and you have a complete supervised-learning dataset:
+The four-molecule descriptor matrix above is already an `X`. Add an illustrative target vector to see the shape convention. These invented values are for array practice, not measured solubilities or a dataset to fit:
 
 ```{python}
-y = np.array([0.74, -1.64, 1.10, -0.88])   # logS: glucose, benzene, ethanol, caffeine
+y = np.array([0.74, -1.64, 1.10, -0.88])   # illustrative target values in the same row order
 
 print("X:", X.shape, "  y:", y.shape)
 print("features of molecule 3 (caffeine):", X[3])
@@ -380,10 +380,10 @@ print("lstsq           :", theta_lstsq.round(4))
 print(f"sample at A = 0.40: {(0.40 - theta[0]) / theta[1]:.3f} mM")
 ```
 
-`X_cal` is an `X` in the sense of this episode: five samples, two features (a constant and the concentration), and `absorb` is the `y`. `X.T @ X` is 2×2 and `X.T @ y` has two entries, so `solve` returns the intercept and the slope that minimise the squared vertical distances to the line. `lstsq` gives the same answer by a numerically more careful route and is what you should use in practice; the point of doing it by hand once is that [episode 2.2](../ch02-ml-fundamentals/02-linear-regression.html) fits linear regression with exactly this equation, and `LinearRegression().fit(X, y)` is this cell wrapped in a class.
+`X_cal` is an `X` in the sense of this episode: five samples, two features (a constant and the concentration), and `absorb` is the `y`. `X.T @ X` is 2×2 and `X.T @ y` has two entries, so `solve` returns the intercept and the slope that minimise the squared vertical distances to the line. `lstsq` gives the same answer by a numerically more careful route and is what you should use in practice; the point of doing it by hand once is that [episode 2.2](../ch02-ml-fundamentals/02-linear-regression.html) fits linear regression with exactly this equation, and `LinearRegression().fit(X, y)` solves the least-squares problem with a suitable numerical solver rather than explicitly inverting this matrix.
 ::::
 :::
 
 ## Where this is going
 
-The feature matrix `X` and target `y` you built here are the input to every model in the course: in [Chapter 2](../ch02-ml-fundamentals/index.html) `train_test_split(X, y)` carves them into training and test sets and `LinearRegression().fit(X, y)` solves the same normal equations as the last exercise, at scale. Broadcasting is how feature scaling works (`(X - X.mean(axis=0)) / X.std(axis=0)`), how distances between molecules are computed in Part II, and how a whole gene-expression matrix is normalised in Part III. The next episode, [1.3](03-pandas-dataframes.html), puts labels on the rows and columns of an array and calls the result a DataFrame.
+The feature matrix `X` and target `y` you built here are the input to every model in the course: in [Chapter 2](../ch02-ml-fundamentals/index.html) `train_test_split(X, y)` carves them into training and test sets and `LinearRegression().fit(X, y)` solves the same least-squares objective as the last exercise, using a more robust numerical implementation. Broadcasting is how feature scaling works (`(X - X.mean(axis=0)) / X.std(axis=0)`), how distances between molecules are computed in Part II, and how a whole gene-expression matrix is normalised in Part III. The next episode, [1.3](03-pandas-dataframes.html), puts labels on the rows and columns of an array and calls the result a DataFrame.
