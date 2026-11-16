@@ -189,6 +189,7 @@ Why not two matplotlib styles? Any approach that re-runs the cell would double e
   - `check`: friendly `assert`s that confirm the learner's result ("✅ check" cells); kept verbatim;
   - `solutions-only`: removed from the student notebook.
 - Budget: CPU, under 3 minutes, no GPU, no accounts, no paid APIs. `tests/test_notebooks_execute.py` enforces time and warnings.
+- Self-contained, deterministic shell labs use notebook metadata `mm: {data_source: bundled-synthetic, deterministic: true}`. Embed the tiny fixtures and create a temporary workspace; a random seed and remote data fallback are unnecessary. Keep the Colab-aware setup, tagged solutions and feedback checks. Bash lesson listings use plain `bash` fences, with expected output and executed notebook counterparts, so rendering never executes file-management commands against the checkout.
 - Quarto executes and renders the solutions notebook as `labs/lab-NN-slug-solutions.html` (the "View solutions" page).
 
 ## Chapter landing pages

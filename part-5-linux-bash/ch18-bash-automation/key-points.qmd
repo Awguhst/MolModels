@@ -1,0 +1,7 @@
+---
+title: "Chapter 18 key points"
+chapter: 18
+subtitle: "The scripting and workflow habits to carry into your next project."
+---
+
+{{< generated ch18-keypoints >}}

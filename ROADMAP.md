@@ -1,6 +1,6 @@
 # Roadmap
 
-Each Part has an accent colour (violet, amber, green, coral) used in the navigation and the metro map on the home page.
+Each Part has an accent colour (violet, amber, green, coral, teal) used in the navigation and the metro map on the home page.
 "Built" chapters have episodes, exercises, a lab and a checkpoint; "planned" chapters have a stub page with an outline.
 
 ## Part I · Foundations: ML & data science (violet)
@@ -50,6 +50,21 @@ Adds: biopython, scanpy, anndata, (small) pre-computed ESM embeddings shipped as
 | 15 | Capstone projects | four project briefs, reporting template, peer review and reproducibility checklist |
 
 Adds: selfies, pytorch.
+
+## Part V · Linux & Bash (teal)
+
+This practical track can be followed alongside Foundations; Parts II–IV are not prerequisites.
+
+| # | Chapter | Built content |
+|---|---|---|
+| 16 | Linux fundamentals | Terminal and shell, paths, files, permissions, processes, environments and script execution; Lab 16: project workspace |
+| 17 | Scientific text processing | Streams, pipes, grep, sort, cut, find, awk, sed and scientific-format boundaries; Lab 17: data triage |
+| 18 | Bash scripting & automation | Arguments, loops, functions, validation, failures, provenance and scheduling; Lab 18: reproducible pipeline |
+
+Six episodes, three notebook labs, thirty checkpoint questions and generated key-point summaries.
+The labs use embedded synthetic fixtures with no network dependencies. A deterministic download
+bundle is generated from `data/linux-bash/` before rendering; it includes TSV, FASTA, logs,
+Bash/Python scripts and checksums. Chapters connect these tools to ML, bioinformatics and cheminformatics.
 
 ## Appendices
 

@@ -1,0 +1,85 @@
+---
+title: "Part V · Linux & Bash"
+subtitle: "From your first terminal command to a reproducible scientific pipeline. Three chapters, six hands-on lessons, and three practical labs."
+---
+
+A folder of sequencing results, a table of molecular descriptors, and a training script all need the same foundations: find the right files, inspect what they contain, run the right program, and record what happened. Linux and Bash give you a repeatable way to do that work, from a laptop to a shared compute server.
+
+This is a **parallel practical track**. You can start it alongside [Scientific Python](../part-1-foundations/ch01-scientific-python/index.html); you do not need to finish Parts II–IV first. Chapter numbers continue the course sequence so existing lesson links stay stable.
+
+<div class="mm-cards">
+<div class="mm-card"><h3><a href="ch16-linux-fundamentals/index.html">16 · Linux fundamentals</a></h3><p>Understand the terminal and shell, navigate directories, organise project files, manage permissions and processes, and run scripts with useful logs. Build a scientific project workspace in Lab 16.</p></div>
+<div class="mm-card"><h3><a href="ch17-scientific-text/index.html">17 · Scientific text processing</a></h3><p>Connect commands with pipes, search logs and FASTA headers with grep, filter and summarise TSV tables with awk, and transform text with sed. Audit a small scientific dataset in Lab 17.</p></div>
+<div class="mm-card"><h3><a href="ch18-bash-automation/index.html">18 · Bash scripting &amp; automation</a></h3><p>Turn commands into scripts with arguments, conditions, loops and functions. Validate inputs, handle failures, preserve provenance, and automate repeatable work. Assemble a complete computational pipeline in Lab 18.</p></div>
+</div>
+
+## Choose a starting point
+
+::: {.prereq}
+No Linux experience is required for Chapter 16. For Chapter 18, you should recognise a small Python script and understand files and tables; the [Python refresher](../part-1-foundations/ch01-scientific-python/01-python-refresher.html) is enough. No GPU, paid software, or scientific package installation is needed for this track.
+:::
+
+- **New to the terminal:** start with [16.1 · Terminal navigation](ch16-linux-fundamentals/01-terminal-navigation.html).
+- **Comfortable with files, new to text tools:** start with [17.1 · Pipes and grep](ch17-scientific-text/01-pipes-grep.html), then work through `awk` and `sed`.
+- **Already use one-line commands:** start with [18.1 · Bash scripting](ch18-bash-automation/01-bash-scripting.html), then build the validated pipeline.
+
+Each chapter uses the familiar overview, schedule, prediction prompts, graded exercises with worked solutions, notebook lab, ten-question checkpoint, and key-points page. Try the exercises before revealing their solutions.
+
+## Set up your practice workspace {#practice-workspace}
+
+The lessons use **Bash and GNU command-line tools on Linux**. Open a Linux terminal, or an Ubuntu terminal in Windows Subsystem for Linux (WSL). On Windows, PowerShell and Command Prompt interpret different syntax: enter the lesson commands inside Bash. Chapter [16.1](ch16-linux-fundamentals/01-terminal-navigation.html) explains your options. macOS uses different versions of some utilities; the notebook labs provide a Linux route through Colab, while GNU-specific examples are labelled in the lessons.
+
+Prefer to start in a browser? Open a chapter's lab in Colab. Each notebook creates its own tiny dataset and scratch directory, and runs Bash through a Python helper. Each helper invocation is a fresh shell: variables and `cd` do not persist between calls, but files do. Downloaded notebooks also work with a Python kernel on Linux; their helpers recognise Git Bash on Windows. Git Bash supports these text exercises, while Linux permissions, processes and scheduling should be practised on Linux.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="../data/linux-bash/linux-bash-practice.zip" download>Download practice workspace (.zip)</a>
+<a class="mm-btn" href="../data/linux-bash/README.md">Dataset notes &amp; expected results</a>
+</div>
+
+Save the ZIP, then extract it into a **new practice folder** using your file manager. The ZIP contains `data/` and `scripts/` directly, so name that folder `mm-linux-lab`. Open a Bash terminal in it. Alternatively, on Linux with `unzip` installed, use the following commands, adjusting the download path if necessary:
+
+```bash
+mkdir -p "$HOME/mm-linux-lab"
+unzip -n "$HOME/Downloads/linux-bash-practice.zip" -d "$HOME/mm-linux-lab"
+cd "$HOME/mm-linux-lab"
+mkdir -p results logs
+pwd
+ls data/raw
+```
+
+`unzip -n` preserves existing files. Use a fresh destination if you want an untouched copy. In WSL, a browser download may be in `/mnt/c/Users/YOUR_NAME/Downloads/`; use that actual path in place of `$HOME/Downloads`. You should see `compounds.tsv`, `pipeline.log`, `samples.tsv`, and `sequences.fasta`. Your home directory prefix will differ from other learners'.
+
+If you already have the course repository, run this from its root instead:
+
+```bash
+mkdir -p "$HOME/mm-linux-lab/data/raw" "$HOME/mm-linux-lab/scripts"
+cp -i data/linux-bash/samples.tsv data/linux-bash/compounds.tsv \
+  data/linux-bash/sequences.fasta data/linux-bash/pipeline.log \
+  "$HOME/mm-linux-lab/data/raw/"
+cp -i data/linux-bash/scripts/* "$HOME/mm-linux-lab/scripts/"
+cd "$HOME/mm-linux-lab"
+mkdir -p results logs
+```
+
+For later examples, **start in the workspace root**, the folder containing `data/`, `scripts/`, `results/`, and `logs/`. Do not run practice commands in a directory containing original research data. Keep `data/raw/` unchanged and write derived files under `results/`.
+
+## What is in the dataset?
+
+| File | Practice task | Expected starting point |
+|---|---|---|
+| `samples.tsv` | Inspect sequencing sample metadata; filter QC results | Six samples; four pass QC |
+| `compounds.tsv` | Prepare a molecular descriptor table without changing its split | Six molecules; four training and two test rows |
+| `sequences.fasta` | Count records and inspect headers without confusing lines with sequences | Three records, some with wrapped sequence lines |
+| `pipeline.log` | Find warnings and errors from a computational run | Two `WARN` lines and one `ERROR` line |
+
+These are **synthetic teaching fixtures**, not experimental observations, reference sequences, or a benchmark. Molecular labels and descriptor values are illustrative. Do not infer biological effects, physical accuracy, or predictive performance from them. Their small size makes outputs easy to check by hand before applying the same workflow to larger datasets.
+
+## Connections to your scientific work
+
+- **Machine learning:** preserve row identifiers and train/test membership when preparing files; run a fixed script with explicit inputs and save its logs. Continue into [pipelines and leakage](../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) before fitting any data-dependent preprocessing.
+- **Bioinformatics:** inspect sample sheets, count FASTA headers, and separate QC reports from raw data. Text tools help with triage; use format-aware parsers for sequence records and specialist formats. [Biological sequences](../part-3-bioinformatics/ch09-biological-sequences/index.html) is the planned next connection.
+- **Cheminformatics:** inspect molecular tables and preserve SMILES strings as data. Use chemistry-aware software for chemical interpretation; shell substitution cannot validate a molecule. Continue towards [molecules as data](../part-2-cheminformatics/ch05-molecules-as-data/index.html).
+
+## Keep the references nearby
+
+The [GNU Bash manual](https://www.gnu.org/software/bash/manual/bash.html) explains quoting, expansion, exit statuses and pipelines. The [GNU grep manual](https://www.gnu.org/software/grep/manual/grep.html), [GNU awk guide](https://www.gnu.org/software/gawk/manual/gawk.html), and [GNU sed manual](https://www.gnu.org/software/sed/manual/sed.html) provide the command semantics used in Chapter 17. Use the [course glossary](../appendices/glossary.html) and [reproducibility toolkit](../appendices/reproducibility.html) when a concept needs more context.

@@ -56,7 +56,7 @@ def main() -> int:
     for mode, t in themes.items():
         print(f"\n=== {mode} ===")
         bgs = {"bg": t["bg"], "surface": t["surface"], "surface-2": t["surface-2"], "code-bg": t["code-bg"]}
-        text_tokens = ["text", "text-muted", "accent-1", "accent-2", "accent-3", "accent-4", "link"]
+        text_tokens = ["text", "text-muted", *sorted(k for k in t if k.startswith("accent-")), "link"]
         callouts = ["note", "tip", "pitfall", "challenge", "solution", "discussion", "bridge-chem",
                     "bridge-bio", "bridge-math", "bridge-cs", "checkpoint", "prereq", "deep-dive"]
         checks: list[tuple[str, str, str, float]] = []

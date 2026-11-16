@@ -1,0 +1,44 @@
+---
+title: "Linux fundamentals"
+chapter-index: true
+summary: "Find your way around a scientific project, protect raw data, run scripts and understand what your terminal is doing. Start with six synthetic samples and build the working habits that make larger analyses manageable."
+---
+
+{{< generated ch16-hero >}}
+
+## What you will be able to do
+
+::: {.mm-outcomes-wrap}
+- Explain the difference between Linux, a terminal and Bash.
+- Navigate a project using relative and absolute paths, including filenames with spaces.
+- Inspect, copy, rename and remove practice files while preserving the raw inputs.
+- Read permissions and choose the intended Python interpreter.
+- Run a script, separate its results from its diagnostics and recognise a failed command.
+- Inspect a process and manage a small job in your own terminal.
+:::
+
+## Schedule
+
+{{< generated ch16-schedule >}}
+
+## Lab
+
+{{< generated ch16-labs >}}
+
+Build a small analysis workspace, keep an unchanged raw-data copy, produce a sample-count report and recover from an incorrect path. The lab runs without network access after you open the notebook; its tiny synthetic dataset is embedded in the setup cell.
+
+Finish with the [chapter checkpoint](checkpoint.html), then use the [key points](key-points.html) as a reference beside your terminal.
+
+## Before you start
+
+::: {.prereq}
+No earlier machine learning chapter is required. Follow the [Linux & Bash setup instructions](../index.html) to prepare a Bash terminal and the practice files. The examples use a project directory called `mm-linux-lab`, with input files under `data/raw/`. Windows learners should use a Linux terminal in WSL for the lessons; the notebook lab also supports Git Bash.
+:::
+
+::: {.bridge audience="bio"}
+Treat a project directory like the labelled container for an experiment: raw measurements, processing instructions and derived results each have a place. Knowing which container you are in is the first step towards knowing what your analysis actually used.
+:::
+
+## Where to go next
+
+[Chapter 17](../ch17-scientific-text/index.html) turns these files into useful subsets with pipes, `grep`, `awk` and `sed`. [Chapter 18](../ch18-bash-automation/index.html) packages the commands into repeatable scripts and computational pipelines.

@@ -1,0 +1,219 @@
+---
+title: "Finding your way around a scientific project"
+chapter: 16
+episode: 1
+teaching: 35
+exercises: 20
+level: beginner
+questions:
+  - "What is the difference between Linux, a terminal and Bash?"
+  - "How does a command decide which file I mean?"
+  - "How can I inspect a scientific dataset without changing it?"
+objectives:
+  - "Identify the shell in which you are entering commands."
+  - "Navigate a project using `pwd`, `cd` and `ls`."
+  - "Distinguish relative paths, absolute paths and the home directory."
+  - "Quote filenames and inspect tabular files with `head`, `less` and `wc`."
+  - "Use help and command history to investigate an unfamiliar command."
+keypoints:
+  - "Linux is an operating-system kernel; a terminal is an interface, and Bash is a shell that interprets commands."
+  - "Relative paths are resolved from the current working directory, not from the location of a script."
+  - "Use `pwd` and inspect the directory before operating on a file."
+  - "Quote paths containing spaces; Linux filenames are normally case-sensitive."
+  - "Inspect a small portion and check the file structure before analysing a scientific dataset."
+prerequisites: []
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A collaborator sends you a sample sheet and a collection of sequence files. Before fitting a model or comparing treatments, you need to answer a simpler question: which files are here, and which one contains the measurements you intended to analyse? A terminal gives you a precise way to ask that question and keep a record of the answer.
+
+The practice project contains six **synthetic** samples. The numbers are invented to make every result easy to check, rather than evidence about an experiment. You will start by locating the files and checking their structure; later chapters will filter them and run a complete processing script.
+
+## Linux, the terminal and the shell
+
+**Linux** is the kernel at the centre of operating systems such as Ubuntu. A distribution combines that kernel with system tools and applications. You will encounter Linux on research workstations, cloud machines and computing clusters, although a Linux machine does not have to be a remote server.
+
+A {{< term terminal >}} is the application or interface where you type commands and read text output. A {{< term shell >}} interprets those commands and starts programs. **Bash** is the shell used throughout this section. Opening a terminal does not guarantee that Bash is running: Windows Terminal can host PowerShell, and other systems may start a different shell.
+
+::: {.prereq}
+Prepare the practice directory using the [section setup](../index.html). On Ubuntu, use its terminal. On Windows, open your Ubuntu/WSL terminal, rather than pasting these commands into PowerShell. The notebook lab provides another route in Colab, or locally with Bash installed. It creates its own temporary practice workspace.
+:::
+
+Enter this in your Bash terminal:
+
+```bash
+printf 'Bash version: %s\n' "$BASH_VERSION"
+```
+
+It prints a version such as `Bash version: 5.2.15(1)-release`; the exact version depends on your installation. `printf` writes formatted text, `%s` is the place for a string, and `\n` starts a new line. `$BASH_VERSION` asks Bash for the value of a variable: a name that stores some information.
+
+Your terminal usually displays a **prompt**, perhaps `learner@computer:~$`, before the cursor. The prompt means the shell is ready. It is not part of a command; the examples omit it so you can copy the command itself. A command is followed by arguments, separated by spaces; arguments beginning with a dash are often options that change its behaviour.
+
+For example, `ls -l data/raw` means “run `ls`, request a long listing, and inspect `data/raw`”. Commands are not sentences in English: spelling, case, spaces and punctuation have specific meanings. If you get an error, compare the command carefully before adding more options.
+
+::: {.bridge audience="chem"}
+Think of the terminal as the control panel, Bash as the language of its instructions, and a program as the instrument carrying them out. A reproducible protocol needs the instrument, settings and sample identity; a reproducible command needs the program, options and input paths.
+:::
+
+## Locate yourself before locating a file
+
+The shell has a current {{< term working-directory >}}: the folder from which relative paths are interpreted. Print it, then enter the practice project:
+
+```bash
+pwd
+cd ~/mm-linux-lab
+pwd
+ls
+```
+
+The final `pwd` might print `/home/learner/mm-linux-lab`. The directory listing should include `data`, `scripts`, `results` and `logs`; the exact listing order is not important. If you chose another location during setup, replace `~/mm-linux-lab` with that location.
+
+`pwd` stands for print working directory. `cd` changes directory, and `ls` lists directory entries. A directory is itself part of the filesystem: a tree of names that leads from a starting point to the file you want. `/` is the top of a Linux filesystem tree, called its root; it is different from your project's root directory.
+
+An **absolute path** starts at `/`, such as `/home/learner/mm-linux-lab/data/raw/samples.tsv`. A **relative path**, such as `data/raw/samples.tsv`, starts at your working directory. The `~` shorthand expands to your home directory. It is useful interactively, but your home directory and username need not match the example.
+
+Two special directory names work almost everywhere: `.` means the current directory and `..` means its parent. Follow the changes one step at a time:
+
+```bash
+cd data
+pwd
+cd raw
+pwd
+cd ../..
+pwd
+```
+
+The printed paths end in `/mm-linux-lab/data`, `/mm-linux-lab/data/raw` and `/mm-linux-lab`. The two `..` components return through the parent directories. Nothing has been moved on disk; you changed the shell's viewpoint.
+
+::: {.predict}
+Run `cd data` to enter `~/mm-linux-lab/data` again. Will `ls data/raw` list the samples? What path would it actually attempt to open? Check your prediction with `pwd`, then use `ls raw`.
+:::
+
+From `data`, `data/raw` would mean `~/mm-linux-lab/data/data/raw`, which does not exist in this project. This is the reason many perfectly valid Python scripts report “file not found”: the script and the shell disagree about the starting directory.
+
+::: {.pitfall title="A failed change of directory leaves you where you were"}
+If `cd` reports that a path does not exist, do not continue as though it succeeded. Run `pwd`, correct the path, and try again. In scripts, explicitly checking failures becomes essential; Chapter 18 develops that habit.
+:::
+
+## Read the directory listing
+
+Return to the project root before continuing:
+
+```bash
+cd ~/mm-linux-lab
+ls data/raw
+ls -l data/raw/samples.tsv
+ls -a
+```
+
+The first command lists the practice inputs, including `samples.tsv`. The long listing adds the file's permissions, owner, size in bytes and modification time. Those values depend on where you unpacked the files, so do not expect your output to match another person's byte-for-byte.
+
+`ls -a` includes names starting with a dot, called **hidden files** because ordinary directory listings leave them out. `.` and `..` may appear too. Files such as `.bashrc` configure shell behaviour; a dot does not make a file private or encrypted. Avoid editing configuration files until you know what a proposed change does.
+
+Linux filenames are normally case-sensitive: `samples.tsv` and `Samples.tsv` are different names. File extensions are conventions that suggest a format; they do not guarantee its contents. A file ending in `.tsv` should contain tab-separated fields, but you should inspect it before assuming that.
+
+Use the Tab key after typing the beginning of a path. Bash can complete an unambiguous name; if several names match, another Tab may list choices. This reduces transcription errors in long sample names. The up-arrow recalls a previous command, which you can edit before running.
+
+## Spaces, quotes and patterns
+
+A space normally separates arguments. If a directory is called `run notes`, Bash needs to know those two words are one name. Use quotes around the complete path:
+
+```bash
+printf '%s\n' "results/run notes.txt"
+printf '%s\n' 'results/run notes.txt'
+```
+
+Both commands print `results/run notes.txt` as one value. Neither creates a file: printing a path and writing to that path are different operations. Single quotes preserve literal text; double quotes also keep a value together but allow variable expansion, as in the earlier `"$BASH_VERSION"` example.
+
+Unquoted `*` is a **glob**, a filename pattern expanded by the shell. You can preview a selection without altering it:
+
+```bash
+printf '%s\n' data/raw/*.tsv
+```
+
+The output includes `data/raw/compounds.tsv` and `data/raw/samples.tsv`, one path per line. Bash passes each matched path as a separate argument. Quoting the complete pattern, as in `'data/raw/*.tsv'`, prevents expansion and prints the literal star instead.
+
+::: {.pitfall title="A filename pattern is not a content search"}
+`*.tsv` matches names, not the text inside those files. A pattern with no matches normally remains literal in Bash, which can lead to a confusing “no such file” error. Chapter 17 introduces `grep` for content and Chapter 18 handles unmatched patterns in scripts.
+:::
+
+## Inspect a scientific file before analysing it
+
+The sample sheet is small enough to read completely, but use habits that still work for a much larger dataset:
+
+```bash
+head -n 3 data/raw/samples.tsv
+wc -l data/raw/samples.tsv
+```
+
+Expected content from `head`:
+
+```text
+sample_id    condition    reads_million    qc_status
+S01          control      12.4             pass
+S02          treated      18.2             pass
+```
+
+The actual separators are tabs; the display above is spaced for readability. `head -n 3` shows the first three lines, including the header. `wc -l` reports `7` followed by the filename: one header and six records. It counts newline characters, so a final line without a newline changes how that count should be interpreted.
+
+The field `reads_million` records an invented sequencing-read count in millions. `qc_status` is a supplied pass/fail flag, not a claim that this short table performs quality control. Looking at the header before processing avoids treating identifiers as numbers or forgetting the units.
+
+For longer files, `less data/raw/samples.tsv` opens a pager: a program that lets you browse without loading the entire file into an editor. Use Space to advance, `/S03` to search, `n` for the next match and `q` to leave. If `less` is not installed in a minimal environment, `head` and `tail` still provide bounded previews.
+
+`tail -n 2 data/raw/samples.tsv` shows the final two records. `cat` prints a whole file, which is convenient for tiny text but overwhelming for a large sequence database. A compressed archive or a binary model file should be opened with a tool that understands that format; do not assume every scientific file is readable text.
+
+## Find help and reconstruct your work
+
+For a Bash built-in, use `help`; for installed GNU tools, try `--help`:
+
+```bash
+help cd
+head --help
+history 5
+```
+
+The first two outputs explain syntax and options. `history 5` displays recent commands from the current interactive shell. It is useful for recovering an exploratory command, but it is not a complete reproducibility record: it may omit other terminals, record failed attempts and contain paths that only exist on your machine.
+
+Many systems also provide `man ls`, which opens a manual in a pager; leave with `q`. A minimal container or notebook environment may not install manuals. Read the help available on the machine where you run the command, especially when transferring commands between Linux and macOS.
+
+Keep successful commands and their assumptions in a project README or script. Do not put passwords or access tokens in command history. When a command fails, read its diagnostic: “not found” often concerns the program, whereas “no such file or directory” commonly concerns an input path. First check your working directory, spelling and whether the data have actually been unpacked.
+
+## Exercises
+
+::: {.challenge level=1 title="Where is the sample sheet?"}
+You are in `~/mm-linux-lab/results`. Give a relative path to the raw sample sheet and a command that confirms your current directory.
+
+:::: {.solution}
+```bash
+pwd
+head -n 2 ../data/raw/samples.tsv
+```
+The parent of `results` is the project root, so `../data/raw/samples.tsv` reaches the input. The preview includes the header and S01; it leaves the file unchanged.
+::::
+:::
+
+::: {.challenge level=2 title="Inspect before you model"}
+From the project root, show the header, the final record and the line count of `samples.tsv`. How many sample records are present, and what assumption supports that answer?
+
+:::: {.solution}
+```bash
+head -n 1 data/raw/samples.tsv
+tail -n 1 data/raw/samples.tsv
+wc -l data/raw/samples.tsv
+```
+There are six sample records: seven newline-terminated lines minus one header, with no blank lines or multiline records. The final record is S06, treated, 7.3 million reads, fail. A line count alone cannot establish the number of records in every scientific format.
+::::
+:::
+
+::: {.challenge level=2 title="Debug this: the disappearing directory"}
+A colleague runs `cd data/raw` from the project root and then `head -n 2 data/raw/samples.tsv`. Explain the failure and give two valid repairs without changing the dataset.
+
+:::: {.solution}
+The second command looks for `data/raw` inside the existing `data/raw` directory. Stay in the new directory and run `head -n 2 samples.tsv`, or return to the root with `cd ../..` and use the original command. Printing `pwd` first makes the mistaken assumption visible.
+::::
+:::
+
+## Where this is going
+
+The next episode turns this directory into a workspace for scripts and results. These navigation habits apply just as directly to [molecular data](../../part-2-cheminformatics/ch05-molecules-as-data/index.html) and [biological sequences](../../part-3-bioinformatics/ch09-biological-sequences/index.html): identify the input, inspect its structure and know which directory each relative path starts from before asking a model to learn anything.

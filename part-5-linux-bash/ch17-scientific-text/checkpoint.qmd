@@ -1,0 +1,150 @@
+---
+title: "Chapter 17 checkpoint"
+chapter: 17
+checkpoint-quiz: true
+subtitle: "Ten questions about streams, fields and trustworthy text processing."
+---
+
+Choose an answer before revealing its explanation. Revisit [pipes and grep](01-pipes-grep.html) or [awk and sed](02-awk-sed.html) if you can remember a command but cannot explain what it assumes about the data.
+
+::: {.checkpoint title="1. Which stream enters a pipe?"}
+In `analysis | wc -l`, what does `wc` normally receive?
+
+- [x] The standard output of `analysis`
+
+  Standard error remains separate unless explicitly redirected.
+- [ ] Standard output and standard error, automatically merged
+
+  A plain pipe does not merge the two streams. Combining diagnostics with data may corrupt downstream input.
+- [ ] Only the last line printed by `analysis`
+
+  The pipe transfers the output stream, not a single selected line.
+:::
+
+::: {.checkpoint title="2. Seven lines, how many samples?"}
+A newline-terminated TSV has one header and six sample records, each on one line. What does `wc -l < file.tsv` print?
+
+- [ ] 6
+
+  `wc` does not recognise and remove a header.
+- [x] 7
+
+  It counts newline characters, including the header's newline.
+- [ ] The number of columns
+
+  The `-l` option counts lines, not fields.
+:::
+
+::: {.checkpoint title="3. Literal chemical notation"}
+You want a literal substring search for `CC(=O)O`. Which choice makes that intent explicit?
+
+- [x] `grep -F 'CC(=O)O' file`
+
+  `-F` treats the pattern as fixed text. This is still a text search, not a molecular identity test.
+- [ ] `grep -E 'CC(=O)O' file`
+
+  In an extended regular expression, parentheses are grouping syntax rather than literal characters.
+- [ ] Remove all punctuation before searching
+
+  Punctuation is meaningful in molecular notation; removing it changes the text being searched.
+:::
+
+::: {.checkpoint title="4. The empty search result"}
+GNU `grep` prints no matches and returns exit status `1`. What does that mean?
+
+- [ ] The file could not be opened
+
+  A file-access error normally gives GNU grep status `2`, with a diagnostic on standard error.
+- [x] The search completed without a match
+
+  Expected absence is a different case from a broken search.
+- [ ] Every line matched
+
+  A successful match produces status `0`, not `1`.
+:::
+
+::: {.checkpoint title="5. FASTA line counts"}
+Why use `grep -c '^>'` to count records in the well-formed FASTA fixture?
+
+- [ ] Every sequence occupies exactly one line
+
+  A sequence may wrap over several lines; that is why total line counts are unsuitable.
+- [x] Each record begins with one header line starting with `>`
+
+  The count is useful, but it does not validate sequence content or identifier uniqueness.
+- [ ] It counts nucleotides in each sequence
+
+  `grep -c` counts matching lines, not sequence characters.
+:::
+
+::: {.checkpoint title="6. Frequencies with uniq"}
+Why does `cut -f 2 file.tsv | uniq -c` fail to count all occurrences of each condition reliably?
+
+- [x] `uniq` combines adjacent repeats only, and the header may also be counted
+
+  Skip the header, extract the field, sort the labels, then count repeats.
+- [ ] `cut` always changes the labels
+
+  `cut` selects the named field; it does not normally rewrite its contents.
+- [ ] `uniq` cannot read from a pipe
+
+  Reading standard input is a normal use of `uniq`.
+:::
+
+::: {.checkpoint title="7. The tab separator"}
+Why specify `awk -F '\t'` for this TSV rather than relying on the default separator?
+
+- [ ] It makes arbitrary quoted CSV safe to read
+
+  A tab separator does not implement CSV quoting rules or multiline fields.
+- [x] It preserves the TSV's field boundaries, including empty fields
+
+  Default whitespace splitting can collapse separators and shift field positions.
+- [ ] It validates every scientific value automatically
+
+  Separating fields and validating their values are different tasks.
+:::
+
+::: {.checkpoint title="8. Before the numeric threshold"}
+A field expected to hold reads in millions contains `NA`. What is the appropriate first step?
+
+- [ ] Add zero and accept the result as a measured zero
+
+  Missingness is not a measurement of zero. Silent coercion invents a value.
+- [x] Validate the representation and apply an explicit missing-value policy
+
+  Report or handle invalid records before thresholding or aggregation.
+- [ ] Remove all letters from every column
+
+  This would damage identifiers and labels while hiding the input problem.
+:::
+
+::: {.checkpoint title="9. Where did the source go?"}
+Why is `sed 's/A/B/' input.txt > input.txt` unsafe?
+
+- [ ] sed cannot read plain text
+
+  Processing text streams is sed's purpose.
+- [x] The shell truncates the destination before sed can read the input
+
+  Write to a different file and compare it with the preserved source.
+- [ ] The pattern has too few characters
+
+  Single-character patterns are valid. The problem is using the same input and output path.
+:::
+
+::: {.checkpoint title="10. A quoted comma in CSV"}
+A compound description is `"clear liquid, fruity odour"` inside a CSV field. Which tool choice respects that field?
+
+- [ ] `awk -F ','`, because every comma separates columns
+
+  The comma inside quotes belongs to one field. Splitting on all commas breaks the record.
+- [ ] sed that deletes every comma inside the file
+
+  That would destroy separators and alter the original content.
+- [x] A CSV parser such as Python's csv module or pandas with appropriate options
+
+  Use a parser that understands the format's quoting and record rules.
+:::
+
+Complete the [data-triage lab](labs/lab-17-data-triage.html), then carry these checks into [Bash automation](../ch18-bash-automation/index.html).

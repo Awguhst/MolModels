@@ -2,3 +2,5 @@
 Dockerfile        text eol=lf
 .dockerignore     text eol=lf
 docker/**         text eol=lf
+data/linux-bash/** text eol=lf
+data/linux-bash/*.zip binary

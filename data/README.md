@@ -61,3 +61,10 @@ Columns (names exactly as in the file):
 Loaded directly with `sklearn.datasets.load_breast_cancer()`; nothing is stored here.
 Source: Wolberg WH, Street WN, Mangasarian OL (1995), UCI Machine Learning Repository, doi:10.24432/C5DW2B.
 569 samples, 30 features computed from digitised images of fine-needle aspirates, target 0 = malignant, 1 = benign (scikit-learn encoding).
+# Linux & Bash teaching fixtures
+
+The small, original synthetic datasets in [linux-bash/README.md](linux-bash/README.md)
+support Chapters 16–18. They include sample and molecular tables, artificial FASTA
+sequences, a fabricated log, and runnable scripts. They are not experimental data.
+The build creates `linux-bash/linux-bash-practice.zip` with an internal `SHA256SUMS`
+manifest; `scripts/build_linux_bash_bundle.py` is the single packaging source.

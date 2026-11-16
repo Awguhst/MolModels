@@ -1,0 +1,260 @@
+---
+title: "Files, environments and running scientific scripts"
+chapter: 16
+episode: 2
+teaching: 40
+exercises: 25
+level: beginner
+questions:
+  - "How can I organise results without changing the original measurements?"
+  - "Which Python interpreter will a terminal command run?"
+  - "How do I save a script's output and know whether it succeeded?"
+  - "What happens when a program runs in the background?"
+objectives:
+  - "Create a project layout and safely copy, rename and remove practice files."
+  - "Interpret file permissions and change a practice file's permissions."
+  - "Inspect PATH and activate a Python environment."
+  - "Run a Python script with explicit input and output paths."
+  - "Capture standard output, standard error and an exit status."
+  - "Inspect and manage a background process started in the current shell."
+keypoints:
+  - "Keep raw inputs separate from derived results, and practise destructive operations on disposable copies."
+  - "File permissions control access; they do not replace backups or provenance records."
+  - "PATH determines how the shell finds programs; activating an environment changes which Python is selected."
+  - "Standard output carries a result and standard error carries diagnostics; save both deliberately."
+  - "A zero exit status reports command success, not scientific validity."
+  - "Background jobs belong to a shell session; they are not a durable cluster scheduling system."
+prerequisites: [ch16-ep01]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+You have located a sample sheet. Now you want a repeatable answer to “how many samples entered this analysis?” A notebook can answer that question, but a small script is useful when the same operation must run for many datasets. Its reliability starts before the code: the inputs must stay intact, the program must use the expected environment, and you must be able to tell a completed run from a failed one.
+
+Continue in the `mm-linux-lab` practice directory from the [previous episode](01-terminal-navigation.html). The examples operate on synthetic data. Run them in Bash on Linux or WSL; the notebook lab uses an equivalent isolated workspace and supports Git Bash too.
+
+## Give raw inputs and results different homes
+
+A simple project layout makes the direction of processing visible:
+
+```text
+mm-linux-lab/
+├── data/raw/      original practice inputs
+├── scripts/       analysis instructions
+├── results/       derived tables and reports
+├── logs/          messages about each run
+└── scratch/       disposable practice copies
+```
+
+Create any missing output directories:
+
+```bash
+cd ~/mm-linux-lab
+mkdir -p results logs scripts scratch
+ls -d results logs scripts scratch
+```
+
+`mkdir` creates directories; `-p` also creates missing parents and accepts a directory that already exists. The listing confirms the four directory names. `ls -d` lists the directory entries themselves rather than their contents.
+
+Separating raw and derived data is a convention, not an automatic protection mechanism. It helps you notice a suspicious command such as writing a filtered table directly over an input. Keep the original download or a versioned source elsewhere as well: a tidy folder cannot recover a deleted dataset.
+
+::: {.bridge audience="bio"}
+The raw sample sheet is like the original instrument export. Your exclusions and derived measurements should be traceable transformations of it. Replacing the export with a cleaned spreadsheet removes the evidence needed to audit which samples were discarded and why.
+:::
+
+## Copy, rename and remove deliberately
+
+Work on a copy while learning file commands:
+
+```bash
+cp -i data/raw/samples.tsv scratch/samples-copy.tsv
+mv -i scratch/samples-copy.tsv "scratch/sample notes.tsv"
+ls scratch
+```
+
+`cp` copies a file; `mv` moves it or gives it a new name. Here the second command renames the copy without changing its contents. The output should include `sample notes.tsv`. The `-i` option asks before overwriting an existing destination, which is helpful if you repeat this practice sequence.
+
+A destination has two possible meanings: `cp source existing-directory/` places the source inside the directory, whereas `cp source new-name.tsv` creates a file with that name. Be explicit about which outcome you intend. Inspecting the destination with `ls` is cheaper than discovering later that a script read an old copy.
+
+::: {.predict}
+After the rename, do `data/raw/samples.tsv` and `scratch/samples-copy.tsv` both exist? Does renaming the copy rename the original? Use `ls data/raw/samples.tsv` and `ls scratch` to check before continuing.
+:::
+
+The original still exists. Only the name of the scratch copy changed. Remove that disposable copy by its exact path:
+
+```bash
+rm -i "scratch/sample notes.tsv"
+ls scratch
+```
+
+`rm -i` prompts before removing the named file; answer `y` only after reading the path. If this was your only scratch file, the following listing is empty. Command-line removal usually has no recycle-bin recovery. For an empty directory, `rmdir scratch` is deliberately narrower than recursive removal: it refuses to remove a directory containing files.
+
+::: {.pitfall title="Inspect a selection before deleting it"}
+Do not practise recursive deletion on your real research directories. An unquoted `*` expands before `rm` runs, so a small path error can select many files. In these lessons, remove only the exact disposable file you just created. Keep `data/raw/` as input throughout.
+:::
+
+## Read permissions without guessing
+
+On Linux, `ls -l` shows a permission string such as `-rw-r--r--`. The first character describes the file type (`-` for a regular file, `d` for a directory). The remaining characters come in three groups: owner, group and everyone else. Within a group, `r` means read, `w` write and `x` execute.
+
+For a regular file, execute permission allows it to be run directly as a program. For a directory, execute permission means traversal: permission to access entries through that directory. File ownership and permissions interact with directory permissions, so a read-only file is not a complete safeguard against deletion.
+
+Try a change only on a new scratch copy:
+
+```bash
+mkdir -p scratch
+cp -i data/raw/samples.tsv scratch/permission-demo.tsv
+chmod u-w scratch/permission-demo.tsv
+ls -l scratch/permission-demo.tsv
+chmod u+w scratch/permission-demo.tsv
+```
+
+`chmod u-w` removes the owner's write permission; `u+w` restores it. Look at the owner triplet in the listing: its middle position should be `-` while write permission is removed. Exact ownership and the other bits vary by system. Windows-mounted filesystems can expose different permission behaviour, so use your Linux home directory when practising in WSL.
+
+Avoid the habit of adding every permission to every file when a command fails. Read the error, inspect the relevant file and directory, and change only the permission required. Most course operations in your own workspace need no administrator privileges.
+
+## Know which Python you are running
+
+**PATH** is a list of directories the shell searches when you type a program name without a slash. If several environments contain a program named `python`, the first match normally wins. A command that worked yesterday can therefore behave differently after activating another environment.
+
+```bash
+printf '%s\n' "$PATH"
+command -v python3
+python3 --version
+```
+
+The first output is a colon-separated search path on Linux. `command -v` tells you which command Bash resolves; the version output identifies the interpreter. If Python is missing, use the course [environment setup](../../part-1-foundations/ch00-start-here/02-setup.html) before continuing.
+
+A **virtual environment** keeps a project's Python packages separate from other projects. With Python and its `venv` support installed, create one inside this practice project:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+command -v python
+python --version
+```
+
+The resolved path should now end in `mm-linux-lab/.venv/bin/python`. Activation changes the current shell's environment; opening a new terminal does not automatically repeat it. These particular commands are for Linux/WSL. If your course environment is already active, you may use it instead: the script below needs only Python's standard library.
+
+An **environment variable** is a name/value pair made available to child programs. For example, `export OMP_NUM_THREADS=1` is a common way to request one thread from libraries that respect that setting; it does not force every program to become single-threaded. Prefer recording such choices in your run script instead of relying on invisible terminal history.
+
+::: {.pitfall title="A script's location is not its working directory"}
+Running `python scripts/count_samples.py` does not move you into `scripts/`. Relative input paths still start at the shell's current directory unless the program explicitly changes that behaviour. Run `pwd` when diagnosing a missing input.
+:::
+
+## Turn a question into a small script
+
+The following command writes a Python program into the practice project's `scripts/` directory. A **here-document** supplies several lines as input to a command. The quoted marker `'PY'` tells Bash to preserve the body literally; finish it with `PY` alone on its line.
+
+```bash
+cat > scripts/count_samples.py <<'PY'
+import csv
+import sys
+
+with open(sys.argv[1], newline="", encoding="utf-8") as handle:
+    rows = list(csv.DictReader(handle, delimiter="\t"))
+print(len(rows))
+PY
+python scripts/count_samples.py data/raw/samples.tsv
+```
+
+Expected output:
+
+```text
+6
+```
+
+The script receives the input path as its first command-line argument, reads tab-separated records with Python's `csv` module and prints their count. `DictReader` uses the first row as field names, so it counts six data rows rather than seven lines. This simple example assumes the expected header and well-formed records; later pipeline code will validate those assumptions explicitly.
+
+This is already more reusable than a manual line count: you can supply a different compatible sample sheet without editing the code. For real scientific formats, choose a parser that understands records. A FASTA sequence can wrap over several lines, and a CSV field can contain quoted line breaks, so counting lines is not a universal count of samples.
+
+## Separate results, diagnostics and success
+
+A program normally has two output streams. **Standard output**, or stdout, carries its result; **standard error**, or stderr, carries diagnostics. By default both appear in your terminal, but Bash can send them to different files:
+
+```bash
+python scripts/count_samples.py data/raw/samples.tsv \
+  > results/sample-count.txt 2> logs/count.log
+status=$?
+printf 'exit status: %s\n' "$status"
+cat results/sample-count.txt
+wc -c logs/count.log
+```
+
+The {{< term exit-status >}} is `0`, the result contains `6`, and the log has `0` bytes for this successful run. The backslash continues the command onto the next physical line; do not put trailing spaces after it. `$?` stores the previous command's exit status, so capture it immediately before another command replaces it.
+
+`>` creates or truncates a file. `>>` appends instead. Repeating the command above replaces the previous report, which is deliberate here; for separate experiments, use separate output paths. Redirection happens before the program runs, so even a failing command can leave an empty output file.
+
+Try a missing path while keeping this failed attempt separate from your valid result:
+
+```bash
+python scripts/count_samples.py data/raw/missing.tsv \
+  > results/attempt.txt 2> logs/attempt.log
+status=$?
+printf 'exit status: %s\n' "$status"
+tail -n 1 logs/attempt.log
+```
+
+The status is nonzero and the log ends with a `FileNotFoundError` diagnostic. `results/attempt.txt` exists but contains no valid answer. A file's existence therefore proves very little about a completed analysis. Conversely, zero means the program reports success; it does not prove your samples, units or modelling assumptions were correct.
+
+## Processes and jobs
+
+A **process** is a running instance of a program. Its process ID, or PID, distinguishes it from other processes. To inspect a harmless job that belongs to you, run:
+
+```bash
+sleep 30 &
+job_pid=$!
+jobs
+ps -p "$job_pid" -o pid,comm
+wait "$job_pid"
+```
+
+`&` starts the command in the background, returning a prompt immediately. `$!` records its PID. `jobs` lists jobs tracked by the current interactive shell, while `ps` inspects a process. `wait` pauses until that job finishes; this one completes after about 30 seconds. The numeric PID varies, and the process may have finished already if you pause between commands.
+
+For a foreground job, Ctrl-C normally requests interruption. Ctrl-Z suspends it in an interactive shell with job control; `jobs` shows the stopped job, `bg %1` resumes job 1 in the background, and `fg %1` brings it to the foreground. Use the job number actually printed by your shell. These interactive controls are not portable substitutes for a workflow scheduler.
+
+If you need to stop your own background `sleep` before it finishes, `kill "$job_pid"` requests termination. Confirm that the PID still refers to your intended process; never copy someone else's example PID. Closing a terminal or losing a remote connection can affect its jobs, so research jobs that must survive disconnects need an approved session manager or the cluster's scheduler.
+
+## Exercises
+
+::: {.challenge level=1 title="Which file is the result?"}
+Your command writes `results/report.tsv` and `logs/report.log`, then returns status 1. The report file exists. Should the next stage use it, and what should you inspect first?
+
+:::: {.solution}
+Do not use the report as a successful result. Inspect the diagnostic log and the failed command's input paths. Shell redirection can create or truncate a result before the program fails, so existence is not evidence that a complete table was produced.
+::::
+:::
+
+::: {.challenge level=2 title="A small audit trail"}
+Save a copy of the raw sample sheet as `scratch/audit-input.tsv`. Run the counting script on that copy, save its answer and diagnostics under new names, then check that the answer is six. Leave the original untouched.
+
+:::: {.solution}
+```bash
+cp -i data/raw/samples.tsv scratch/audit-input.tsv
+python scripts/count_samples.py scratch/audit-input.tsv \
+  > results/audit-count.txt 2> logs/audit-count.log
+status=$?
+printf 'exit status: %s\n' "$status"
+cat results/audit-count.txt
+```
+The successful status is zero and the printed answer is six. The input path is explicit, and the output names distinguish this run from the earlier count. A real audit would also record the input checksum, code version and environment.
+::::
+:::
+
+::: {.challenge level=2 title="Debug this: a misleading success status"}
+A colleague runs the commands below, sees zero and concludes that the analysis succeeded. What went wrong?
+
+```bash
+python scripts/count_samples.py data/raw/missing.tsv
+printf 'Run finished\n'
+printf 'status: %s\n' "$?"
+```
+
+:::: {.solution}
+The final `$?` describes the successful `printf`, not the failed Python process. Capture `status=$?` immediately after Python, then report the saved value. In Chapter 18, explicit failure checks will prevent later stages from running on incomplete outputs.
+::::
+:::
+
+## Where this is going
+
+[Chapter 17](../ch17-scientific-text/index.html) uses text tools to select and summarise scientific records before a script consumes them. These same file, environment and process habits support a descriptor calculation in [cheminformatics](../../part-2-cheminformatics/index.html), a sequence-processing run in [bioinformatics](../../part-3-bioinformatics/index.html), and reproducible model training. The [automation chapter](../ch18-bash-automation/index.html) adds input checks, failure handling and records of each run so that repeating a command becomes a defensible computational workflow.

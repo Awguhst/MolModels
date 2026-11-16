@@ -8,6 +8,54 @@
 #   chapter:    where the term is introduced
 #   see:        related ids
 terms:
+  - id: terminal
+    term: terminal
+    short: "An interface for sending text input to a shell and displaying its output."
+    definition: "A terminal presents a text interface. The shell, such as Bash, is the program that interprets commands entered through it; the terminal and shell are separate pieces of software."
+    chapter: "16.1"
+    see: [shell, working-directory]
+  - id: shell
+    term: shell
+    short: "A program that interprets commands, starts other programs, and connects their inputs and outputs."
+    definition: "A shell interprets command syntax and manages program execution. Bash is the shell used in Part V. Commands written for Bash are not interchangeable with PowerShell or Python code."
+    chapter: "16.1"
+    see: [terminal, shell-pipe, exit-status]
+  - id: working-directory
+    term: working directory
+    short: "The directory a process uses as the starting point for relative file paths."
+    definition: "A process resolves relative paths from its current working directory. In Bash, `pwd` prints it and `cd` changes it for that shell. A script's location need not be its working directory."
+    chapter: "16.1"
+    see: [shell]
+  - id: shell-pipe
+    term: shell pipe
+    short: "A connection that passes one command's standard output to the next command's standard input."
+    definition: "Bash's `|` operator connects standard output to standard input. Standard error remains separate unless redirected. A shell pipeline composes processes; it is different from a fitted scikit-learn Pipeline."
+    chapter: "17.1"
+    see: [shell, exit-status, pipeline]
+  - id: exit-status
+    term: exit status
+    short: "A small integer a command returns to report its result to the calling process."
+    definition: "Zero conventionally means success; nonzero values have command-specific meanings. For grep, one means no matching lines, not necessarily an operational error. Bash exposes the most recent status through `$?`; check it before running another command."
+    chapter: "16.2"
+    see: [shell, shell-pipe]
+  - id: regular-expression
+    term: regular expression
+    short: "A pattern language for matching text, with metacharacters such as anchors and repetition operators."
+    definition: "Regular expressions describe text patterns. Tools differ in the dialect they support: grep defaults to basic regular expressions and `grep -E` uses extended expressions. Use `grep -F` when a scientific identifier or molecular string should be matched literally."
+    chapter: "17.1"
+    see: [shell-pipe]
+  - id: checksum
+    term: checksum
+    short: "A value computed from file bytes that helps detect whether the file has changed."
+    definition: "A SHA-256 digest records file content. Matching digests help verify unchanged inputs and outputs; they do not establish the truth of the measurements or the trustworthiness of an unverified source."
+    chapter: "18.2"
+    see: [workflow-provenance]
+  - id: workflow-provenance
+    term: workflow provenance
+    short: "A record of the inputs, code, parameters and environment that produced a computational result."
+    definition: "Provenance connects an output to its inputs and processing history. Record input and script checksums, parameters, interpreter and tool versions, logs, and output checksums. A random seed alone is not a complete reproducibility record."
+    chapter: "18.2"
+    see: [checksum, exit-status]
   - id: random-search
     term: random search
     short: "A hyperparameter search that samples a fixed number of configurations from declared distributions."

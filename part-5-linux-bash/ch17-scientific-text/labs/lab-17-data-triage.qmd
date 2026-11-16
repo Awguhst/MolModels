@@ -1,0 +1,54 @@
+---
+title: "Scientific data triage at the terminal"
+chapter: 17
+lab: 17
+duration: "60–75 min"
+minutes: 70
+level: intermediate
+objectives:
+  - "Inspect synthetic sample, sequence and compound files before analysis."
+  - "Write reproducible Bash commands for filters, summaries and log inspection."
+  - "Preserve raw files and verify the identifiers and units of derived results."
+  - "Explain where line-oriented tools need a proper file-format parser."
+prerequisites-text: ["Episodes 17.1–17.2", "Bash on Linux, WSL or Git Bash; alternatively Google Colab"]
+summary: "Build a checked triage report with pipes, grep, awk and sed: count records, inspect warnings, select samples and compounds, summarise read depth, and verify that the raw fixtures remain unchanged."
+dataset: "Bundled synthetic sample metadata, compounds, FASTA sequences and run log; no download needed"
+notebook: lab-17-data-triage
+---
+
+A new dataset has arrived, but an analysis should not begin with a training command. This lab asks you to inspect the files, account for the samples, preserve their identifiers and produce a short report another researcher could audit. The dataset is deliberately tiny and synthetic; every result can be checked by hand.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/part-5-linux-bash/ch17-scientific-text/labs/lab-17-data-triage.ipynb">Open in Colab</a>
+<a class="mm-btn" href="lab-17-data-triage.ipynb" download>Download .ipynb</a>
+<a class="mm-btn" href="lab-17-data-triage-solutions.html">View solutions</a>
+</div>
+
+## How to work
+
+The notebook uses a Python kernel to launch **real Bash commands** through a small `run_bash(...)` helper. Linux and Colab already provide Bash; on Windows, use the course's Linux/WSL environment or install Git Bash and run the notebook with Windows Python. The setup detects the usual Git Bash installation before trying a system Bash. It installs nothing and downloads no data.
+
+All fixtures are embedded in the notebook and written to a new temporary workspace. Commands start from that directory, so nothing touches your original datasets or your home directory. A new helper call starts a new shell: files persist, but shell variables and a previous call's `cd` do not. The notebook prints the workspace path so you can inspect or copy your results before closing the session.
+
+Complete each `# TODO` cell using the Bash commands you learned, then run its check. The helper raises an error when a command fails; read that message before proceeding. Do not replace a check with a hard-coded answer. The goal is to generate files whose contents support your conclusion.
+
+## The tasks
+
+1. **Inventory the records.** Count sample-table lines and FASTA headers; explain the different units.
+2. **Inspect the run log.** Write warning and error lines to a derived attention file.
+3. **Select passing samples.** Keep the header, all original columns and the four passing sample identifiers.
+4. **Summarise by condition.** Report the count and mean reads in millions for each condition, in stable order.
+5. **Prepare a molecular subset.** Select training compounds with synthetic molar mass below 150 g/mol, without changing their split labels.
+6. **Create a reporting copy.** Rename only the leading log label `WARN` to `WARNING`, then verify that every raw file is unchanged.
+
+## What to hand in
+
+Submit the completed notebook with all checks passing, the generated TSV and log files, and a short report answering these questions:
+
+- How many sample records, passing samples and FASTA records are present? Which commands establish each number?
+- Does three warning/error lines mean three distinct samples failed? Explain using the identifiers.
+- Which population did the mean read-depth calculation include, and how would exclusions change that population?
+- Why is a literal SMILES substring match insufficient to establish molecular identity?
+- Name one property your checks do **not** validate, and describe the tool or extra evidence you would need.
+
+Use a restarted kernel and run all cells before submitting. A clean run demonstrates that the notebook contains the necessary steps rather than depending on a command you ran manually earlier. Keep the [key points](../key-points.html) nearby; the next chapter turns the same sequence into a reusable script.

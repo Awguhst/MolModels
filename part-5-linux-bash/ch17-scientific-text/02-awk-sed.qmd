@@ -1,0 +1,244 @@
+---
+title: "Select, summarise and clean with awk and sed"
+chapter: 17
+episode: 2
+teaching: 45
+exercises: 30
+level: intermediate
+questions:
+  - "How do I filter a table by a particular column rather than matching any text?"
+  - "How can I summarise scientific measurements without loading a notebook?"
+  - "Which text transformations preserve the meaning of a dataset?"
+objectives:
+  - "Select TSV records using explicit fields and retain the header."
+  - "Validate numeric inputs before comparing or aggregating them."
+  - "Produce deterministic grouped summaries with awk."
+  - "Use sed to transform a derived copy and inspect the differences."
+  - "Choose a dedicated parser when a file format exceeds line-and-field rules."
+keypoints:
+  - "Set awk's field separator explicitly for tabular files; whitespace splitting can hide empty fields."
+  - "Keep headers separate from data and validate numeric strings before arithmetic."
+  - "Write a filtered table to a new file and check its header, row count and identifiers."
+  - "Sort grouped awk output when a stable reporting order matters."
+  - "sed writes transformed text to standard output unless asked to edit files."
+  - "A text substitution is not a chemical or biological validation procedure."
+prerequisites: [ch17-ep01]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A sample's identifier is useful only while it stays attached to its measurements. Searching every line for `pass` gives a quick glimpse of a sample sheet; selecting the quality-status **column** gives a rule you can explain and rerun. That distinction becomes more important when tables contain free text, missing values and columns with similar names.
+
+Work in the [practice workspace](../index.html), such as `~/mm-linux-lab`, in a **Bash terminal**. You need `data/raw/samples.tsv`, `data/raw/compounds.tsv` and `data/raw/pipeline.log`. Create `results/` if necessary. All values are teaching fixtures: the compound strings illustrate molecular notation, but their accompanying numerical values are synthetic, not experimental measurements.
+
+```bash
+mkdir -p results
+head -n 2 data/raw/samples.tsv
+head -n 2 data/raw/compounds.tsv
+```
+
+Confirm the headers before referring to column numbers. The sample columns are `sample_id`, `condition`, `reads_million` and `qc_status`. The compound columns are `compound_id`, `smiles`, `mol_weight`, `logS` and `split`. In this fixture, `mol_weight` is expressed in g/mol and `logS` uses the log₁₀(mol/L) convention; these labels are part of the data contract.
+
+## Give awk a small, explicit job
+
+`awk` reads records, usually one line at a time, divides them into **fields**, then runs rules of the form `pattern { action }`. A field is one value within a record. `$1` refers to the first field, `$2` to the second, and `$0` to the whole current record. Single quotes protect this program from Bash interpreting the dollar signs.
+
+```bash
+awk -F '\t' 'NR == 1 { print; next } $4 == "pass" { print }' \
+  data/raw/samples.tsv > results/passing-samples.tsv
+cat results/passing-samples.tsv
+```
+
+```text
+sample_id	condition	reads_million	qc_status
+S01	control	12.4	pass
+S02	treated	18.2	pass
+S04	treated	22.0	pass
+S05	control	15.7	pass
+```
+
+The displayed columns are separated by literal tabs in the file. `-F '\t'` specifies a tab as the input separator. `NR` is the number of records read so far. On the first record, `print` emits the header and `next` skips the remaining rules for that record. On later records, the condition checks exactly field 4.
+
+This command does not search for the word `pass` in comments or identifiers. That is its advantage over a whole-line match. It also preserves each original line rather than reconstructing columns unnecessarily. There are five output lines: one header and four passing samples.
+
+::: {.pitfall title="The default separator is not a TSV schema"}
+Without `-F`, awk normally treats runs of spaces and tabs as separators and ignores surrounding whitespace. An empty TSV field can then disappear, shifting later fields into the wrong position. An explicit tab separator preserves those empty positions. Even then, you must check that each record has the expected number of fields.
+:::
+
+## Validate before interpreting a number
+
+The expression `$3 >= 10` looks simple, but field 3 could contain `NA`, an empty string, a unit suffix or an accidental column heading. Numeric coercion is not a missing-value policy. First define the accepted representation, then compare values that satisfy it.
+
+For this lesson, read counts must be non-negative decimal numbers, with optional digits after a decimal point. Scientific notation and comma-formatted numbers are deliberately outside this small contract. The **regular expression** `^[0-9]+([.][0-9]+)?$` describes that accepted form; `[.]` means a literal dot and `?` makes the decimal group optional.
+
+```bash
+awk -F '\t' '
+  NR == 1 { next }
+  NF != 4 || $3 !~ /^[0-9]+([.][0-9]+)?$/ {
+    print "invalid record at line", NR
+    bad = 1
+  }
+  END { exit bad }
+' data/raw/samples.tsv
+printf 'validation status: %s\n' "$?"
+```
+
+The fixture produces no diagnostic lines and status `0`. `NF` is the number of fields in the current record. `!~` means “does not match”; `||` combines alternative reasons to reject a record. The variable `bad` starts at zero and becomes one if a problem is found. This is a narrow validation check: it does not prove that identifiers are unique or that a quality label belongs to the allowed set.
+
+Only after a successful validation should you filter numerically. In a script, make the filtering step conditional on validation succeeding; [Chapter 18](../ch18-bash-automation/index.html) shows that control flow. In this interactive example, inspect the printed validation status before proceeding.
+
+::: {.predict}
+Four samples pass QC. Which of them also have at least 15 million reads? Predict both identifiers before running the filter. Does the threshold establish that these are scientifically “better” samples?
+:::
+
+```bash
+awk -F '\t' '
+  NR == 1 { print; next }
+  $4 == "pass" && ($3 + 0) >= 15 { print }
+' data/raw/samples.tsv > results/passing-high-depth.tsv
+cat results/passing-high-depth.tsv
+```
+
+The selected identifiers are `S02`, `S04` and `S05`. `&&` means both conditions must be true; `+ 0` makes the numeric interpretation explicit after validation. A threshold of 15 is an exercise choice, not a recommendation for a sequencing assay. Real thresholds need justification from the assay, analysis and experimental design.
+
+::: {.bridge audience="bio"}
+A shell filter cannot distinguish technical failure from a biological change in signal. If depth or QC exclusions differ by condition, discarding rows may change which biological population you analyse. Record the excluded identifiers and reasons, and check the experimental design before treating a convenient command as a scientific decision.
+:::
+
+## Summarise with units and a stable order
+
+`awk` can accumulate values while it reads the file. A variable keeps one running value; an **associative array** stores values under keys such as `control` and `treated`. Here each condition has a running total and a count, computed on all six rows after validation.
+
+```bash
+awk -F '\t' '
+  NR > 1 { total[$2] += $3; count[$2]++ }
+  END {
+    for (group in count)
+      printf "%s\t%d\t%.2f\n", group, count[group], total[group] / count[group]
+  }
+' data/raw/samples.tsv | LC_ALL=C sort > results/condition-summary.tsv
+cat results/condition-summary.tsv
+```
+
+```text
+control	3	10.73
+treated	3	15.83
+```
+
+The columns are condition, sample count and mean reads in millions. Controls total 32.2 million reads; treated samples total 47.5 million. Dividing each by three gives the displayed rounded means. This summary includes the two samples marked `fail`; if the scientific question requires another population, explicitly change and document the selection rule.
+
+Array iteration order is not a reporting contract. Sorting the summary makes the line order reproducible, and `LC_ALL=C` gives `sort` a predictable byte-based ordering. Locale settings can otherwise affect ordering, and some tools' interpretation or display of decimal separators. Keep numerical files in an agreed machine-readable format rather than changing punctuation ad hoc.
+
+For a reusable table, add a header in a separate command group:
+
+```bash
+{
+  printf 'condition\tn_samples\tmean_reads_million\n'
+  cat results/condition-summary.tsv
+} > results/condition-summary-labelled.tsv
+```
+
+The braces group commands whose combined output is redirected. The header states the unit and prevents a later reader guessing what `10.73` means. Do not redirect this command onto `condition-summary.tsv`, because it reads that file as an input.
+
+## Select molecules without changing their split
+
+The compound table has four training rows and two test rows. A mechanical task might be to prepare the training compounds whose synthetic molar-mass values are below 150 g/mol. Keep every column attached to its identifier and preserve the `split` field:
+
+```bash
+awk -F '\t' '
+  NR == 1 { print; next }
+  NF == 5 && $3 ~ /^[0-9]+([.][0-9]+)?$/ &&
+    $5 == "train" && ($3 + 0) < 150 { print }
+' data/raw/compounds.tsv > results/small-training-compounds.tsv
+cut -f 1 results/small-training-compounds.tsv
+```
+
+```text
+compound_id
+C001
+C002
+C006
+```
+
+The command demonstrates field selection, not a modelling recommendation. It skips malformed rows rather than reporting them, so an actual pipeline should run a validation stage first and account for every excluded record. A silent reduction from thousands of rows to a handful is a data-quality signal, even when the shell exits successfully.
+
+The [ML evaluation lessons](../../part-1-foundations/ch02-ml-fundamentals/03-evaluating-models.html) explain why a test set must remain independent of decisions made during model development. A shell command can create leakage as readily as Python: using test-set labels to choose a threshold is still using the test set. Preserve and audit split membership when preparing inputs for training scripts.
+
+## Use sed for a documented text transformation
+
+`sed` is a stream editor. Its common substitution command, `s/pattern/replacement/`, replaces the first matching occurrence on each line; a trailing `g` replaces all non-overlapping occurrences on that line. By default, sed writes the transformed stream to standard output. Reading a file does not alter it.
+
+Suppose a reporting tool requires `WARNING` as the severity label while our source log uses `WARN`. Change only that leading label:
+
+```bash
+sed 's/^WARN /WARNING /' data/raw/pipeline.log > results/reporting.log
+grep -E '^(WARN|WARNING) ' results/reporting.log
+diff -u data/raw/pipeline.log results/reporting.log
+```
+
+The new file contains two lines starting with `WARNING`. The diff shows the two original `WARN` lines removed and their replacements added. `diff` returns status `1` when it finds differences; that is expected here. No sample identifier or other log field changed.
+
+Anchoring the substitution matters: an unanchored replacement could also alter a quoted message or an identifier containing the same substring. Avoid `sed -i` while learning; it edits the file itself, and its backup syntax differs between implementations. A new output path makes the before-and-after comparison explicit.
+
+## Handle line endings without guessing
+
+Windows text files often use carriage-return plus line-feed endings, abbreviated **CRLF**. Linux text tools generally use line-feed endings, **LF**. An extra carriage-return at the end of a field can make an exact match fail, even though the text looks normal in an editor.
+
+Create a tiny derived example so the original table remains safe:
+
+```bash
+printf 'sample_id\tstatus\r\nS01\tpass\r\n' > results/crlf-demo.tsv
+sed -b -n 'l' results/crlf-demo.tsv
+sed -b 's/\r$//' results/crlf-demo.tsv > results/lf-demo.tsv
+sed -b -n 'l' results/lf-demo.tsv
+```
+
+With GNU sed, the first inspection displays `\r` before the end-of-line marker `$`; the second does not. `-b` disables platform text translation, which otherwise hides carriage returns in Git Bash; on GNU/Linux it has no effect. `-n` suppresses ordinary printing and `l` displays escaped, visible representations of the lines. The `-b` option and `\r` escape here use GNU sed syntax; verify portability before running them with a different sed implementation.
+
+Removing the trailing carriage-return is different from deleting all whitespace. A command that removes tabs would destroy this file's column boundaries. Treat line-ending conversion as a specific, recorded operation, then rerun the same schema and count checks on its output.
+
+## Know when text tools have reached their limit
+
+A true CSV parser understands quoted commas, escaped quotes and embedded newlines. `awk -F ','` simply splits on commas. It cannot safely read arbitrary CSV, including chemical descriptions that contain commas. Use Python's `csv` module or `pandas.read_csv` with documented options when the CSV grammar matters.
+
+Likewise, FASTA has multiline records, FASTQ has quality strings, and molecular formats have their own syntax and semantics. Substituting letters in a sequence or punctuation in SMILES can change scientific meaning. Use a domain parser to validate the result, and distinguish a format conversion from a biological or chemical transformation.
+
+Before handing any derived file to a model, check four things: the header still describes its columns, the row count matches the stated selection, identifiers remain attached to their values, and excluded rows have an explanation. These checks are cheap compared with discovering a malformed input after a long computation. Preserve the exact commands alongside the results so another person can reproduce the transformation.
+
+## Exercises
+
+::: {.challenge level=1 title="A header is not a sample"}
+Explain the purpose of both `print` and `next` in `NR == 1 { print; next }`. What could go wrong if the header entered a numeric rule?
+
+:::: {.solution}
+`print` preserves the column names in the output; `next` finishes processing that record immediately. Without the separate header rule, headings can be excluded, misinterpreted as values or included in a count. A downstream table may then lose its schema or have an incorrect summary.
+::::
+:::
+
+::: {.challenge level=2 title="Keep an exclusion list"}
+Create `results/excluded-samples.tsv` containing the header and only rows whose quality-status field is `fail`. Predict the identifiers and use a line count to check the output.
+
+:::: {.solution}
+```bash
+awk -F '\t' 'NR == 1 { print; next } $4 == "fail" { print }' \
+  data/raw/samples.tsv > results/excluded-samples.tsv
+wc -l < results/excluded-samples.tsv
+```
+The output has three lines: the header, `S03` and `S06`. Retaining this file records who was excluded; a real report should also explain why the supplied QC labels justify exclusion for the analysis.
+::::
+:::
+
+::: {.challenge level=2 title="Debug this: the vanished dataset"}
+A colleague runs `sed 's/^WARN /WARNING /' results/reporting.log > results/reporting.log`. Why does the file become empty? Give a command that regenerates the desired result from the raw fixture.
+
+:::: {.solution}
+```bash
+sed 's/^WARN /WARNING /' data/raw/pipeline.log > results/reporting.log
+```
+The shell truncates the destination before sed reads its input. Using the same path for both loses the source content. Regenerating from the unchanged raw file restores the intended derived report; use a distinct destination for every transformation.
+::::
+:::
+
+## Where this is going
+
+The [data-triage lab](labs/lab-17-data-triage.html) combines inspection, filtering and audit files into one small analysis. [Bash automation](../ch18-bash-automation/index.html) then wraps those steps in scripts that check arguments, stop on meaningful failures and record what ran. The same contracts protect inputs to [QSAR modelling](../../part-2-cheminformatics/ch06-qsar-property-prediction/index.html) and [omics analysis](../../part-3-bioinformatics/ch11-omics-data/index.html), where a shifted column or silently dropped sample can invalidate the scientific result.

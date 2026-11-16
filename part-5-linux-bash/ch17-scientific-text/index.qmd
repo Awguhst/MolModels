@@ -1,0 +1,36 @@
+---
+title: "Scientific text at the command line"
+chapter-index: true
+summary: "Inspect datasets and logs with pipes and grep, then use awk and sed to select, summarise and clean scientific text without changing your raw inputs."
+---
+
+{{< generated ch17-hero >}}
+
+## What you will be able to do
+
+::: {.mm-outcomes-wrap}
+- Connect commands through standard input and output, keeping diagnostics separate from data.
+- Find literal text, anchored patterns and FASTA headers with `grep`.
+- Count records, inspect columns and check category frequencies before an analysis.
+- Filter tab-separated tables with `awk`, retain their headers and validate numeric fields.
+- Make a documented text transformation with `sed` while preserving the original file.
+- Recognise when CSV, sequence or molecular formats need a dedicated parser.
+:::
+
+## Schedule
+
+{{< generated ch17-schedule >}}
+
+## Lab
+
+{{< generated ch17-labs >}}
+
+The lab produces a small data-quality report from sample metadata, a synthetic compound table and a run log. Finish with the [checkpoint](checkpoint.html), then review the [key points](key-points.html).
+
+## Before you start
+
+::: {.prereq}
+Complete [Linux fundamentals](../ch16-linux-fundamentals/index.html), or be comfortable with paths, quoting and working in a Bash terminal. Download the [practice workspace](../index.html) and keep its raw files unchanged. All terminal examples run from the workspace root, with inputs in `data/raw/` and derived files in `results/`.
+:::
+
+The records are deliberately small and synthetic, so you can predict every answer. The habits transfer to large files; the invented measurements do not support biological or chemical conclusions. These tools complement the [pandas lessons](../../part-1-foundations/ch01-scientific-python/03-pandas-dataframes.html): use the shell for quick inspection and orchestration, and a proper table or domain parser when the file format requires one.

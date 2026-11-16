@@ -1,0 +1,148 @@
+---
+title: "Chapter 16 checkpoint"
+chapter: 16
+checkpoint-quiz: true
+subtitle: "Check the habits that make terminal work understandable and repeatable."
+---
+
+Choose an answer before opening its feedback. If a question is uncertain, try its command in the practice workspace, then return to the [key points](key-points.html).
+
+::: {.checkpoint title="Which layer interprets a command?"}
+When you enter `ls data/raw` in the course's terminal, what interprets the command line?
+
+- [x] Bash, the shell
+
+  Bash interprets the command and arguments, then invokes the relevant command.
+- [ ] The terminal window alone
+
+  The terminal provides the input/output interface; it can host different shells.
+- [ ] The sample sheet
+
+  The sample sheet is input data, not a command interpreter.
+:::
+
+::: {.checkpoint title="Where does a relative path begin?"}
+You run `python scripts/count_samples.py data/raw/samples.tsv` from the project root. Where does this example's input path begin?
+
+- [x] At the current working directory
+
+  The program opens the relative path from its working directory, inherited from the shell.
+- [ ] Inside `scripts/`, because that contains the program
+
+  A program's location does not automatically change its working directory.
+- [ ] Always at the filesystem root `/`
+
+  A path starting with `/` is absolute; this one is relative.
+:::
+
+::: {.checkpoint title="A path from results"}
+You are inside `mm-linux-lab/results`. Which path reaches the raw sample sheet?
+
+- [x] `../data/raw/samples.tsv`
+
+  `..` returns to the project root, from which `data/raw/` is accessible.
+- [ ] `data/raw/samples.tsv`
+
+  That looks for a `data` directory inside `results`.
+- [ ] `/data/raw/samples.tsv`
+
+  The leading slash starts at the filesystem root, not at your project.
+:::
+
+::: {.checkpoint title="A filename with spaces"}
+Which command passes a path containing a space as one argument?
+
+- [x] `head -n 2 "scratch/sample notes.tsv"`
+
+  Quotes keep the complete path together.
+- [ ] `head -n 2 scratch/sample notes.tsv`
+
+  The space separates two arguments, neither of which is the intended complete path.
+- [ ] `head -n 2 scratch/sample*notes.tsv` is always equivalent
+
+  A glob may match additional filenames or nothing; exact quoting expresses the intended file.
+:::
+
+::: {.checkpoint title="How many samples?"}
+The fixture has a header, six records, no blank lines and a newline after every line. What does `wc -l` report?
+
+- [x] Seven lines
+
+  The header contributes one newline in addition to the six records.
+- [ ] Six lines
+
+  That is the number of sample records, not the number of lines including the header.
+- [ ] The number of columns
+
+  The `-l` option counts newline characters, not fields.
+:::
+
+::: {.checkpoint title="Protect the input"}
+You want to practise renaming and deleting files. Which workflow best preserves the original sample sheet?
+
+- [x] Copy it into `scratch/` and operate on that exact copy
+
+  The practice operations have an explicit disposable target, while raw input stays separate.
+- [ ] Rename the raw input and try to remember its old name
+
+  That changes a shared input path and can break other commands.
+- [ ] Remove every matching `*.tsv` file after the exercise
+
+  A broad pattern can include raw inputs or other valuable files.
+:::
+
+::: {.checkpoint title="Which interpreter?"}
+After activating an environment, which command helps confirm how Bash resolves `python`?
+
+- [x] `command -v python`
+
+  It shows the command Bash resolves; `python --version` adds its version.
+- [ ] `pwd`
+
+  This shows the working directory, not the interpreter selected through PATH.
+- [ ] `ls data/raw`
+
+  This lists inputs and says nothing about Python resolution.
+:::
+
+::: {.checkpoint title="An empty output file"}
+A script fails after its output was redirected with `> results/report.tsv`. Why might the report file still exist?
+
+- [x] Bash can create or truncate the file before the program executes
+
+  Check exit status, diagnostics and output validity before using it.
+- [ ] An existing file proves the script completed successfully
+
+  File creation and a complete successful calculation are different events.
+- [ ] Standard error automatically repairs standard output
+
+  Standard error is a diagnostic stream; it does not repair results.
+:::
+
+::: {.checkpoint title="Save the right status"}
+How should you preserve the exit status of a Python command before printing other messages?
+
+- [x] Assign `status=$?` immediately after the Python command
+
+  Later commands replace `$?`, while the saved variable preserves the value you need.
+- [ ] Print several messages, then read `$?`
+
+  That reads the exit status of the last message-printing command.
+- [ ] Assume an empty diagnostic log always means scientific correctness
+
+  A silent program can still use the wrong data or make invalid assumptions.
+:::
+
+::: {.checkpoint title="A background job"}
+What does `sleep 30 &` do in an interactive Bash terminal?
+
+- [x] Starts a background process and returns the prompt
+
+  `jobs` can show the shell's job and `$!` captures its PID.
+- [ ] Submits a durable job to the research cluster scheduler
+
+  Backgrounding alone is not cluster scheduling and does not guarantee survival after a disconnect.
+- [ ] Stops every process after 30 seconds
+
+  `sleep` waits; it does not terminate other programs.
+:::

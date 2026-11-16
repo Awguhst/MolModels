@@ -20,7 +20,7 @@ h1, h2, h3 { letter-spacing: -.035em; }
 .navbar > .navbar-container { min-height: 48px; }
 .navbar .navbar-brand img { width: 30px; height: 30px; max-height: 30px; }
 .navbar .navbar-title { color: var(--mm-text); font-size: 20px; font-weight: 500; letter-spacing: -.7px; }
-.navbar .navbar-nav .nav-link { font-size: 15px; font-weight: 500; }
+.navbar .navbar-nav .nav-link { font-size: 15px; font-weight: 500; white-space: nowrap; }
 .navbar .navbar-nav .nav-link.active { font-weight: 500; }
 .navbar .navbar-nav .nav-link::before {
   content: ""; position: absolute; inset: auto .7rem 15px; height: 2px;
@@ -170,9 +170,11 @@ body:has(.mm-home) .mm-title { display: none; }
   html { scroll-behavior: smooth; }
 }
 @media (min-width: 992px) and (max-width: 1199.98px) {
-  #quarto-header .navbar { --mm-navbar-inset: 24px; }
-  .navbar .navbar-collapse::before { margin: 0 .5rem 0 .8rem; }
-  .navbar .navbar-nav .nav-link { padding-inline: .4rem; }
+  #quarto-header .navbar { --mm-navbar-inset: 20px; }
+  .navbar .navbar-title { font-size: 18px; }
+  .navbar .navbar-collapse::before { margin: 0 .35rem 0 .5rem; }
+  .navbar .navbar-nav .nav-link { padding-inline: .3rem; font-size: 14px; }
+  .navbar .mm-seg button { width: 28px; }
 }
 @media (max-width: 991.98px) {
   body:has(.mm-home) main.content { padding-inline: 1.75rem; }

@@ -1,0 +1,7 @@
+---
+title: "Chapter 16 key points"
+chapter: 16
+subtitle: "Every key point of the chapter, generated from the episode front matter."
+---
+
+{{< generated ch16-keypoints >}}

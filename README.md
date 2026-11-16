@@ -17,6 +17,7 @@ executed when the site is built. Text CC BY 4.0, code MIT.
 | II · Cheminformatics | 5–8 | planned |
 | III · Bioinformatics | 9–12 | planned |
 | IV · Generative | 13–15 | planned |
+| V · Linux & Bash | 16–18 | **complete**, with six lessons, three offline-capable labs, checkpoints, and a downloadable scientific practice workspace |
 
 See [ROADMAP.md](ROADMAP.md) for the outlines and [AUTHORING.md](AUTHORING.md) for how to add a chapter.
 
@@ -93,8 +94,10 @@ _includes/mm-setup.qmd      hidden setup cell every episode includes (figure the
 index.qmd about.qmd cite.qmd
 part-1-foundations/         complete ch00–ch04: setup, Python, ML, nonlinear models, PyTorch
 part-2-cheminformatics/ part-3-bioinformatics/ part-4-generative/     stub chapters
+part-5-linux-bash/          terminal navigation, scientific text tools and reproducible Bash pipelines
 appendices/                 maths-refresher.qmd, glossary.qmd, key-points.qmd, reproducibility.qmd, further-reading.qmd
 data/                       penguins.csv + README.md (sources, licences, checksums); esol.csv is downloaded
+data/linux-bash/             synthetic TSV/FASTA/log fixtures and runnable Bash/Python examples
 glossary.yml                single source for the glossary page and tooltips
 scripts/                    build_course_data.py, post_render.py, fetch_data.py, check_env.py,
                             make_student_notebooks.py, new_episode.py, new_chapter.py, review_site.py,

@@ -1,0 +1,150 @@
+---
+title: "Chapter 18 checkpoint"
+chapter: 18
+checkpoint-quiz: true
+subtitle: "Ten decisions that make an automated workflow trustworthy."
+---
+
+Answer before opening the feedback. The questions follow a run from command-line arguments to its final outputs. Revisit the [scripting episode](01-bash-scripting.html) or [pipeline episode](02-reproducible-pipelines.html) when you cannot explain why the other choices fail.
+
+::: {.checkpoint title="Which interpreter?"}
+A script uses a Bash array and begins `#!/usr/bin/env bash`. What is the appropriate explicit invocation?
+
+- [x] `bash scripts/analyse.sh`
+
+  This selects Bash directly. The shebang is used for direct execution, after executable permission has been set.
+- [ ] `sh scripts/analyse.sh`
+
+  This selects `sh`; the shebang cannot override that choice, and Bash arrays are not POSIX shell syntax.
+- [ ] `python3 scripts/analyse.sh`
+
+  A Python interpreter cannot execute Bash syntax. The file extension does not translate the language.
+:::
+
+::: {.checkpoint title="One filename"}
+`input='pilot samples.tsv'`. Which expansion passes one filename to `wc`?
+
+- [ ] `wc -l $input`
+
+  The unquoted expansion can split on the space, giving two arguments.
+- [x] `wc -l -- "$input"`
+
+  Double quotes preserve the path as one argument, and `--` ends option parsing.
+- [ ] `wc -l '$input'`
+
+  Single quotes suppress expansion, so this asks for a file literally named `$input`.
+:::
+
+::: {.checkpoint title="Forward every argument"}
+A function must pass its arguments unchanged to another command. Which form preserves each argument boundary?
+
+- [x] `"$@"`
+
+  It expands to one word per positional argument, including arguments containing spaces.
+- [ ] `"$*"`
+
+  This joins the positional arguments into one word, changing the interface.
+- [ ] An unquoted `$@`
+
+  Unquoted arguments can be split again or undergo filename expansion.
+:::
+
+::: {.checkpoint title="A no-match search"}
+In a strict script, `grep` returns status 1 because no error records matched. What is the clearest response when this is an expected outcome?
+
+- [ ] Ignore every nonzero status in the entire script.
+
+  That also hides unreadable inputs, failed processing and other unexpected problems.
+- [x] Test the search status explicitly and distinguish no matches from an execution error.
+
+  Tool statuses carry meaning. An expected absence and a failed search need different interpretations.
+- [ ] Treat an empty output file as proof the search worked.
+
+  A failed command can also leave an empty file; output shape alone does not establish success.
+:::
+
+::: {.checkpoint title="What strict mode can promise"}
+Does `set -euo pipefail` guarantee that every failure stops a script?
+
+- [ ] Yes; further status checks are redundant.
+
+  Bash has conditional-context exceptions, and scientific input validation is outside these options.
+- [x] No; it adds useful checks, but critical failures still need explicit handling.
+
+  In particular, commands whose status is being tested can behave differently under `-e`. Make the intended control flow visible.
+- [ ] No; these options only change printed output.
+
+  They affect error handling and expansion, not just display. They are useful when you understand their scope.
+:::
+
+::: {.checkpoint title="Preserving the previous result"}
+A validator rejects a late row. Which output strategy preserves an existing good result?
+
+- [ ] Redirect into the final filename before validation.
+
+  `>` may truncate that filename before the command starts.
+- [ ] Append validated rows to the final filename as they arrive.
+
+  A failure leaves a mixture of an earlier result and part of the new one.
+- [x] Write to a unique temporary file beside the destination and rename only after successful validation.
+
+  The old result remains intact until the replacement is complete. Cleanup removes the failed temporary output.
+:::
+
+::: {.checkpoint title="A compound preparation step"}
+The molecular TSV has a declared `train`/`test` split. What should the preparation script do?
+
+- [x] Preserve the labels and validate the table; fit learned transformations later using training data.
+
+  Format preparation should not silently reassign evaluation roles or learn from held-out observations.
+- [ ] Choose a new split that gives a better final score.
+
+  That selects the evaluation data using the desired outcome and invalidates the reported test result.
+- [ ] Include the `logS` target as an input descriptor.
+
+  Supplying the answer as an input leaks the target. Select model features explicitly.
+:::
+
+::: {.checkpoint title="The checksum tells you"}
+Two input files have the same SHA-256 checksum. What is the practical conclusion for this workflow?
+
+- [ ] The biological sampling design is valid.
+
+  A checksum cannot assess experimental design, representativeness or scientific meaning.
+- [x] Their bytes match for practical integrity checking; you still need the files and scientific validation.
+
+  Hashes fingerprint content. They neither archive the data nor prove its suitability.
+- [ ] Every downstream model must have identical predictions.
+
+  Code, parameters, environments and randomness may differ even when inputs match.
+:::
+
+::: {.checkpoint title="A repeat run"}
+The pipeline refuses an existing `results/run-01` directory. What is the intended way to check repeatability?
+
+- [ ] Append a new run to its existing tables.
+
+  That duplicates rows and changes the meaning of the output.
+- [x] Run into a new directory and compare the data outputs and recorded inputs.
+
+  Retain both records. Time metadata may differ even when deterministic data outputs match.
+- [ ] Delete the previous result before checking whether the new run works.
+
+  That removes the reference you need for comparison and weakens recovery after a failure.
+:::
+
+::: {.checkpoint title="An unattended job"}
+A script works in your terminal but cannot find Python in a scheduler. What should you inspect first?
+
+- [x] Its working directory, environment, executable paths and logs.
+
+  An unattended job may not inherit your interactive `PATH` or environment activation. Configure these explicitly and test the wrapper before scheduling it.
+- [ ] Its random seed.
+
+  A random seed does not control which executable the operating system can find.
+- [ ] Whether the output directory contains any file at all.
+
+  A partial file is insufficient. Inspect the exit status, diagnostics and the workflow's completion contract.
+:::
+
+Ready to test these promises? Continue to [Lab 18](labs/lab-18-reproducible-pipeline.html), then revisit the [chapter key points](key-points.html).

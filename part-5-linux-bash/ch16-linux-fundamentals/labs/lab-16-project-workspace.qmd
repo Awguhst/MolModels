@@ -1,0 +1,43 @@
+---
+title: "A reproducible scientific workspace"
+chapter: 16
+lab: 16
+duration: "45–60 min"
+minutes: 60
+level: beginner
+objectives:
+  - "Organise raw inputs, scripts, results and logs in a small project."
+  - "Inspect and copy a synthetic sample sheet without modifying the source."
+  - "Run a Python script from Bash and capture its result and diagnostics."
+  - "Diagnose an incorrect relative path and verify the repaired command."
+prerequisites-text: ["Episodes 16.1–16.2", "A Python notebook kernel and Bash; Colab provides both"]
+summary: "Build a project workspace for six synthetic samples, run a counting script, preserve the original input and use assertions to check your result. The notebook contains its data and needs no network downloads."
+dataset: "Six synthetic sample-sheet records embedded in the notebook; no experimental claims"
+notebook: lab-16-project-workspace
+---
+
+Your collaborator should be able to find the input, read your processing instructions and reproduce the same sample count. This lab makes that small promise concrete. It uses the same six synthetic samples as the lessons, embedded in the notebook so that the exercise works without fetching a remote dataset.
+
+<div class="mm-card-actions"><a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/Awguhst/MolModels/blob/main/part-5-linux-bash/ch16-linux-fundamentals/labs/lab-16-project-workspace.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="mm-btn" href="lab-16-project-workspace.ipynb" download>Download .ipynb</a><a class="mm-btn" href="lab-16-project-workspace-solutions.html">View solutions</a></div>
+
+## Before you start
+
+Use a Python notebook kernel on Linux/WSL, Colab, or Windows with Git Bash installed. The setup cell locates Bash and creates a fresh temporary workspace; it does not modify your home directory or the course's input files. Run setup once, then work from top to bottom. Each Bash call starts in the workspace root, so a `cd` in one call does not persist into the next call.
+
+The notebook's `run_bash(...)` helper launches a real Bash process and prints its output. Put your commands inside the supplied multiline string; do not enter PowerShell syntax. The Python around the string is a notebook adapter, not a replacement for practising the commands in a terminal.
+
+## Your tasks
+
+1. Create separate directories for scripts, results, logs and disposable copies.
+2. Inspect the sample sheet, explain why its line count is seven, and preserve a working copy.
+3. Write and run a small Python sample-counting script from Bash, saving stdout and stderr separately.
+4. Diagnose a command run from the wrong directory, then record the corrected relative path.
+5. Remove only the disposable copy you created and verify that the raw input is unchanged.
+
+Checks follow each task. If a check fails, inspect the files and the command's working directory before opening the solutions. The final report should contain six, the successful diagnostic log should be empty, and the original input's bytes should still match the setup fixture.
+
+## Reflect
+
+Which parts of your project would another researcher need to repeat the count? Why does the presence of a report file fail to establish that a process succeeded? What would you add before processing a sample sheet supplied by someone outside your group?
+
+Finish with the [chapter checkpoint](../checkpoint.html). Then move to [scientific text processing](../../ch17-scientific-text/index.html), where you will select records rather than simply count them.

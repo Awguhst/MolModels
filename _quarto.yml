@@ -8,6 +8,7 @@ project:
   output-dir: _site
   execute-dir: project          # code cells run from the repo root: pd.read_csv("data/...") works everywhere
   pre-render:
+    - scripts/build_linux_bash_bundle.py
     - scripts/build_course_data.py
   post-render:
     - scripts/post_render.py
@@ -21,6 +22,7 @@ project:
   resources:
     - "data/*.csv"
     - "data/README.md"
+    - "data/linux-bash/**"
     - "**/labs/*.ipynb"
     - "scripts/check_env.py"
     - "environment.yml"
@@ -73,6 +75,8 @@ website:
         href: part-3-bioinformatics/index.qmd
       - text: "Generative"
         href: part-4-generative/index.qmd
+      - text: "Linux & Bash"
+        href: part-5-linux-bash/index.qmd
     tools:
       - icon: github
         href: "https://github.com/Awguhst/MolModels"

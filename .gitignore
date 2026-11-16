@@ -17,6 +17,7 @@ __pycache__/
 
 # Data downloaded at build time (not redistributed, see data/README.md)
 /data/esol.csv
+/data/linux-bash/linux-bash-practice.zip
 
 # Review artefacts: screenshots are kept, bulky intermediates are not
 /_review/axe/*.json

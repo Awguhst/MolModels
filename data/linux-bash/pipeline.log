@@ -1,0 +1,6 @@
+INFO start run=demo
+INFO samples=6
+WARN low_reads sample=S03
+WARN low_reads sample=S06
+ERROR missing_reference sample=S06
+INFO finished stage=inspect

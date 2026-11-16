@@ -1,0 +1,56 @@
+---
+title: "Build, repeat and break a scientific pipeline"
+chapter: 18
+lab: 18
+duration: "75–90 min"
+minutes: 90
+level: intermediate
+objectives:
+  - "Run a Bash pipeline that validates sample and molecular descriptor tables."
+  - "Check selected sample identities and preserve molecular train/test labels."
+  - "Compare two runs and verify output checksums."
+  - "Inject a malformed input and confirm that no incomplete run is published."
+prerequisites-text: ["Episodes 18.1–18.2", "Chapter 17 text processing"]
+summary: "Use a self-contained notebook to orchestrate Bash and Python, inspect a complete run, repeat it, and test the failure path with damaged input. The tiny fixtures and scripts are bundled, so no data downloads or scientific packages are required."
+dataset: "Bundled synthetic sample metadata and molecular descriptors; not experimental measurements"
+notebook: lab-18-reproducible-pipeline
+---
+
+A workflow is only as useful as its promises. This lab checks three of them: the selected samples are the ones you intended, a repeat run reproduces the data outputs, and invalid input cannot publish an apparently complete result.
+
+<div class="mm-card-actions">
+<a class="mm-btn mm-btn-primary" href="https://colab.research.google.com/github/Awguhst/MolModels/blob/main/part-5-linux-bash/ch18-bash-automation/labs/lab-18-reproducible-pipeline.ipynb">Open in Colab</a>
+<a class="mm-btn" href="lab-18-reproducible-pipeline.ipynb" download>Download .ipynb</a>
+<a class="mm-btn" href="lab-18-reproducible-pipeline-solutions.html">View solutions</a>
+</div>
+
+## How to work on this lab
+
+The notebook uses a Python kernel to launch real Bash subprocesses. Every `run_bash(...)` call begins in the same temporary project directory, so files persist between calls but shell variables do not. The wrapper displays captured output and raises an error for an unexpected failure; one task deliberately requests the raw result of a failing command.
+
+Use Linux, WSL with a Linux Python kernel, or Colab. On Windows, the setup also recognises Git Bash for this small exercise. The notebook contains its synthetic fixtures and copies of the three teaching scripts; it needs no network data and no extra Python packages. The scripts do not install tools or change your scheduler.
+
+Run the setup cells unchanged, then fill in each task cell. Check cells name the variable or file they expect. The setup creates a fresh directory when rerun, so restart from the top if you want a clean attempt. Save the notebook or export your work before a hosted session ends.
+
+## The tasks
+
+1. **Preflight.** Inspect the input headers and show that Bash and Python are available. State which file supplies sample metadata and which supplies compound descriptors.
+2. **First run.** Run the provided pipeline into `results/run-01`, inspect its completion marker and read both output tables.
+3. **Scientific identities.** Check that QC retained `S01`, `S02`, `S04`, `S05`; confirm that each compound keeps its original split. Explain why preserving `logS` in the file does not make it a valid model input.
+4. **Repeatability.** Run into `results/run-02`, compare the two data tables byte for byte and verify the recorded output checksums.
+5. **A controlled failure.** Copy the raw data, replace one numeric read count with `unknown`, and run the pipeline against the damaged copy. Require a nonzero exit and no published output directory.
+6. **A protected result.** Run the sample validator against that damaged input while pointing it at an existing good sample output. Verify that its bytes remain unchanged.
+
+## What to hand in
+
+Keep the completed notebook, a brief report of retained identifiers and split preservation, and the observed outcome of the failure test. The final paragraph should distinguish computation from science: a complete run establishes that these scripts met these checks; it does not establish biological validity or predictive performance.
+
+::: {.discussion}
+Which additional checks would you require for real sequencing reads or molecular structures? Name one input-quality check, one experimental-design check and one environment detail that this small teaching workflow does not capture.
+:::
+
+## Optional extension
+
+Add a new numeric cutoff argument to a copy of `qc_samples.sh`. Validate it, record it in run metadata, and compare two named runs using different cutoffs. Keep the original inputs unchanged. Explain whether a changed result reflects a software failure or a deliberately changed analysis definition.
+
+The [checkpoint](../checkpoint.html) tests the decisions behind these tasks; the [key points](../key-points.html) are a compact reminder for your next project.

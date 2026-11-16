@@ -1,0 +1,7 @@
+sample_id	condition	reads_million	qc_status
+S01	control	12.4	pass
+S02	treated	18.2	pass
+S03	control	4.1	fail
+S04	treated	22.0	pass
+S05	control	15.7	pass
+S06	treated	7.3	fail

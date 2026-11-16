@@ -1,11 +1,13 @@
 ---
 title: "Further reading"
-subtitle: "Appendix D · Primary documentation to accompany the Foundations lessons."
+subtitle: "Appendix D · Primary documentation for Foundations and Linux & Bash."
 ---
 
 Use these references when a lesson needs another example or an API detail. Read the course explanation first; documentation often assumes more vocabulary. The installed versions are recorded in [requirements.txt](../requirements.txt), while “stable” documentation may describe a newer release.
 
 ## Scientific Python
+
+For the terminal track, see the [Linux & Bash starting points](../part-5-linux-bash/index.html). The [GNU Bash manual](https://www.gnu.org/software/bash/manual/bash.html) covers shell syntax and execution; the [grep manual](https://www.gnu.org/software/grep/manual/grep.html), [awk guide](https://www.gnu.org/software/gawk/manual/gawk.html), and [sed manual](https://www.gnu.org/software/sed/manual/sed.html) explain the text tools used in Chapters 17–18.
 
 - [Python tutorial](https://docs.python.org/3/tutorial/): functions, control flow, containers and exceptions, beside Chapter 0's self-check and episode 1.1.
 - [NumPy fundamentals](https://numpy.org/doc/stable/user/basics.html): indexing, broadcasting, types and copies versus views. Use it to reason about shapes rather than memorising expressions.

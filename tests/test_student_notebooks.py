@@ -27,8 +27,11 @@ def test_solutions_notebook_conventions(sol: Path):
     assert any("check" in t for t in tags), "no auto-feedback cell tagged 'check'"
     src = "\n".join(c.source for c in nb.cells if c.cell_type == "code")
     assert "google.colab" in src, "setup cell should be Colab-aware"
-    assert "raw.githubusercontent.com" in src, "data loading needs a raw-GitHub fallback"
-    assert "random_state=42" in src or "default_rng(42)" in src, "fix the seeds"
+    lab_metadata = nb.metadata.get("mm", {})
+    if lab_metadata.get("data_source") != "bundled-synthetic":
+        assert "raw.githubusercontent.com" in src, "external data loading needs a raw-GitHub fallback"
+    if not lab_metadata.get("deterministic", False):
+        assert "random_state=42" in src or "default_rng(42)" in src, "fix the seeds"
     assert "filterwarnings" not in src, "never suppress warnings"
     md = "\n".join(c.source for c in nb.cells if c.cell_type == "markdown").lower()
     assert "reflection" in md, "end with reflection questions"

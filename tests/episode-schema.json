@@ -6,7 +6,7 @@
   "additionalProperties": true,
   "properties": {
     "title": { "type": "string", "minLength": 3, "maxLength": 80 },
-    "chapter": { "type": "integer", "minimum": 0, "maximum": 15 },
+    "chapter": { "type": "integer", "minimum": 0, "maximum": 99 },
     "episode": { "type": "integer", "minimum": 1, "maximum": 12 },
     "teaching": { "type": "integer", "minimum": 5, "maximum": 90 },
     "exercises": { "type": "integer", "minimum": 0, "maximum": 60 },

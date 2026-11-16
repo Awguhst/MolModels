@@ -41,6 +41,8 @@ Whatever your background, do the three episodes of this chapter in order. [Episo
 
 ## Your route through Foundations
 
+If terminal commands or file paths feel unfamiliar, follow [Linux & Bash](../../part-5-linux-bash/index.html) alongside Chapter 1. Its three practical chapters cover project directories, scientific text processing, and running reproducible pipelines. You can start that track immediately; the planned specialist chapters are not prerequisites.
+
 | Stage | What to bring forward |
 |---|---|
 | [Chapter 1: scientific Python](../ch01-scientific-python/index.html) | A reproducible notebook, a checked table, and an EDA summary that separates observations from explanations. |

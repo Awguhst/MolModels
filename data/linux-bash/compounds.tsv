@@ -1,0 +1,7 @@
+compound_id	smiles	mol_weight	logS	split
+C001	CCO	46.07	-0.3	train
+C002	CC(=O)O	60.05	-0.7	train
+C003	c1ccccc1	78.11	-2.1	test
+C004	CC(=O)Oc1ccccc1C(=O)O	180.16	-2.3	train
+C005	Cn1c(=O)c2c(ncn2C)n(C)c1=O	194.19	-0.1	test
+C006	CCCCCCCC	114.23	-4.0	train

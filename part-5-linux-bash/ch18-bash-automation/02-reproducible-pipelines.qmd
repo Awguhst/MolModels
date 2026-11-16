@@ -1,0 +1,211 @@
+---
+title: "Automating a reproducible scientific pipeline"
+chapter: 18
+episode: 2
+teaching: 50
+exercises: 30
+level: intermediate
+questions:
+  - "How can I prevent a failed command from publishing a partial result?"
+  - "What should I record so a colleague can repeat my workflow?"
+  - "What changes when a script runs unattended?"
+objectives:
+  - "Validate scientific input tables before generating analysis-ready outputs."
+  - "Combine Bash and Python using explicit file and exit-status contracts."
+  - "Publish complete outputs through temporary paths and a success marker."
+  - "Record input checksums, script versions, parameters and logs."
+  - "Explain reruns, scheduling and the limits of a small shell pipeline."
+keypoints:
+  - "A process finishing successfully does not prove that its scientific inputs are valid."
+  - "Write to a temporary path, validate, and publish only after all required steps succeed."
+  - "Keep raw data unchanged and preserve declared training/test assignments during preparation."
+  - "Reproducibility needs data, code, parameters and environment records, not only a random seed."
+  - "Unattended jobs need explicit paths, environments, logs and an overlap policy."
+prerequisites: [ch18-ep01]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A collaborator receives `results.tsv` after an overnight analysis. It contains plausible numbers, but the last Python step failed halfway through. Without a clear completion rule, a partial output can look like a finished experiment.
+
+A **computational pipeline** connects processing steps so that each output becomes a defined input to the next step. Here you will run a deliberately small pipeline: filter sample metadata, prepare a molecular descriptor table and publish a record of the run. Its datasets are synthetic teaching examples, not experimental observations; the purpose is to make the computation inspectable.
+
+## Define the files before writing the loop
+
+Prepare the [practice workspace](../index.html) and work from its root. It supplies `data/raw/samples.tsv`, `data/raw/compounds.tsv` and the three scripts below. Bash, GNU command-line tools and Python 3 are required; the lab notebook also runs on Linux in Colab without extra Python packages.
+
+| Step | Input | Output | Success contract |
+|---|---|---|---|
+| Sample QC | Four-column sample TSV | `samples-qc.tsv` | Valid rows; keep `pass` samples with at least 10 million reads |
+| Compound preparation | Five-column compound TSV | `compounds-model.tsv` | Valid identifiers and numbers; preserve every declared split |
+| Run record | Inputs, scripts and outputs | Checksums, metadata, `_SUCCESS` | Publish only after both processing steps and recording succeed |
+
+QC means *quality control*. Our cutoff is an arbitrary teaching rule, not a recommended sequencing threshold. A real choice depends on the assay, read quality, experimental design and intended analysis. The sample table and compound table are separate examples; joining them by row position would invent a biological relationship that is not present.
+
+Download or inspect the complete scripts: [sample QC](../../data/linux-bash/scripts/qc_samples.sh), [compound preparation](../../data/linux-bash/scripts/prepare_compounds.py), and [pipeline runner](../../data/linux-bash/scripts/run_pipeline.sh). The runner locates its companion scripts relative to its own location, so keep the three together. Its input and output arguments are resolved relative to the caller's working directory.
+
+## Validate before selecting rows
+
+A tabular filter is short; validation is the work that keeps it trustworthy. If `reads_million` contains `unknown`, a casual numeric conversion may silently treat it as zero. If the header changes order, `$3` may refer to an entirely different measurement. The supplied `qc_samples.sh` therefore checks the exact header, number of fields, unique sample identifiers, allowed conditions and QC labels, and a non-negative decimal read count.
+
+Its selection rule is the small `awk` condition you already know:
+
+```awk
+if ($4 == "pass" && $3 + 0 >= 10) print $1, $2, $3
+```
+
+Run the complete script, which includes validation and output handling:
+
+```bash
+bash scripts/qc_samples.sh data/raw/samples.tsv results/samples-qc.tsv
+cat results/samples-qc.tsv
+```
+
+```text
+sample_id	condition	reads_million
+S01	control	12.4
+S02	treated	18.2
+S04	treated	22.0
+S05	control	15.7
+```
+
+There are four retained samples, two per condition. `S03` and `S06` fail the QC label and have fewer than ten million reads. This tiny example happens to preserve balance; filtering another dataset could remove mostly one condition and change what comparisons remain meaningful.
+
+::: {.bridge audience="bio"}
+Removing a sample changes the experiment represented by the table. Record its identifier and reason, then consider whether missingness is related to treatment, batch or the biological outcome. A perfectly reproducible filter can still bias the question you answer.
+:::
+
+The header and accepted values are intentionally narrow. A production dataset might allow other conditions or missing measurements; expand the documented contract before accepting them. Do not modify an input until a script happens to pass. If the input is invalid, preserve it and create a clearly named corrected version with an explanation.
+
+## Publish a file only when it is ready
+
+The shell opens `>` destinations before starting a command. Directing output to the final filename can therefore destroy a previous result even when the command fails. The QC script writes beside the final output under a unique temporary name and moves it only after `awk` succeeds.
+
+```bash
+# Excerpt: input and output were validated earlier in qc_samples.sh.
+temp=$(mktemp "${output}.tmp.XXXXXX")
+trap 'rm -f -- "$temp"' EXIT
+# Run the validated awk program into "$temp"; exit on failure.
+# Only after that program returns successfully:
+mv -- "$temp" "$output"
+```
+
+`mktemp` creates a unique file; the `XXXXXX` suffix is replaced automatically. A **trap** arranges a command to run when the shell receives a specified event; `EXIT` runs the cleanup as the shell exits. The single quotes defer expansion of `$temp` until cleanup, and the double quotes inside preserve it as one path.
+
+Keeping the temporary file in the destination directory avoids a cross-filesystem move. On a local Linux filesystem, the final rename provides an atomic switch between old and new names: readers do not observe the file being written line by line. This is a publication boundary, not a universal guarantee against power loss, network filesystem semantics or simultaneous writers. Assign one writer to each output path.
+
+::: {.predict}
+Suppose row 6 has an invalid read count, after four earlier rows have already been printed into the temporary file. Will the old `results/samples-qc.tsv` disappear? Will the temporary rows become the official result?
+:::
+
+The validator returns nonzero, the wrapper exits, and its trap removes the temporary file. The previous result remains intact. This is why an error test should check the filesystem as well as the process status.
+
+## Let Python handle the table contract
+
+Bash is good at selecting programs and connecting files. Python is usually easier for structured validation, detailed error messages and scientific libraries. The supplied `prepare_compounds.py` uses `argparse` for its interface, `csv.DictReader` for TSV parsing, and explicit checks for duplicate identifiers, finite numeric values and recognised `train`/`test` labels.
+
+```bash
+python3 scripts/prepare_compounds.py --help
+python3 scripts/prepare_compounds.py \
+    data/raw/compounds.tsv results/compounds-model.tsv
+head -n 3 results/compounds-model.tsv
+```
+
+```text
+compound_id	mol_weight	logS	split
+C001	46.07	-0.3	train
+C002	60.05	-0.7	train
+```
+
+The table retains all six compounds and four columns. `mol_weight` is a supplied molecular-weight descriptor in g/mol; `logS` is a synthetic target in log₁₀(mol/L). The script removes the SMILES column from this numerical export, but does **not** validate chemistry, calculate descriptors or train a model. A nonempty SMILES string is not proof of a valid molecular structure.
+
+After validating all rows, Python writes a temporary file and uses [`os.replace`](https://docs.python.org/3/library/os.html#os.replace) to publish it. It preserves the original textual numbers and every split label. Later modelling must choose features explicitly: `logS` is the target, and `split` tells you how observations were allocated; neither is a predictive input.
+
+::: {.pitfall title="Preparation can leak information too"}
+Do not normalise a descriptor using all rows or choose a filter because it improves held-out scores. The [leakage lesson](../../part-1-foundations/ch02-ml-fundamentals/06-pipelines-leakage.html) explains why learned preprocessing belongs inside the training procedure. A shell script can automate an invalid evaluation just as faithfully as a valid one.
+:::
+
+## Run, record, then publish the whole result
+
+The runner accepts an input directory and a **new** output directory. It refuses to overwrite an existing run. Use a fresh name if you have run the example already; directory names are labels, not automatic timestamps.
+
+```bash
+mkdir -p logs results
+bash scripts/run_pipeline.sh data/raw results/run-01 \
+    > logs/run-01.stdout.log 2> logs/run-01.stderr.log
+cat results/run-01/_SUCCESS
+cat results/run-01/samples-qc.tsv
+```
+
+The marker contains `complete`, followed by the same four selected samples when you print the table. Progress and error messages are in the stderr log; the Python step's ordinary output is in the stdout log. A diagnostic stream can contain normal progress, so a nonempty stderr log does not by itself mean failure.
+
+The runner builds both outputs in a temporary directory next to the requested destination. It records input checksums, script checksums, Bash/Python versions, the QC rule, an absolute input path and a UTC start time. Only after every step succeeds does it create `_SUCCESS` and rename the directory into place. On an ordinary failure or handled termination, its trap removes that staging directory.
+
+The supplied script uses GNU `mv -T` to treat the destination as a directory name rather than a container into which another directory should be copied. This course targets a Linux/GNU environment; macOS users should run the Linux notebook or use an appropriate Linux environment. A unique output path avoids accidental overlap; the final existence check is not a general lock for concurrent jobs.
+
+The shell runner uses `python3` unless `PYTHON` specifies another executable. For a virtual environment you can write `PYTHON="$PWD/.venv/bin/python" bash scripts/run_pipeline.sh ...`, replacing the ellipsis with its two arguments. This chooses an interpreter explicitly; merely naming the environment in a README does not activate it for an unattended job.
+
+## Reruns should answer a specific question
+
+{{< term workflow-provenance "Provenance" >}} is the record of where a result came from. A cryptographic {{< term checksum >}}, produced here by `sha256sum`, fingerprints file contents so you can detect changes. It does not establish that the contents are scientifically correct, and it does not archive the original files for you.
+
+```bash
+bash scripts/run_pipeline.sh data/raw results/run-02 \
+    > logs/run-02.stdout.log 2> logs/run-02.stderr.log
+cmp results/run-01/samples-qc.tsv results/run-02/samples-qc.tsv
+cmp results/run-01/compounds-model.tsv results/run-02/compounds-model.tsv
+(cd results/run-02 && sha256sum -c output-sha256.txt)
+```
+
+Each successful `cmp` is silent; the checksum check reports `OK` for both data outputs. Timestamps and temporary paths in logs may differ even though the scientific tables are identical. **Idempotence** means repeating an operation does not accumulate extra changes: the individual preparation steps replace deterministic outputs, while the whole runner records separate immutable runs instead of appending rows to a shared table.
+
+Keep the data and code alongside those records, or in versioned storage that the records identify. For real environments, also retain dependency versions and reference-database releases; the teaching pipeline uses no external Python libraries. A fixed random seed is needed when a later computation uses randomness, but cannot compensate for changing inputs, dependencies or model settings.
+
+## From your terminal to an unattended job
+
+An unattended process does not inherit your interactive habits. It needs a known working directory, executable paths, input paths, output naming rule and logs. A scheduler also needs a policy for overlap: will a new run wait, skip, or fail if the previous one has not completed?
+
+On a Linux machine with cron configured, a user crontab entry has five time fields followed by a command. The following is an **illustration to adapt**, not something to paste into your practice terminal:
+
+```text
+# Minute Hour Day-of-month Month Day-of-week
+0 6 * * 1 /bin/bash /home/alex/project/scripts/weekly.sh >> /home/alex/project/logs/weekly.log 2>&1
+```
+
+It requests Monday at 06:00 in the scheduler's configured timezone. The wrapper must set its environment, choose a new run directory and handle failures; its parent log directory must already exist. Check the machine's timezone and scheduler behaviour, particularly daylight-saving changes, before scheduling real work. A log file is a record, not a notification system, so decide how failed runs will reach the person responsible.
+
+On a shared high-performance computing cluster, submit resource-intensive jobs through the site's scheduler rather than running them on the login node. Follow its documentation for CPUs, memory, wall time and module environments. When dependencies, retries and parallel tasks become hard to describe reliably in Bash, move orchestration to a workflow system such as Snakemake or Nextflow, keeping these same input, output and completion contracts.
+
+## Exercises
+
+::: {.challenge level=1 title="Finished or merely present?"}
+A failed run leaves a stderr log but no requested run directory. Should a downstream analysis use the log as evidence that sample QC completed?
+
+:::: {.solution}
+No. The pipeline promises a published run directory with `_SUCCESS` only after all required steps and records succeed. Logs describe what happened; they are not data outputs or completion markers. Read the exit status and log to diagnose the failure, then rerun into a new destination after fixing the cause.
+::::
+:::
+
+::: {.challenge level=2 title="A failure that protects earlier work"}
+Copy the sample table into `results/bad-samples.tsv`, change one read count to `unknown`, and run `qc_samples.sh` with the existing `results/samples-qc.tsv` as the output. What should remain unchanged?
+
+:::: {.solution}
+The script should return nonzero, report the invalid row and leave the previous output byte-for-byte unchanged. Save its checksum before running and compare afterwards. The damaged input remains available for inspection; only the script's temporary output is removed. Do not edit `data/raw/samples.tsv` for this experiment.
+::::
+:::
+
+::: {.challenge level=3 title="Debug this: a result that grows each day"}
+A daily job runs the following after `prepared.tsv` has been created. What happens after three successful runs, and how should the result be published instead?
+
+```bash
+cat prepared.tsv >> results/all-compounds.tsv
+```
+
+:::: {.solution}
+It appends the entire table, including its header, each time. Three runs can contain three copies of every row and three headers. Prepare one complete validated output under a temporary name and replace the destination, or publish a separate run directory. If combining genuinely different batches is intended, define unique identifiers and a deduplication policy explicitly; repeated execution is not a new batch.
+::::
+:::
+
+## Where this is going
+
+The [pipeline lab](labs/lab-18-reproducible-pipeline.html) checks success, repeatability and failure recovery on these exact scripts. Carry the pattern into [QSAR](../../part-2-cheminformatics/ch06-qsar-property-prediction/index.html), [biological sequences](../../part-3-bioinformatics/ch09-biological-sequences/index.html) and the [reproducibility toolkit](../../appendices/reproducibility.html). Your shell workflow makes an analysis repeatable; the scientific chapters teach which analysis answers the question.

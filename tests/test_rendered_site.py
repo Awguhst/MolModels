@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 import pytest
+import yaml
 
 from conftest import ROOT
 
@@ -49,13 +50,14 @@ def test_navbar_marks_the_pages_actual_course_section():
             if tag == "nav":
                 self.in_navbar = False
 
+    expected_parts = {part["dir"] for part in yaml.safe_load((ROOT / "course.yml").read_text(encoding="utf8"))["parts"]}
     checked_parts = set()
     for page in pages():
         relative = page.relative_to(SITE)
         part = relative.parts[0] if re.match(r"part-\d+-", relative.parts[0]) else None
         parser = NavbarLinks()
         parser.feed(page.read_text(encoding="utf8"))
-        assert len(parser.links) == 4, f"{relative}: missing course navigation"
+        assert len(parser.links) == len(expected_parts), f"{relative}: missing course navigation"
         current = []
         for link in parser.links:
             target = (page.parent / urlsplit(link["href"]).path).resolve().relative_to(SITE)
@@ -67,7 +69,7 @@ def test_navbar_marks_the_pages_actual_course_section():
         assert len(current) == (1 if part else 0), f"{relative}: {current}"
         if part:
             checked_parts.add(part)
-    assert len(checked_parts) == 4
+    assert checked_parts == expected_parts
 
 
 def test_internal_links_resolve():

@@ -1,0 +1,223 @@
+---
+title: "Pipes, patterns and first-pass data checks"
+chapter: 17
+episode: 1
+teaching: 40
+exercises: 25
+level: beginner
+questions:
+  - "How can I inspect a scientific file without opening it in a spreadsheet?"
+  - "How do I connect commands and keep errors out of my data?"
+  - "When does a text match count a biological record?"
+objectives:
+  - "Connect standard output to standard input with a pipe."
+  - "Use grep to match literal strings and anchored regular expressions."
+  - "Inspect line counts, headers and category frequencies."
+  - "Find files safely when names contain spaces."
+keypoints:
+  - "A pipe carries standard output; diagnostics normally go to standard error."
+  - "Redirection with > replaces a file, while >> appends to it."
+  - "Use grep -F for literal text and grep -E for extended regular expressions."
+  - "Line counts, matching lines and scientific records are different quantities."
+  - "A grep exit status of 1 means no match; status 2 indicates an error in GNU grep."
+  - "Inspect raw data first and write derived results to a separate path."
+prerequisites: [ch16-ep02]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A sequencing run has produced a sample sheet, a FASTA file and a log. Before fitting a model or launching an alignment, you need simple answers: how many samples arrived, which ones failed a quality check, and did the run report an error? A few small commands can answer these questions while leaving the original files untouched.
+
+Use a **Bash terminal** in your [practice workspace](../index.html), such as `~/mm-linux-lab`. This episode reads `data/raw/samples.tsv`, `data/raw/sequences.fasta` and `data/raw/pipeline.log`; it writes only into `results/` and `logs/`. The fixtures contain six invented samples and three short synthetic sequences. They teach file handling, not sequencing quality standards.
+
+```bash
+pwd
+mkdir -p results logs
+ls data/raw
+```
+
+The final command should list the four practice files, including `compounds.tsv`. If it does not, stop and find the workspace before continuing. A command's relative paths are interpreted from the current directory, not from the directory in which you last viewed a file.
+
+## Read a little before processing a lot
+
+A **stream** is a sequence of bytes a program reads or writes. Most command-line text tools process streams a line at a time, allowing you to inspect a large file without loading a spreadsheet application. Start by checking both ends of the sample table:
+
+```bash
+head -n 3 data/raw/samples.tsv
+tail -n 2 data/raw/samples.tsv
+wc -l < data/raw/samples.tsv
+```
+
+The first command shows the header plus `S01` and `S02`; the second shows `S05` and `S06`. The line count is `7`: six samples plus one header. `wc -l` counts newline characters, so a last line without a terminating newline can make this count misleading. Our fixtures end every line with a newline.
+
+`<` redirects **standard input**, the stream a command reads, from a file. Without it, `wc -l data/raw/samples.tsv` also prints the filename. Both forms are useful; the input-redirection form gives a cleaner number to use in a report.
+
+::: {.pitfall title="A line is not always an observation"}
+Subtracting one header works for this simple TSV. It does not count samples in a FASTA file, where a sequence can span many lines, or in a CSV containing quoted fields with embedded newlines. First identify the file's record structure.
+:::
+
+The command `less data/raw/samples.tsv` opens an interactive pager on Linux. Use the arrow keys to move, `/S04` to search, `n` for the next match and `q` to leave. A pager is useful when the question is still forming; a reproducible command is useful once you know which rows matter. In a notebook or noninteractive terminal, prefer `head` and `tail`.
+
+## Connect one clear operation to the next
+
+**Standard output** is the normal result stream of a command. A {{< term shell-pipe >}}, written `|`, connects one command's standard output to the next command's standard input. Think of a series of labelled laboratory containers: each step should have a clear input, operation and output.
+
+::: {.predict}
+The sample sheet has three `control` rows and three `treated` rows. What will `uniq -c` count if identical labels are separated? Why might `sort` need to appear before it?
+:::
+
+```bash
+tail -n +2 data/raw/samples.tsv | cut -f 2 | sort | uniq -c
+```
+
+```text
+      3 control
+      3 treated
+```
+
+`tail -n +2` starts at line 2, skipping the header. `cut -f 2` extracts the second tab-separated field. `sort` places equal labels together; `uniq -c` counts consecutive equal lines. The indentation before each count may differ between implementations, but the labels and counts should agree.
+
+Run each stage on its own when learning a pipeline. First inspect `tail`; then append `cut`; then inspect the sorted labels. This makes errors easier to localise than reading a long command and guessing which symbol caused trouble. A pipeline is a small data transformation, and each intermediate result deserves a check.
+
+```bash
+tail -n +2 data/raw/samples.tsv | cut -f 4 | sort | uniq -c \
+  > results/qc-counts.txt
+cat results/qc-counts.txt
+```
+
+The result is two `fail` labels and four `pass` labels. `>` creates the result file, or **truncates** an existing file before the command runs. `>>` appends instead. Appending is useful for a run log; repeatedly appending a complete report usually creates duplicates.
+
+::: {.pitfall title="Never redirect onto the input"}
+Do not run `sort data/raw/samples.tsv > data/raw/samples.tsv`. The shell opens and empties the destination before `sort` reads it. Use a new path in `results/`, check it, and keep the raw input.
+:::
+
+## Search for a literal before learning patterns
+
+`grep` prints lines containing a match. Use `-F` when the pattern is a fixed, literal string; this is particularly helpful for identifiers and molecular strings containing punctuation.
+
+```bash
+grep -F 'sample=S03' data/raw/pipeline.log
+grep -n -F 'low_reads' data/raw/pipeline.log
+```
+
+```text
+WARN low_reads sample=S03
+3:WARN low_reads sample=S03
+4:WARN low_reads sample=S06
+```
+
+The first line is the first command's output. The next two lines belong to the second command: `-n` prefixes the matching line number. These are useful references when investigating a log with a colleague. They are not suitable rows to append directly to the original log format.
+
+Quote the pattern so Bash passes it as one argument. The quotes belong to the shell; `grep` receives the text inside them. A string with spaces, such as `'missing reference'`, would otherwise become two arguments. A pattern beginning with `-` should be supplied using `grep -F -e '-example' file`, so it cannot be mistaken for a command option.
+
+For our simple log, the severity is the first word. A {{< term regular-expression >}} describes a family of text patterns rather than one exact string. `grep -E` enables extended regular expressions; `^` anchors the match to the beginning of a line, `$` to its end, and `|` means “either alternative”.
+
+```bash
+grep -E '^(WARN|ERROR) ' data/raw/pipeline.log
+```
+
+```text
+WARN low_reads sample=S03
+WARN low_reads sample=S06
+ERROR missing_reference sample=S06
+```
+
+The trailing space after the group matters: it expresses the log's separator, so a hypothetical word `WARNINGLY` is not accidentally treated as the `WARN` severity. Patterns should encode the property you mean, not merely resemble the result you hope to see. Add an explanatory comment when a pattern becomes difficult to read.
+
+::: {.bridge audience="chem"}
+A SMILES string can contain parentheses, brackets and other characters meaningful to a regular expression. Use `grep -F` for a quick literal search. Even then, finding a substring is not a molecular identity test: different valid SMILES can describe the same molecule, and a fragment can occur inside a longer string. Use a cheminformatics toolkit for structure matching.
+:::
+
+## Count matches with the right scientific meaning
+
+FASTA records begin with a header line whose first character is `>`. Sequence text follows and may wrap across several lines. Count headers, rather than all lines:
+
+```bash
+grep -c '^>' data/raw/sequences.fasta
+grep '^>' data/raw/sequences.fasta
+```
+
+```text
+3
+>seq01 control
+>seq02 treated
+>seq03 control
+```
+
+This is a quick record count for the well-formed fixture. It does not validate the alphabet, confirm unique identifiers or prove that each header has a sequence. Searching sequence lines with `grep` is also not a general motif search: a motif might cross a line break. A sequence parser can join the sequence before searching.
+
+`grep -c` counts **matching lines**, not the number of occurrences. If one log line says `ERROR ERROR`, it still contributes one. Similarly, `grep -F 'S01'` can also match `S010`; exact identifier selection in a column belongs in a field-aware tool such as `awk`, which you will use next.
+
+## Keep diagnostics separate, and read the exit status
+
+**Standard error** is a separate stream for diagnostic messages. A plain pipe transfers standard output only. Redirect errors using `2>`; the number identifies the error stream. This deliberately missing filename shows the distinction:
+
+```bash
+grep -F 'ERROR' data/raw/missing.log \
+  > results/missing-search.txt 2> logs/missing-search.err
+status=$?
+printf 'exit status: %s\n' "$status"
+cat logs/missing-search.err
+```
+
+GNU `grep` returns status `2` and writes a “No such file or directory” diagnostic. The result file is empty. The exact diagnostic depends on the system language and implementation. Run this demonstration in an ordinary interactive Bash session, not inside a script that exits automatically on command failure.
+
+After a command finishes, `$?` holds its {{< term exit-status >}}. Zero conventionally means success; nonzero indicates another outcome. Capture it immediately because the next command replaces it. For GNU `grep`, `0` means at least one match, `1` means no match, and `2` indicates an error. An empty result therefore does not tell you whether the search worked.
+
+```bash
+grep -F 'FATAL' data/raw/pipeline.log > results/fatal-lines.txt
+status=$?
+printf 'exit status: %s\n' "$status"
+```
+
+This prints `1`: the fixture contains no `FATAL` line. In automation, handle that expected absence separately from a missing file. Also remember that a pipeline normally reports the last command's status: `grep ... | wc -l` can report success even if `grep` failed. [Chapter 18](../ch18-bash-automation/index.html) introduces `pipefail` and explicit failure handling.
+
+## Locate files without splitting their names
+
+To list TSV files recursively, ask `find` to match names itself:
+
+```bash
+find data/raw -type f -name '*.tsv' -print
+find data/raw -type f -name '*.tsv' -exec wc -l {} +
+```
+
+The first command lists `samples.tsv` and `compounds.tsv`, in an order you should not rely on. The second passes the actual filenames as arguments to `wc`, reporting seven lines for each and fourteen in total. Quotes around `'*.tsv'` prevent Bash expanding the pattern before `find` receives it.
+
+`-exec ... {} +` safely handles filenames containing spaces: `find` supplies each path as a separate argument. Avoid loops over `$(ls ...)`, where whitespace can split one filename into several. Printing names is for inspection; passing them as arguments is for reliable processing.
+
+## Exercises
+
+::: {.challenge level=1 title="Count what you mean"}
+How many sample records and FASTA records are in the fixtures? Explain why using `wc -l` for both would give different kinds of answers.
+
+:::: {.solution}
+There are six samples and three FASTA records. The sample sheet has seven newline-terminated lines including a header. FASTA records contain variable numbers of sequence lines, so count the three anchored `>` headers instead. Neither count establishes that the underlying records are valid.
+::::
+:::
+
+::: {.challenge level=2 title="Build an inspection report"}
+Write all `WARN` or `ERROR` log lines into `results/attention.txt`, then print the number of lines. Keep the raw log unchanged.
+
+:::: {.solution}
+```bash
+grep -E '^(WARN|ERROR) ' data/raw/pipeline.log > results/attention.txt
+wc -l < results/attention.txt
+```
+The answer is `3`. There are two warning lines and one error line; this does not mean three different samples failed, because `S06` occurs twice.
+::::
+:::
+
+::: {.challenge level=2 title="Debug this: suspicious category counts"}
+A colleague runs `cut -f 2 data/raw/samples.tsv | uniq -c` and reports many categories of size one. Identify two problems and repair the pipeline.
+
+:::: {.solution}
+```bash
+tail -n +2 data/raw/samples.tsv | cut -f 2 | sort | uniq -c
+```
+Skip the header, which is not a sample, and sort the labels before counting adjacent repeats. The corrected result is three controls and three treated samples. Sorting the extracted labels is safe here because the report only needs frequencies; sorting one column separately and pasting it back beside the original samples would corrupt their relationships.
+::::
+:::
+
+## Where this is going
+
+The [next episode](02-awk-sed.html) turns line-oriented inspection into field-aware selection and documented cleaning. The same first-pass questions arise in [molecular data](../../part-2-cheminformatics/ch05-molecules-as-data/index.html) and [biological sequences](../../part-3-bioinformatics/ch09-biological-sequences/index.html): identify the unit of observation, verify the format, preserve the source, and only then send trustworthy inputs to an analysis.

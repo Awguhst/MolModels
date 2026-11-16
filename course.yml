@@ -25,6 +25,12 @@ parts:
     short: "Generative"
     roman: "IV"
     accent: coral
+  - number: 5
+    dir: part-5-linux-bash
+    title: "Linux & Bash"
+    short: "Linux & Bash"
+    roman: "V"
+    accent: teal
 
 appendices:
   - letter: A

@@ -1,0 +1,40 @@
+---
+title: "Bash scripting & scientific pipelines"
+chapter-index: true
+summary: "Turn a working command into a checked, repeatable workflow. Write Bash scripts, prepare scientific tables, record provenance, and distinguish a completed computation from a plausible-looking partial result."
+---
+
+{{< generated ch18-hero >}}
+
+## What you will be able to do
+
+::: {.mm-outcomes-wrap}
+- Pass paths and options safely through variables, arguments, arrays and functions.
+- Check exit statuses and decide whether a batch should stop or continue after failure.
+- Validate sample and molecular descriptor tables before publishing results.
+- Combine Bash and Python with logs, temporary outputs and recorded input checksums.
+- Repeat a computation without silently appending or overwriting a previous run.
+- Explain what changes when a workflow runs unattended or on a compute cluster.
+:::
+
+## Schedule
+
+{{< generated ch18-schedule >}}
+
+## Lab
+
+{{< generated ch18-labs >}}
+
+The lab builds a small pipeline, runs it twice, deliberately damages an input and checks what remains. Finish with the [checkpoint](checkpoint.html) and keep the [key points](key-points.html) beside your next command-line project.
+
+## Before you start
+
+::: {.prereq}
+Complete [terminal and file essentials](../ch16-linux-fundamentals/index.html) and [scientific text processing](../ch17-scientific-text/index.html). You should recognise a pipe, an exit status, a tab-separated table and an `awk` condition. The [Linux & Bash overview](../index.html) explains how to prepare the practice workspace and download its scripts.
+:::
+
+The examples use synthetic sequencing metadata and a tiny molecular table. They teach file handling and reproducibility; six rows do not support a scientific conclusion or a useful predictive model. Python 3 is needed only for the molecular-table step, which uses the standard library.
+
+::: {.bridge audience="chem"}
+A computational protocol needs the same separation as a bench protocol: starting materials, processing steps, instrument settings and results. Your raw files are the starting materials; scripts and recorded parameters describe the procedure. A successful process exit is a useful check, but it does not establish that the scientific assumptions were appropriate.
+:::

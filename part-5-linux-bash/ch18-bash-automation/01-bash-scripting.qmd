@@ -1,0 +1,243 @@
+---
+title: "From commands to reliable Bash scripts"
+chapter: 18
+episode: 1
+teaching: 45
+exercises: 30
+level: beginner
+questions:
+  - "How do I turn a command that works once into a reusable script?"
+  - "Why does a filename containing a space break my loop?"
+  - "How do I know whether a command succeeded?"
+objectives:
+  - "Write a Bash script with a clear command-line interface."
+  - "Use quoted variables, positional arguments, arrays and functions."
+  - "Handle expected failures explicitly and stop after unexpected failures."
+  - "Run a small batch without mixing successful and failed results."
+keypoints:
+  - "A script records a sequence of commands, but its interpreter and working directory still matter."
+  - "Quote expansions that represent one argument, and use arrays for lists of arguments."
+  - "Exit status zero means success; nonzero statuses need interpretation in context."
+  - "Strict Bash options help, but validation and explicit error handling remain necessary."
+  - "A batch needs a deliberate policy for failures and a record of which inputs succeeded."
+prerequisites: [ch16-ep02, ch17-ep02]
+---
+
+{{< include /_includes/mm-setup.qmd >}}
+
+A sequencing project has six samples today and six hundred next month. You can type the same quality-control command for each file, but every repetition creates another opportunity to choose the wrong input or forget an option. A Bash script saves the procedure as text so you can inspect, repeat and share it.
+
+Work in the practice directory from the [Linux & Bash overview](../index.html), with `data/raw/samples.tsv`, `data/raw/compounds.tsv`, `scripts/`, `results/` and `logs/`. Commands below are for **Bash**, not PowerShell or a Python prompt. In a notebook, use the lab's `run_bash` helper; a normal notebook code cell interprets Python.
+
+## A script has an interpreter and an interface
+
+A **shell script** is a text file containing commands for a shell. The first line, called a *shebang*, names the interpreter when the operating system executes the file directly. Save this small example as `scripts/count_records.sh`; the quoted `BASH` delimiter prevents your current shell from expanding variables while it writes the file.
+
+```bash
+cat > scripts/count_records.sh <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+if (( $# != 1 )); then
+    printf 'Usage: bash count_records.sh INPUT_TSV\n' >&2
+    exit 2
+fi
+input=$1
+[[ -r "$input" && -f "$input" ]] || exit 2
+awk 'END { print NR > 0 ? NR - 1 : 0 }' "$input"
+BASH
+bash scripts/count_records.sh data/raw/samples.tsv
+```
+
+```text
+6
+```
+
+`$#` is the number of supplied arguments; `$1` is the first argument. The script expects one table with a single header row, so it counts physical records and subtracts one. It does not validate sample identities or scientific measurements; that belongs to the more specific pipeline in the next episode.
+
+You can also run `chmod u+x scripts/count_records.sh`, then `./scripts/count_records.sh data/raw/samples.tsv`. Calling `bash file.sh` only needs a readable script; direct execution also needs its executable permission. `#!/usr/bin/env bash` locates Bash through `PATH`, while `sh file.sh` explicitly selects `sh` and bypasses that choice. Bash arrays and `[[ ... ]]` are not portable POSIX `sh` syntax, so keep the interpreter consistent.
+
+The current working directory belongs to the process that launches your script. Running a script stored inside `scripts/` does **not** move you into that directory. A relative input such as `data/raw/samples.tsv` is still resolved from where you launched it; this is useful when the command is run from the practice project root.
+
+::: {.pitfall title="A filename is not an interpreter"}
+The `.sh` suffix is a useful convention, but does not cause a file to run under Bash. On Linux, also save shell scripts with LF line endings: a Windows CRLF ending can become part of the interpreter name or an argument. Your editor's line-ending selector is the simplest place to fix this.
+:::
+
+## Variables hold text; quotes preserve argument boundaries
+
+An assignment has no spaces around `=`. Bash otherwise treats a space as a separator between words, so `input = data.tsv` tries to run a command called `input`. Expand a variable with `$input` or `${input}`; braces make its name unambiguous when adjoining other text.
+
+```bash
+input='data/raw/samples.tsv'
+label=pilot
+printf 'Input: %s\nResult: %s\n' "$input" "results/${label}.tsv"
+```
+
+```text
+Input: data/raw/samples.tsv
+Result: results/pilot.tsv
+```
+
+Single quotes preserve literal characters. Double quotes allow variables to expand while keeping the result together as one argument. Unquoted expansions can undergo word splitting and filename expansion, so a path containing spaces, `*` or `?` may turn into several arguments.
+
+::: {.predict}
+The next command stores a path containing one space. Will `printf` receive one filename or two? What happens if the double quotes around the expansion are removed?
+:::
+
+```bash
+sample_file='data/raw/pilot samples.tsv'
+printf '<%s>\n' "$sample_file"
+```
+
+```text
+<data/raw/pilot samples.tsv>
+```
+
+No file needs to exist for this demonstration: `printf` prints its argument. Without the quotes it would receive two words and print two lines. Make quoting your default when a value represents one path or one label. Quoting does not validate the contents; a perfectly quoted path can still point to the wrong dataset.
+
+`$(command)` captures a command's standard output, removing trailing newlines. It is useful for a scalar result such as a count; it is a poor substitute for a list of arbitrary filenames. `count=$(bash scripts/count_records.sh "$input")` stores the count, while diagnostics printed to standard error remain visible.
+
+## Lists belong in arrays
+
+A **Bash array** stores separate elements without encoding the boundaries as spaces inside a single string. It is particularly useful for model configuration paths or data files whose names may contain spaces.
+
+```bash
+inputs=(data/raw/samples.tsv data/raw/compounds.tsv)
+for input in "${inputs[@]}"; do
+    printf '%s: ' "$input"
+    bash scripts/count_records.sh "$input"
+done
+```
+
+```text
+data/raw/samples.tsv: 6
+data/raw/compounds.tsv: 6
+```
+
+`"${inputs[@]}"` expands to one argument per element. `"${inputs[*]}"` instead joins the array into one string. A `for` loop assigns each element to `input` and runs its body in order; there is no parallel execution here.
+
+The same rule applies to arguments received by a function or script: `"$@"` forwards each supplied argument separately. Do not store a whole command in one string and then try to repair its quoting with `eval`. Keep the program and its arguments explicit, or use an array such as `command=(python3 scripts/analyse.py --input "$input")` and execute `"${command[@]}"` when the script exists.
+
+For a small, known directory, a glob is convenient. `shopt -s nullglob` makes an unmatched glob expand to no words, rather than the literal `*.tsv` name. Check that you found any inputs before claiming a batch completed; the absence of a loop iteration is not evidence that the data were processed.
+
+```bash
+shopt -s nullglob
+tables=(data/raw/*.tsv)
+if (( ${#tables[@]} == 0 )); then
+    printf 'No TSV inputs found\n' >&2
+else
+    printf 'Found %s TSV inputs\n' "${#tables[@]}"
+fi
+```
+
+The practice directory contains two TSV inputs. For deeply nested directories or arbitrary filenames, use the null-delimited `find` patterns from [Chapter 17](../ch17-scientific-text/01-pipes-grep.html) rather than parsing the formatted output of `ls`.
+
+## Functions name repeatable steps
+
+A **function** gives a sequence of commands a name inside the current shell. Its positional parameters refer to its own arguments, and `local` keeps temporary variables inside the function. `return` reports a status to the caller; `exit` terminates the entire shell process.
+
+```bash
+count_table() {
+    local input=$1
+    if [[ ! -f "$input" || ! -r "$input" ]]; then
+        printf 'Unreadable table: %s\n' "$input" >&2
+        return 2
+    fi
+    awk 'END { print NR > 0 ? NR - 1 : 0 }' "$input"
+}
+count_table data/raw/samples.tsv
+```
+
+The function prints `6`. Returning an answer through standard output keeps it composable: callers may display it, redirect it or capture it. Put progress messages on standard error, otherwise a message such as “reading file” becomes part of the captured count.
+
+::: {.bridge audience="bio"}
+A function resembles a named step in a sample-processing protocol: it declares what you hand it, what it returns and what makes it fail. Calling the same step on every sample improves consistency. It does not remove the need to check that sample identifiers refer to the intended biological units.
+:::
+
+## Exit statuses are part of the result
+
+A process returns an **exit status**, an integer available immediately as `$?`: zero conventionally means success, and a nonzero value describes failure or another condition. Always read a tool's contract. For `grep`, no match is status 1, while an error is typically status 2; an empty search result may be expected scientific information.
+
+Use `if` when a command's status determines what happens next. The command runs normally, and its output goes wherever its redirections say. A negation such as `! command` reverses the status, so capturing `$?` inside that branch would capture the negated status rather than the original one.
+
+```bash
+if count_table data/raw/samples.tsv > results/record-count.txt; then
+    printf 'Count saved\n'
+else
+    status=$?
+    printf 'Count failed with status %s\n' "$status" >&2
+fi
+```
+
+This prints `Count saved` and writes `6` to the file. However, `>` opens the destination **before** the command runs; a later failure could leave an empty file. In [the next episode](02-reproducible-pipelines.html), temporary files prevent that empty output from replacing an earlier valid result.
+
+`set -euo pipefail` at the start of a script enables three useful checks. `-u` rejects expansions of unset variables; `-o pipefail` makes a pipeline report failure when a component fails; `-e` exits on many unhandled nonzero statuses. The word *many* matters: commands tested by `if`, some `&&`/`||` lists, and related contexts have special rules. Do not use `-e` as a substitute for checking a critical result, particularly inside a function whose status is being tested.
+
+An optional variable can use a default, such as `python=${PYTHON:-python3}`. An expected no-match search belongs inside an explicit conditional. Do not add `|| true` everywhere: that discards precisely the evidence needed to know whether the pipeline completed. The [Bash manual's set options](https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html) document the full exceptions.
+
+## Choose how a batch handles failure
+
+A batch that must produce one complete report should usually stop when a required input fails. A survey of independent samples may instead process the remaining inputs and record each failure. Those are different products; choose before running, and make the final status match the promise.
+
+```bash
+# Run this block in a saved Bash script so exit closes the script, not your terminal.
+failed=0
+for input in "${inputs[@]}"; do
+    if count_table "$input"; then
+        printf 'OK\t%s\n' "$input" >&2
+    else
+        printf 'FAILED\t%s\n' "$input" >&2
+        failed=1
+    fi
+done
+exit "$failed"
+```
+
+With the two practice tables, both succeed and the script exits zero. If either is unreadable, the loop continues but its final exit status is nonzero. A downstream step can therefore reject an incomplete batch even when the final individual command succeeded.
+
+Before execution, `bash -n scripts/count_records.sh` checks shell syntax without running the commands; success produces no output. `bash -x ...` traces expanded commands as they execute and can reveal an unexpected path. Use tracing on the practice data, and remember that it also prints argument values: it is unsuitable for commands containing credentials.
+
+## Exercises
+
+::: {.challenge level=1 title="Count the arguments"}
+For `bash scripts/count_records.sh "data/raw/pilot samples.tsv"`, what are `$#` and `$1` inside the script? Does quoting guarantee that this file exists?
+
+:::: {.solution}
+`$#` is 1 and `$1` is the whole path `data/raw/pilot samples.tsv`. Quoting preserves one argument; it does not create or validate the file. The readability and file checks still need to run.
+::::
+:::
+
+::: {.challenge level=2 title="Debug this: one name became two"}
+Why does this snippet mishandle filenames, and how would you repair it?
+
+```bash
+inputs="data/raw/samples.tsv data/raw/pilot samples.tsv"
+for input in $inputs; do
+    wc -l $input
+done
+```
+
+:::: {.solution}
+The string has lost the boundary between paths; splitting on whitespace creates three words. Store the paths as array elements and quote the expansion and each path:
+
+```bash
+inputs=(data/raw/samples.tsv 'data/raw/pilot samples.tsv')
+for input in "${inputs[@]}"; do
+    wc -l -- "$input"
+done
+```
+
+The second file must still exist. A correct script reports its absence; it does not invent an empty file just to make the loop finish.
+::::
+:::
+
+::: {.challenge level=3 title="A missing sample is not a complete batch"}
+Save the keep-going loop with the `count_table` function. Replace its inputs with `data/raw/samples.tsv` and `data/raw/absent.tsv`. Predict the messages and final status, then check them. Why is the status different from the number of successful inputs?
+
+:::: {.solution}
+The first input prints `6` and an `OK` record. The missing input prints an error and a `FAILED` record. After the script returns, `printf '%s\n' "$?"` prints `1`, provided you run it immediately. The status is a success/failure signal for the entire batch, not a counter: one successful sample does not satisfy a promise to process both inputs.
+::::
+:::
+
+## Where this is going
+
+The [next episode](02-reproducible-pipelines.html) connects these shell tools into a recorded workflow that validates tables before publishing results. Those habits carry into [molecular property prediction](../../part-2-cheminformatics/ch06-qsar-property-prediction/index.html) and [omics data analysis](../../part-3-bioinformatics/ch11-omics-data/index.html): Bash controls the files and processes, while domain tools and Python perform the scientific calculations.
